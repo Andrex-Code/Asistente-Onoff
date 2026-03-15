@@ -1,0 +1,110 @@
+GUIA DE DESPLIEGUE EN EMPRESA (RED LOCAL)
+=========================================
+
+Objetivo
+--------
+Levantar la app dentro de la red interna de la empresa para que asesores y admin la usen sin exponer PDFs en internet.
+
+Requisitos en el PC servidor
+----------------------------
+1) Windows 10/11
+2) Python 3.11+ instalado
+3) Node.js 20+ instalado
+4) Conexion LAN con los equipos de la empresa
+
+Carpetas importantes
+--------------------
+- Proyecto: carpeta raiz de este repositorio
+- Datos persistentes recomendados: C:\AsistenteOnoffData
+
+Paso 1. Configurar backend
+--------------------------
+1) Abrir terminal en la carpeta del proyecto
+2) Entrar a backend:
+   cd backend
+3) Crear .env:
+   copy .env.example .env
+4) Editar backend\.env con estos valores:
+
+   OPENAI_API_KEY=TU_API_KEY
+   ADMIN_EMAIL=admin@tuempresa.com
+   ADMIN_PASSWORD=CAMBIA_ESTA_CLAVE
+   ADMIN_NAME=Administrador General
+   CORS_ORIGINS=*
+   APP_STORAGE_DIR=C:\AsistenteOnoffData
+
+5) Crear entorno virtual e instalar:
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+
+6) Iniciar backend:
+   uvicorn main:app --host 0.0.0.0 --port 8000
+
+Paso 2. Configurar frontend
+---------------------------
+1) Abrir otra terminal en la carpeta del proyecto
+2) Entrar a frontend:
+   cd frontend
+3) Crear .env:
+   copy .env.example .env
+4) Editar frontend\.env:
+   VITE_API_URL=http://IP_DEL_PC_SERVIDOR:8000
+
+   Ejemplo:
+   VITE_API_URL=http://192.168.1.25:8000
+
+5) Instalar y levantar:
+   npm install
+   npm run dev -- --host 0.0.0.0 --port 5173
+
+Paso 3. Firewall
+----------------
+Permitir en Windows Firewall:
+- TCP 8000 (backend)
+- TCP 5173 (frontend)
+
+Paso 4. Acceso de usuarios
+--------------------------
+- URL para asesores/admin:
+  http://IP_DEL_PC_SERVIDOR:5173
+
+Al primer arranque se crea el admin inicial con ADMIN_EMAIL y ADMIN_PASSWORD.
+Luego desde el panel admin:
+- crear cuentas de asesores
+- activar/desactivar cuentas
+- cambiar permisos de subir/editar/eliminar
+- cambiar contrasenas
+
+Inicio rapido (un solo click)
+-----------------------------
+En la raiz del proyecto ejecuta:
+- start-all.bat
+
+Esto abre dos ventanas:
+- backend (puerto 8000)
+- frontend (puerto 5173)
+
+Persistencia de datos
+---------------------
+Todo queda en APP_STORAGE_DIR:
+- app.db (usuarios, documentos, configuracion)
+- uploads\ (PDFs originales)
+- faiss.index y faiss_meta.json (indice de busqueda)
+
+Mientras no borres esa carpeta, no se pierde informacion.
+
+Respaldo recomendado
+--------------------
+1) Cerrar backend
+2) Ejecutar:
+   backup-storage.bat
+3) El archivo .zip se guarda en:
+   carpeta_proyecto\backups\
+4) Opcionalmente copiar ese .zip a NAS/disco externo
+5) Reiniciar backend
+
+Nota de seguridad
+-----------------
+No usar hosting gratuito publico para informacion interna sensible.
+Si en el futuro requieren acceso remoto, usar VPN corporativa o servidor privado con red restringida.

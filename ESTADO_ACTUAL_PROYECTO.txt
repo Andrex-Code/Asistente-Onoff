@@ -1,0 +1,46 @@
+ESTADO ACTUAL DEL PROYECTO ASISTENTE ONOFF
+
+Objetivo actual
+Centralizar la informacion operativa de una empresa para que los asesores puedan encontrar respuestas rapido y apoyarse en un chatbot interno.
+
+Lo que hace hoy el proyecto
+Tiene un frontend en React + Vite y un backend en FastAPI.
+Permite iniciar sesion con usuarios administradores y asesores.
+Maneja roles y permisos para subir archivos, editar documentos, eliminar documentos y usar el chat.
+Guarda la informacion localmente en SQLite.
+Guarda los PDFs subidos en disco.
+Construye un indice vectorial con FAISS para hacer busqueda semantica.
+Tiene busqueda por temas.
+Tiene chatbot conectado a OpenAI para responder usando el contenido cargado.
+Permite activar o desactivar el chatbot desde el panel de administracion.
+Permite administrar usuarios desde el panel.
+
+Fuentes de conocimiento soportadas actualmente
+PDFs cargados desde el panel.
+Archivos JSON estructurados para importar conocimiento ordenado.
+Creacion manual de documentos estructurados desde el panel admin, escribiendo nombre del documento y temas.
+
+Como se organiza la informacion hoy
+Cada documento queda dividido en temas y fragmentos.
+Los temas sirven para la vista editable y la busqueda por contenido.
+Los fragmentos se usan para indexar y responder con el chatbot.
+
+Problemas ya resueltos
+El archivo start-all.bat ya abre correctamente backend y frontend en ventanas separadas.
+El panel ya no depende solo de PDFs y ahora permite cargar conocimiento mas estructurado.
+
+Mejoras recomendadas siguientes
+Agregar importacion desde Excel o CSV con plantilla empresarial.
+Corregir textos con caracteres mal codificados en algunas respuestas del backend.
+Agregar metadatos por tema, por ejemplo area, proceso, version, fecha y prioridad.
+Agregar historial de cambios o auditoria de documentos.
+Agregar citas visibles de la fuente en las respuestas del chatbot.
+
+Archivos clave
+start-all.bat
+backend/main.py
+backend/pdf_service.py
+backend/chat_service.py
+frontend/src/pages/AdminPage.jsx
+frontend/src/components/AdminUpload.jsx
+frontend/src/components/AdminStructuredForm.jsx

@@ -1,0 +1,133 @@
+========================================================
+  PLAN DE PRUEBAS - FASE 2: Panel Admin + ChatWidget
+========================================================
+
+PREPARACION:
+  1. Backend:  cd backend && uvicorn main:app --reload --port 8000
+  2. Frontend: cd frontend && npm run dev
+  3. Abrir http://localhost:5173
+
+========================================================
+PRUEBA 1 - Navegacion Header
+========================================================
+[ ] Verificar que el Header muestra dos links: "Inicio" y "Admin"
+[ ] Click en "Admin" -> navega a /admin
+[ ] Click en "Inicio" -> navega a /
+[ ] El link activo tiene fondo semi-transparente
+[ ] El titulo "Asistente de Procesos ONOFF" sigue visible
+
+========================================================
+PRUEBA 2 - Panel Admin: Toggle del chatbot
+========================================================
+[ ] Ir a /admin
+[ ] Verificar que aparece "Panel de Administracion"
+[ ] Verificar que el switch muestra "Activar Asistente Inteligente"
+[ ] Verificar que el switch inicia en OFF (gris)
+[ ] Click en el switch -> cambia a verde (ON)
+[ ] Verificar en backend: GET http://localhost:8000/config
+    debe retornar {"chatbot_enabled": true}
+[ ] Click de nuevo -> vuelve a gris (OFF)
+[ ] Verificar en backend: GET http://localhost:8000/config
+    debe retornar {"chatbot_enabled": false}
+
+========================================================
+PRUEBA 3 - Panel Admin: Subir PDF
+========================================================
+[ ] En /admin, verificar que aparece seccion "Subir documento PDF"
+[ ] Click "Seleccionar PDF" -> se abre selector de archivos
+[ ] Seleccionar un archivo PDF de prueba
+[ ] Verificar que muestra mensaje de exito con nombre y fragmentos
+[ ] Verificar que el documento aparece en la lista de abajo
+[ ] Intentar subir un archivo que NO sea PDF (ej: .txt)
+    -> debe mostrar error "Solo se permiten archivos PDF"
+
+========================================================
+PRUEBA 4 - Panel Admin: Lista de documentos
+========================================================
+[ ] En /admin, verificar la seccion "Documentos cargados (N)"
+[ ] Si no hay documentos, muestra "No hay documentos cargados aun"
+[ ] Subir 2 PDFs de prueba
+[ ] Verificar que ambos aparecen con nombre y cantidad de fragmentos
+[ ] Click "Eliminar" en uno de ellos
+[ ] Verificar que desaparece de la lista
+[ ] Verificar en backend: GET http://localhost:8000/documents
+    debe retornar solo el documento restante
+
+========================================================
+PRUEBA 5 - ChatWidget deshabilitado (por defecto)
+========================================================
+[ ] Ir a / (Inicio)
+[ ] Verificar que aparece el ChatWidget al final de la pagina
+[ ] El ChatWidget debe tener opacidad 0.4 (se ve gris/transparente)
+[ ] El punto indicador debe estar gris
+[ ] El input debe estar disabled (no se puede escribir)
+[ ] El boton "Enviar" debe estar gris y disabled
+[ ] Debe mostrar texto: "Asistente deshabilitado por administracion"
+
+========================================================
+PRUEBA 6 - ChatWidget habilitado
+========================================================
+[ ] Ir a /admin
+[ ] Activar el switch (ponerlo en ON/verde)
+[ ] Ir a / (Inicio)
+[ ] El ChatWidget debe tener opacidad 1 (se ve normal)
+[ ] El punto indicador debe estar verde
+[ ] El input debe estar habilitado con placeholder "Escribe tu pregunta..."
+[ ] El boton "Enviar" debe estar verde
+[ ] NO debe mostrar el texto de deshabilitado
+
+========================================================
+PRUEBA 7 - Funcionalidades Fase 1 siguen funcionando
+========================================================
+[ ] En /, el buscador grande sigue centrado
+[ ] Las 4 cards de temas frecuentes siguen apareciendo:
+    - Anulacion de factura
+    - Cierre de caja
+    - Sincronizacion
+    - Cambio de precio
+[ ] Subir un PDF desde /admin con texto conocido
+[ ] Volver a / y buscar una palabra del PDF
+[ ] Verificar que aparecen resultados
+[ ] Click en un tema frecuente -> realiza busqueda
+[ ] ResultsList sigue mostrando resultados con formato correcto
+
+========================================================
+PRUEBA 8 - API Backend directa (opcional, con curl o Postman)
+========================================================
+[ ] GET  http://localhost:8000/config
+    -> {"chatbot_enabled": false}
+
+[ ] POST http://localhost:8000/config
+    Body: {"chatbot_enabled": true}
+    -> {"chatbot_enabled": true}
+
+[ ] POST http://localhost:8000/upload-pdf
+    Form-data: file=@archivo.pdf
+    -> {"message": "PDF procesado correctamente", "document": {...}}
+
+[ ] GET  http://localhost:8000/documents
+    -> {"documents": [...]}
+
+[ ] DELETE http://localhost:8000/documents/{id}
+    -> {"message": "Documento eliminado correctamente"}
+
+[ ] POST http://localhost:8000/search
+    Body: {"query": "palabra"}
+    -> {"query": "palabra", "total_results": N, "results": [...]}
+
+========================================================
+PRUEBA 9 - Persistencia
+========================================================
+[ ] Subir PDF y activar chatbot
+[ ] Detener backend (Ctrl+C) y volver a iniciar
+[ ] Verificar que /config sigue retornando chatbot_enabled: true
+[ ] Verificar que /documents sigue retornando los PDFs subidos
+[ ] Los archivos storage/config.json y storage/documents.json
+    deben contener los datos correctos
+
+========================================================
+RESULTADO ESPERADO:
+  Todas las casillas [ ] deben poder marcarse con [X]
+  Si alguna falla, revisar la consola del navegador (F12)
+  y la terminal del backend para errores.
+========================================================
