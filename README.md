@@ -1,42 +1,106 @@
-# Asistente ONOFF (Local Empresa)
+# Asistente ONOFF
 
-Proyecto dividido en:
+Aplicacion interna para centralizar conocimiento operativo, buscar informacion rapidamente y apoyar a los asesores con un chatbot basado en contenido interno.
+
+## Resumen
+
+El proyecto fue pensado para empresa y hoy funciona como una base de conocimiento local con:
+
+- login obligatorio
+- roles y permisos
+- carga de PDFs
+- importacion de JSON estructurado
+- creacion manual de documentos estructurados
+- busqueda por temas
+- chatbot con OpenAI usando contexto interno
+- persistencia local en SQLite y FAISS
+
+## Stack
+
 - `frontend`: React + Vite
-- `backend`: FastAPI + SQLite + FAISS
+- `backend`: FastAPI
+- `database`: SQLite
+- `vector search`: FAISS
+- `LLM / embeddings`: OpenAI
 
-## Estado actual
+## Estructura del repositorio
 
-- Login obligatorio para toda la app (admin y asesor).
-- Roles y permisos granulares:
-  - `admin`: control total.
-  - `asesor`: permisos configurables (`can_upload`, `can_edit_documents`, `can_delete_documents`, `can_use_chat`).
-- Admin puede gestionar usuarios desde el panel:
-  - crear cuenta,
-  - activar/desactivar,
-  - cambiar rol,
-  - asignar permisos,
-  - cambiar contrasena.
-- Persistencia local real:
-  - SQLite (`app.db`)
-  - PDFs en disco (`uploads`)
-  - indice FAISS en disco.
+```text
+Asistente-Onoff/
+├── backend/
+├── frontend/
+├── docs/
+├── start-all.bat
+├── start-backend.bat
+├── start-frontend.bat
+└── README.md
+```
 
-## Configurar backend
+## Documentacion disponible
+
+- Revision tecnica: [GUIA_REVISION_TI.md](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/docs/GUIA_REVISION_TI.md)
+- Instalacion local en empresa: [INSTALACION_LOCAL_EMPRESA.md](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/docs/INSTALACION_LOCAL_EMPRESA.md)
+- Arquitectura del sistema: [ARQUITECTURA.md](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/docs/ARQUITECTURA.md)
+- Estado funcional actual: [ESTADO_ACTUAL_PROYECTO.txt](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/ESTADO_ACTUAL_PROYECTO.txt)
+
+## Requisitos
+
+- Python 3.11 o superior
+- Node.js 20 o superior
+- acceso a internet para instalar dependencias
+- `OPENAI_API_KEY` valida si se usara chatbot / embeddings
+
+## Configuracion rapida
+
+### Backend
 
 ```powershell
 cd backend
 copy .env.example .env
 ```
 
-Edita `backend/.env`:
+Variables principales:
+
 - `OPENAI_API_KEY`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`
 - `ADMIN_NAME`
 - `CORS_ORIGINS`
-- `APP_STORAGE_DIR`
+- `APP_STORAGE_DIR` opcional pero recomendado
 
-Instalar y ejecutar:
+### Frontend
+
+```powershell
+cd frontend
+copy .env.example .env
+```
+
+Uso local en el mismo PC:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+## Ejecucion
+
+### Opcion 0: preparacion automatica del PC
+
+- Ejecuta [setup-local.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/setup-local.bat)
+- Este script:
+  - verifica Python y Node.js
+  - crea `backend/.env` y `frontend/.env` si no existen
+  - crea el entorno virtual del backend
+  - instala dependencias del backend y frontend
+
+### Opcion 1: scripts .bat
+
+- [start-all.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-all.bat)
+- [start-backend.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-backend.bat)
+- [start-frontend.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-frontend.bat)
+
+### Opcion 2: manual
+
+Backend:
 
 ```powershell
 cd backend
@@ -46,17 +110,7 @@ pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-## Configurar frontend
-
-```powershell
-cd frontend
-copy .env.example .env
-```
-
-En `frontend/.env` define:
-- `VITE_API_URL=http://IP_DEL_PC_SERVIDOR:8000`
-
-Instalar y ejecutar:
+Frontend:
 
 ```powershell
 cd frontend
@@ -64,25 +118,25 @@ npm install
 npm run dev -- --host 0.0.0.0 --port 5173
 ```
 
-## Acceso en red local (LAN)
+## URLs
 
-- Frontend: `http://IP_DEL_PC_SERVIDOR:5173`
-- Backend API: `http://IP_DEL_PC_SERVIDOR:8000`
-
-Permitir puertos `5173` y `8000` en Windows Firewall.
-
-## Inicio rapido
-
-- Ejecuta [start-all.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-all.bat) para levantar backend y frontend en ventanas separadas.
-- Si prefieres por separado, usa [start-backend.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-backend.bat) y [start-frontend.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/start-frontend.bat).
+- Frontend local: `http://localhost:5173`
+- Backend local: `http://localhost:8000`
+- Healthcheck backend: `http://localhost:8000/health`
 
 ## Carga de conocimiento
 
-- El panel admin ahora acepta:
-  - PDFs para extraer contenido automaticamente.
-  - JSON estructurado para mantener una base mas consistente.
-- Plantilla sugerida: [knowledge_template.json](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/backend/knowledge_template.json)
-- Formato esperado:
+El panel administrativo soporta:
+
+- PDFs
+- JSON estructurado
+- formulario manual de documentos estructurados
+
+Plantilla base:
+
+- [knowledge_template.json](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/backend/knowledge_template.json)
+
+Formato esperado:
 
 ```json
 {
@@ -92,7 +146,7 @@ Permitir puertos `5173` y `8000` en Windows Firewall.
       "topics": [
         {
           "title": "Titulo del tema",
-          "content": "Procedimiento, reglas, mensajes aprobados, pasos y notas."
+          "content": "Procedimiento, reglas, excepciones, mensajes sugeridos y notas."
         }
       ]
     }
@@ -100,17 +154,32 @@ Permitir puertos `5173` y `8000` en Windows Firewall.
 }
 ```
 
-- Recomendacion de organizacion:
-  - 1 documento por proceso o politica.
-  - 1 tema por duda frecuente o paso operativo.
-  - incluir siempre pasos, restricciones, excepciones y mensaje sugerido al asesor.
+## Persistencia
 
-## Persistencia y respaldo
+Se almacenan:
 
-No se pierde informacion al reiniciar si conservas `APP_STORAGE_DIR`.
-Respaldar periodicamente esa carpeta (`app.db`, `uploads`, `faiss.index`, `faiss_meta.json`).
+- base SQLite
+- archivos PDF originales
+- indice FAISS
+- metadata del indice
 
-## Backup automatico
+Si no se define `APP_STORAGE_DIR`, se usan rutas dentro de `backend/storage`.
 
-- Ejecuta [backup-storage.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/backup-storage.bat).
-- El backup se genera en `backups\` como archivo `.zip` con fecha y hora.
+## Seguridad actual
+
+- autenticacion obligatoria
+- sesiones con expiracion
+- roles y permisos
+- validacion de permisos en backend
+
+## Backup
+
+- Script disponible: [backup-storage.bat](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/backup-storage.bat)
+- Script PowerShell: [backup-storage.ps1](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/backup-storage.ps1)
+
+## Notas para revision de TI
+
+- El proyecto esta preparado para correr primero en un solo PC.
+- Para uso compartido por LAN, TI debe encargarse de IP, firewall y puertos.
+- Se recomienda mover `APP_STORAGE_DIR` fuera del repo a una carpeta fija y respaldable.
+- Guia rapida para preparar un PC nuevo: [PREPARAR_PC_EMPRESA.txt](/c:/Users/pipev/OneDrive/Escritorio/Asistente-Onoff/PREPARAR_PC_EMPRESA.txt)

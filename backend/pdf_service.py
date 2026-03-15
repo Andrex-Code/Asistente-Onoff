@@ -68,6 +68,7 @@ def extract_topics(text):
                 "content": content,
             })
 
+    # Fallback para documentos que no vienen bien estructurados: se crea un solo tema base.
     if not topics:
         lines_clean = [l.strip() for l in text.split("\n") if l.strip()]
         if lines_clean:
@@ -106,6 +107,7 @@ def split_into_chunks(text, chunk_size=CHUNK_SIZE):
 
 
 def _clean_topics(topics):
+    """Normaliza temas manuales o importados y descarta entradas vacias."""
     clean_topics = []
     for topic in topics or []:
         title = str(topic.get("title", "")).strip()
@@ -122,11 +124,13 @@ def _clean_topics(topics):
 
 
 def _save_document(doc_id, filename, stored_filename, topics):
+    # Todos los caminos de carga terminan aqui: PDF, JSON estructurado o formulario manual.
     safe_filename = os.path.basename(filename).strip() or "documento"
     clean_topics = _clean_topics(topics)
     if not clean_topics:
         return None
 
+    # El texto completo se recompone desde temas para mantener consistente la indexacion.
     full_text = "\n\n".join(
         f'{topic["title"]}\n\n{topic["content"]}' for topic in clean_topics
     )
@@ -215,6 +219,7 @@ def process_structured_payload(file_bytes, filename):
     except json.JSONDecodeError as exc:
         raise ValueError("El archivo JSON no tiene un formato valido.") from exc
 
+    # Se aceptan dos formatos: un objeto con "documents" o una lista de documentos.
     if isinstance(payload, dict):
         documents = payload.get("documents")
         if documents is None:
@@ -353,6 +358,7 @@ def update_document_topics(doc_id, topics):
         if not current:
             return None
 
+        # Al editar temas, los chunks tambien deben regenerarse para que busqueda y chat queden sincronizados.
         full_text = "\n\n".join(
             f'{topic["title"]}\n\n{topic["content"]}' for topic in clean_topics
         )

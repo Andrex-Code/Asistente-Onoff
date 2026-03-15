@@ -1,0 +1,45 @@
+PREPARAR PC EMPRESA - ASISTENTE ONOFF
+
+Objetivo
+Dejar el proyecto listo para correr en un PC nuevo con el menor numero posible de pasos manuales.
+
+Importante
+La carpeta del proyecto SI puede descargar automaticamente dependencias de Python y Node,
+pero NO puede instalar por si sola Python ni Node.js si ese PC no los tiene instalados.
+
+Requisitos minimos del PC
+- Python 3.11 o superior
+- Node.js 20 o superior
+- Internet para descargar dependencias
+
+Pasos
+1. Copiar o descargar la carpeta completa del proyecto.
+2. Ejecutar setup-local.bat
+3. Revisar estos archivos:
+   - backend\.env
+   - frontend\.env
+4. Ejecutar start-all.bat
+
+Que hace setup-local.bat
+- verifica que exista Python
+- verifica que exista Node.js
+- crea backend\.env si no existe
+- crea frontend\.env si no existe
+- crea el entorno virtual del backend
+- instala dependencias del backend
+- instala dependencias del frontend
+
+Que revisar antes de usar el sistema
+- OPENAI_API_KEY en backend\.env
+- credenciales admin en backend\.env
+- VITE_API_URL en frontend\.env
+
+Uso local en el mismo PC
+- backend: http://localhost:8000
+- frontend: http://localhost:5173
+
+Scripts principales
+- setup-local.bat
+- start-all.bat
+- start-backend.bat
+- start-frontend.bat

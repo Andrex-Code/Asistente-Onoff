@@ -346,12 +346,14 @@ function Home() {
   const [isCompact, setIsCompact] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 940 : false))
 
   useEffect(() => {
+    // Carga el estado inicial que alimenta buscador, resumen lateral y disponibilidad del chat.
     fetchConfig()
     fetchTopics()
     fetchDocuments()
   }, [])
 
   useEffect(() => {
+    // El layout cambia a una sola columna en pantallas reducidas.
     const onResize = () => setIsCompact(window.innerWidth < 940)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
@@ -391,6 +393,7 @@ function Home() {
     const cleanQuery = searchQuery.trim()
     if (!cleanQuery) return
 
+    // La busqueda siempre limpia la vista de detalle para priorizar el flujo principal.
     setSelectedTopic(null)
     setQuery(cleanQuery)
     setSearchInput(cleanQuery)
@@ -426,6 +429,7 @@ function Home() {
   }
 
   const handleTopicClick = (topic) => {
+    // Abrir un tema destacado limpia el estado de busqueda para evitar mezclar contextos visuales.
     setSelectedTopic(topic)
     setQuery('')
     setResults([])

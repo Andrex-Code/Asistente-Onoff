@@ -19,6 +19,7 @@ def _get_client():
 
 
 def _build_context(chunks):
+    """Construye el contexto con trazabilidad de la fuente para cada fragmento."""
     context_parts = []
     for i, chunk in enumerate(chunks, start=1):
         filename = chunk.get("filename") or "Documento sin nombre"
@@ -28,6 +29,7 @@ def _build_context(chunks):
 
 
 def answer_question(message: str):
+    """Responde una pregunta usando solo los fragmentos recuperados del indice vectorial."""
     config = load_config()
     if not config.get("chatbot_enabled", False):
         raise PermissionError("El chatbot esta desactivado.")

@@ -37,6 +37,7 @@ def _ensure_storage():
 
 
 def _write_empty_index():
+    """Crea un indice vacio para evitar errores cuando aun no existen documentos."""
     faiss, _ = _get_faiss_and_np()
     _ensure_storage()
     index = faiss.IndexFlatIP(EMBEDDING_DIM)
@@ -46,6 +47,7 @@ def _write_empty_index():
 
 
 def _load_index_and_meta():
+    """Carga indice y metadata, validando que ambos tengan la misma cantidad de entradas."""
     faiss, _ = _get_faiss_and_np()
     if not os.path.exists(INDEX_PATH) or not os.path.exists(META_PATH):
         return None, None
@@ -61,6 +63,7 @@ def _load_index_and_meta():
 
 
 def _embed_texts(texts: List[str]):
+    """Genera embeddings en lotes para reducir llamadas y costo de red."""
     faiss, np = _get_faiss_and_np()
     client = _get_client()
     vectors: List[List[float]] = []
@@ -77,6 +80,7 @@ def _embed_texts(texts: List[str]):
 
 
 def rebuild_vector_store(documents: List[Dict[str, Any]]):
+    """Reconstruye por completo el indice FAISS usando todos los chunks actuales."""
     faiss, _ = _get_faiss_and_np()
     _ensure_storage()
 
@@ -101,6 +105,7 @@ def rebuild_vector_store(documents: List[Dict[str, Any]]):
     chunk_texts = [record["chunk_text"] for record in records]
     vectors = _embed_texts(chunk_texts)
 
+    # Se usa similitud coseno via inner product despues de normalizar vectores.
     index = faiss.IndexFlatIP(vectors.shape[1])
     index.add(vectors)
 
@@ -112,6 +117,7 @@ def rebuild_vector_store(documents: List[Dict[str, Any]]):
 
 
 def ensure_vector_store_ready():
+    """Si el indice aun no existe, lo crea a partir del estado actual de documentos."""
     index, metadata = _load_index_and_meta()
     if index is not None and metadata is not None:
         return
@@ -121,6 +127,7 @@ def ensure_vector_store_ready():
 
 
 def search_similar_chunks(query: str, top_k: int = 3):
+    """Busca los chunks mas cercanos semanticamente a la consulta del usuario."""
     _, _ = _get_faiss_and_np()
     ensure_vector_store_ready()
     index, metadata = _load_index_and_meta()

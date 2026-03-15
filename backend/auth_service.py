@@ -34,6 +34,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def bootstrap_admin_user():
+    """Crea el primer admin si la base aun no tiene cuentas administradoras."""
     init_db()
     email = _admin_email()
     with get_connection() as conn:
@@ -52,6 +53,7 @@ def bootstrap_admin_user():
 
 
 def _row_to_user(row) -> Dict:
+    """Convierte una fila SQLite al formato de usuario que consume la API."""
     return {
         "id": row["id"],
         "email": row["email"],
@@ -101,6 +103,7 @@ def get_user_by_id(user_id: int):
 
 
 def create_token(user_id: int) -> str:
+    """Crea una sesion persistida en SQLite para el usuario autenticado."""
     token = secrets.token_hex(32)
     expires_at = int(time.time()) + TOKEN_DURATION
     with get_connection() as conn:
@@ -117,6 +120,7 @@ def remove_token(token: str):
 
 
 def authenticate_user(email: str, password: str):
+    """Valida credenciales, actualiza ultimo acceso y abre una nueva sesion."""
     row = get_user_by_email(email)
     if not row:
         return None
@@ -137,6 +141,7 @@ def authenticate_user(email: str, password: str):
 
 
 def validate_token(token: str):
+    """Valida que la sesion exista, no haya expirado y pertenezca a un usuario activo."""
     if not token:
         return None
     now = int(time.time())
@@ -184,6 +189,7 @@ def _normalize_role(role: str) -> str:
 
 
 def _permissions_for_role(role: str, permissions: Optional[Dict] = None) -> Dict[str, bool]:
+    """Centraliza la matriz de permisos para evitar divergencias entre endpoints."""
     if role == "admin":
         return {
             "can_upload": True,
@@ -245,6 +251,7 @@ def update_user(user_id: int, full_name: str, role: str, is_active: bool, permis
         if not row:
             raise ValueError("Usuario no encontrado.")
 
+        # Protege contra dejar el sistema sin un administrador activo.
         if row["role"] == "admin" and role_value != "admin":
             admin_count = conn.execute("SELECT COUNT(*) AS c FROM users WHERE role = 'admin' AND is_active = 1").fetchone()["c"]
             if admin_count <= 1:

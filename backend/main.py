@@ -37,6 +37,7 @@ load_dotenv()
 
 
 def _cors_origins():
+    """Permite configurar multiples origenes desde .env separados por comas."""
     raw = os.getenv("CORS_ORIGINS", "*").strip()
     if not raw:
         return ["*"]
@@ -125,6 +126,7 @@ def _extract_token(authorization: str) -> str:
 
 
 def require_user(authorization: str = Header(None)):
+    """Valida sesion y retorna el usuario actual."""
     token = _extract_token(authorization)
     user = validate_token(token)
     if not user:
@@ -133,6 +135,7 @@ def require_user(authorization: str = Header(None)):
 
 
 def require_admin(authorization: str = Header(None)):
+    """Restringe el acceso a cuentas administradoras."""
     user = require_user(authorization)
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="No tiene permisos de administrador.")
@@ -140,6 +143,7 @@ def require_admin(authorization: str = Header(None)):
 
 
 def require_permission(permission_key: str, authorization: str = Header(None)):
+    """Permite a admin todo y al asesor solo la accion habilitada en sus permisos."""
     user = require_user(authorization)
     if user["role"] == "admin":
         return user
@@ -277,6 +281,7 @@ async def upload_pdf(file: UploadFile = File(...), authorization: str = Header(N
     if result is None:
         raise HTTPException(status_code=400, detail="No se pudo extraer texto del PDF.")
     try:
+        # El indice vectorial se reconstruye despues de cada cambio para mantener las respuestas actualizadas.
         rebuild_vector_store(load_documents())
     except Exception as err:
         delete_document(result["id"])
