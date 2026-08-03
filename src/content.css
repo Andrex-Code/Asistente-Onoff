@@ -1,0 +1,236 @@
+.ikono-translator-launcher {
+  position: fixed;
+  right: 18px;
+  bottom: 86px;
+  z-index: 2147483647;
+  width: 54px;
+  height: 54px;
+  border: 0;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 6px;
+  touch-action: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.ikono-translator-launcher::before {
+  content: "ON";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.ikono-translator-launcher.is-dragging {
+  cursor: grabbing;
+  transform: scale(1.04);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.45);
+}
+
+.ikono-translator-launcher img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+.ikono-translator-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 142px;
+  z-index: 2147483647;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: #052e16;
+  border: 1px solid #22c55e;
+  border-radius: 16px;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.35);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ikono-translator-panel[hidden] { display: none; }
+
+.ikono-translator-panel-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ikono-translator-panel-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #22c55e;
+}
+
+.ikono-translator-panel button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: #22c55e;
+  color: #052e16;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ikono-translator-panel button[data-action="falar"] { background: #dcfce7; }
+.ikono-translator-panel button[data-action="audio"] { background: #ffffff; }
+
+.ikono-translator-toolbar {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background: #052e16;
+  border: 1px solid #22c55e;
+  border-radius: 999px;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.35);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.ikono-translator-toolbar button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #22c55e;
+  color: #052e16;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ikono-translator-toolbar button[data-action="falar"] { background: #dcfce7; }
+
+.ikono-translator-bubble {
+  position: fixed;
+  z-index: 2147483647;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #22c55e;
+  border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.35);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.ikono-translator-bubble.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.48);
+}
+
+.ikono-translator-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #16a34a;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  flex: 0 0 auto;
+}
+
+.ikono-translator-header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ikono-translator-drag-hint {
+  margin-left: auto;
+  color: #dcfce7;
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.9;
+}
+
+.ikono-translator-header button,
+.ikono-translator-actions button {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ikono-translator-header button {
+  width: 24px;
+  height: 24px;
+  color: #0f172a;
+  background: #dcfce7;
+  flex: 0 0 auto;
+}
+
+.ikono-translator-body {
+  overflow: auto;
+  min-height: 0;
+}
+
+.ikono-translator-section {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ikono-translator-section span {
+  display: block;
+  margin-bottom: 5px;
+  color: #86efac;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ikono-translator-section p {
+  margin: 0;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.ikono-translator-result p { font-size: 14px; }
+
+.ikono-translator-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 12px 12px;
+  flex: 0 0 auto;
+}
+
+.ikono-translator-actions button {
+  padding: 7px 12px;
+  background: #22c55e;
+  color: #052e16;
+  font-weight: 700;
+}
