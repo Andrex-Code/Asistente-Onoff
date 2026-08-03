@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Traductor iKono PT-BR",
-  "version": "0.5.3",
-  "description": "Extension para traducir mensajes de iKono Chat entre portugues brasileno y espanol.",
-  "permissions": ["contextMenus", "storage", "activeTab", "scripting"],
+  "name": "Asistente ONOFF",
+  "version": "1.0.0",
+  "description": "Asistente ONOFF para traducción, mejora de textos, plantillas Bitrix, seguimientos y audios.",
+  "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "<all_urls>",
     "https://*.vercel.app/*",
@@ -30,7 +30,7 @@
   ],
   "options_page": "src/options.html",
   "action": {
-    "default_title": "Traductor iKono",
+    "default_title": "Asistente ONOFF",
     "default_popup": "src/popup.html"
   },
   "icons": {
