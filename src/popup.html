@@ -1,1 +1,51 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><link rel="stylesheet" href="popup.css"></head><body><h2>Asistente ONOFF</h2><p>Abra el botón verde dentro de iKono para usar las herramientas.</p><a href="options.html" target="_blank">Configuración</a></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Asistente ONOFF</title>
+  <style>
+    body { width: 360px; margin: 0; padding: 16px; font-family: system-ui, sans-serif; color: #0f172a; }
+    h1 { font-size: 18px; color: #15803d; margin: 0 0 8px; }
+    h2 { font-size: 14px; margin: 18px 0 8px; }
+    p { margin: 0 0 12px; line-height: 1.4; }
+    a { color: #16a34a; font-weight: 700; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; margin: 12px 0; padding: 10px; border: 1px solid #dbeafe; border-radius: 12px; background: #f8fafc; font-size: 13px; font-weight: 700; }
+    .toggle-row input { width: 16px; height: 16px; accent-color: #16a34a; }
+    input[type="file"] { width: 100%; margin: 8px 0 10px; }
+    button { width: 100%; min-height: 38px; border: 0; border-radius: 10px; background: #16a34a; color: white; font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .box { margin-top: 12px; padding: 12px; border: 1px solid #dbeafe; border-radius: 12px; background: #f8fafc; }
+    .result-title { display: block; margin-bottom: 6px; color: #15803d; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    .result-text { margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.45; }
+    .status { color: #475569; font-size: 13px; }
+    .error { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>Asistente ONOFF</h1>
+  <p>Use el botón ON dentro de iKono para traducir, mejorar textos, abrir plantillas y gestionar seguimientos.</p>
+  <a href="options.html" target="_blank">Abrir opciones</a>
+
+  <label class="toggle-row">
+    <input id="showSelectionButtons" type="checkbox" />
+    <span>Mostrar botones flotantes al seleccionar texto</span>
+  </label>
+
+  <h2>Transcribir audio</h2>
+  <input id="audioFile" type="file" accept="audio/*,.opus,.ogg,.webm,.mp3,.m4a,.wav" />
+  <button id="transcribeButton" type="button">Transcribir al español</button>
+  <div id="status" class="status"></div>
+
+  <div id="transcriptBox" class="box" hidden>
+    <span class="result-title">Transcripción original</span>
+    <p id="transcript" class="result-text"></p>
+  </div>
+
+  <div id="spanishBox" class="box" hidden>
+    <span class="result-title">Español</span>
+    <p id="spanish" class="result-text"></p>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
