@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Traductor iKono</title>
+  <title>Asistente ONOFF</title>
   <style>
     body { width: 360px; margin: 0; padding: 16px; font-family: system-ui, sans-serif; color: #0f172a; }
     h1 { font-size: 17px; margin: 0 0 8px; }
@@ -22,32 +22,23 @@
   </style>
 </head>
 <body>
-  <h1>Traductor iKono PT-BR</h1>
-  <p>Selecciona texto en iKono Chat o carga un audio descargado para transcribirlo.</p>
+  <h1>Asistente ONOFF</h1>
+  <p>Traduzca textos, mejore respuestas, abra plantillas, gestione seguimientos o cargue un audio.</p>
   <a href="options.html" target="_blank">Abrir opciones</a>
 
   <label class="toggle-row">
     <input id="showSelectionButtons" type="checkbox" />
-    <span>Mostrar botones flotantes Traducir / Falar</span>
+    <span>Mostrar botones flotantes Traducir / Falar / Mejorar</span>
   </label>
 
   <h2>Transcribir audio descargado</h2>
-  <p class="status">Carga audios de iKono en formato opus/ogg/webm/mp3/m4a/wav. El resultado aparecerá abajo.</p>
+  <p class="status">Cargue audios de iKono en formato opus/ogg/webm/mp3/m4a/wav.</p>
   <input id="audioFile" type="file" accept="audio/*,.opus,.ogg,.webm,.mp3,.m4a,.wav" />
   <button id="transcribeButton" type="button">Transcribir al español</button>
 
   <div id="status" class="status"></div>
-
-  <div id="transcriptBox" class="box" hidden>
-    <span class="result-title">Transcripción original</span>
-    <p id="transcript" class="result-text"></p>
-  </div>
-
-  <div id="spanishBox" class="box" hidden>
-    <span class="result-title">Español</span>
-    <p id="spanish" class="result-text"></p>
-  </div>
-
+  <div id="transcriptBox" class="box" hidden><span class="result-title">Transcripción original</span><p id="transcript" class="result-text"></p></div>
+  <div id="spanishBox" class="box" hidden><span class="result-title">Español</span><p id="spanish" class="result-text"></p></div>
   <script src="popup.js"></script>
 </body>
 </html>
