@@ -1,0 +1,1 @@
+const input=document.getElementById('backend');const status=document.getElementById('status');chrome.storage.sync.get(['backendUrl'],(s)=>input.value=s.backendUrl||'https://traductor-try-controller.vercel.app');document.getElementById('save').onclick=()=>chrome.storage.sync.set({backendUrl:input.value.trim().replace(/\/$/,'')},()=>{status.textContent='Configuración guardada.';});

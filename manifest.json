@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Asistente ONOFF",
+  "version": "1.0.0",
+  "description": "Asistente para traducción, mejora de textos, plantillas Bitrix y seguimientos.",
+  "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["<all_urls>", "https://*.vercel.app/*", "https://api.mymemory.translated.net/*"],
+  "background": {"service_worker": "src/background.js", "type": "module"},
+  "content_scripts": [{"matches": ["<all_urls>"], "js": ["src/content.js"], "css": ["src/content.css"], "run_at": "document_idle"}],
+  "options_page": "src/options.html",
+  "action": {"default_title": "Asistente ONOFF", "default_popup": "src/popup.html"}
+}
