@@ -1,1 +1,54 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Asistente ONOFF</title><style>body{max-width:680px;margin:40px auto;font-family:Arial}input{width:100%;padding:10px}button{margin-top:12px;padding:10px 16px}</style></head><body><h1>Configuración</h1><label>URL del backend</label><input id="backend"><button id="save">Guardar</button><p id="status"></p><script src="options.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Opciones - Asistente ONOFF</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>Asistente ONOFF</h1>
+    <p>Configure el motor de traducción y la apariencia de las herramientas flotantes.</p>
+
+    <label>
+      Motor de traducción
+      <select id="provider">
+        <option value="backend-openai">Backend seguro</option>
+        <option value="mymemory-free">MyMemory gratis sin clave</option>
+        <option value="offline-basic">Básico offline incluido</option>
+        <option value="libretranslate-local">LibreTranslate local</option>
+      </select>
+    </label>
+
+    <label class="toggle-row">
+      <input id="showCornerButton" type="checkbox" />
+      <span>Mostrar botón fijo ONOFF</span>
+    </label>
+
+    <label class="toggle-row">
+      <input id="showSelectionButtons" type="checkbox" />
+      <span>Mostrar botones flotantes Traducir / Falar / Mejorar al seleccionar texto</span>
+    </label>
+
+    <section class="provider-box" data-provider-box="backend-openai">
+      <label>
+        URL del backend
+        <input id="backendUrl" type="url" placeholder="https://asistente-onoff-andres-projects-bf9797b2.vercel.app" />
+      </label>
+      <p class="warning">La clave de OpenAI permanece protegida en Vercel.</p>
+    </section>
+
+    <section class="provider-box" data-provider-box="libretranslate-local">
+      <label>
+        URL de LibreTranslate local
+        <input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate" />
+      </label>
+    </section>
+
+    <button id="save">Guardar</button>
+    <p id="status" role="status"></p>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
