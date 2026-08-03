@@ -3,40 +3,40 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Opciones - Traductor iKono</title>
+  <title>Opciones - Asistente ONOFF</title>
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
   <main>
-    <h1>Traductor iKono PT-BR</h1>
-    <p>Configura el motor de traduccion. El modo recomendado es Backend seguro, porque la clave queda guardada en Vercel y no en el navegador.</p>
+    <h1>Asistente ONOFF</h1>
+    <p>Configure el motor de traducción y las herramientas visuales. El modo recomendado es Backend seguro, porque la clave permanece en Vercel y no en el navegador.</p>
 
     <label>
-      Motor de traduccion
+      Motor de traducción
       <select id="provider">
         <option value="backend-openai">Backend seguro</option>
         <option value="mymemory-free">MyMemory gratis sin clave</option>
-        <option value="offline-basic">Basico offline incluido</option>
+        <option value="offline-basic">Básico offline incluido</option>
         <option value="libretranslate-local">LibreTranslate local</option>
       </select>
     </label>
 
     <label class="toggle-row">
       <input id="showCornerButton" type="checkbox" />
-      <span>Mostrar boton fijo ONOFF en la esquina inferior derecha</span>
+      <span>Mostrar botón fijo ONOFF en la esquina inferior derecha</span>
     </label>
 
     <label class="toggle-row">
       <input id="showSelectionButtons" type="checkbox" />
-      <span>Mostrar botones flotantes Traducir / Falar al seleccionar texto</span>
+      <span>Mostrar botones flotantes Traducir / Falar / Mejorar al seleccionar texto</span>
     </label>
 
     <section class="provider-box" data-provider-box="backend-openai">
       <label>
         URL del backend
-        <input id="backendUrl" type="url" placeholder="https://traductor-try-controller.vercel.app" />
+        <input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app" />
       </label>
-      <p class="warning">Esta URL apunta al servicio de Vercel. Los asesores no deben configurar ninguna clave en el navegador.</p>
+      <p class="warning">Los asesores no deben configurar ninguna clave en el navegador. La API se administra desde Vercel.</p>
     </section>
 
     <section class="provider-box" data-provider-box="libretranslate-local">
