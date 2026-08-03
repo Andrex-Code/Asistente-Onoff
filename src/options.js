@@ -7,7 +7,7 @@ const status = document.querySelector('#status');
 
 const DEFAULTS = {
   provider: 'backend-openai',
-  backendUrl: 'https://traductor-try-controller.vercel.app',
+  backendUrl: 'https://asistente-onoff.vercel.app',
   libreTranslateUrl: 'http://localhost:5000/translate',
   showCornerButton: true,
   showSelectionButtons: true
@@ -32,8 +32,8 @@ document.querySelector('#save').addEventListener('click', () => {
     showCornerButton: showCornerButton.checked,
     showSelectionButtons: showSelectionButtons.checked
   }, () => {
-    status.textContent = 'Opciones guardadas. Recarga la pagina de iKono para aplicar cambios visuales.';
-    setTimeout(() => status.textContent = '', 2600);
+    status.textContent = 'Opciones guardadas. Recargue la página de iKono para aplicar los cambios visuales.';
+    setTimeout(() => { status.textContent = ''; }, 2600);
   });
 });
 
