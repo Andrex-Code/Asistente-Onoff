@@ -1,6 +1,8 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const STATE_KEY = 'onoffAssistantHistory';
+  let observedPanel = null;
+  let panelObserver = null;
   let assistantWindow = null;
   let messagesBox = null;
   let input = null;
@@ -12,14 +14,43 @@
 
   function init() {
     const panel = document.querySelector(PANEL_SELECTOR);
-    if (!panel) return setTimeout(init, 250);
-    if (panel.querySelector('[data-action="assistant-chat"]')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.action = 'assistant-chat';
-    button.innerHTML = '<span>Asistente de conversación</span><span class="onoff-chevron">›</span>';
+    if (!panel) {
+      window.setTimeout(init, 250);
+      return;
+    }
+
+    observePanel(panel);
+    ensureAssistantButton(panel);
+  }
+
+  function observePanel(panel) {
+    if (observedPanel === panel) return;
+    observedPanel = panel;
+    panelObserver?.disconnect();
+    panelObserver = new MutationObserver(() => ensureAssistantButton(panel));
+    panelObserver.observe(panel, { childList: true });
+  }
+
+  function ensureAssistantButton(panel) {
+    if (!panel?.isConnected) {
+      window.setTimeout(init, 250);
+      return;
+    }
+
+    let button = panel.querySelector('[data-action="assistant-chat"]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = 'assistant-chat';
+      button.innerHTML = '<span>Asistente de conversación</span><span class="onoff-chevron">›</span>';
+      const subview = panel.querySelector('[data-subview]');
+      if (subview) panel.insertBefore(button, subview);
+      else panel.appendChild(button);
+    }
+
+    if (button.dataset.onoffAssistantBound === 'true') return;
+    button.dataset.onoffAssistantBound = 'true';
     button.addEventListener('click', openAssistant);
-    panel.appendChild(button);
   }
 
   async function openAssistant() {
