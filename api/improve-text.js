@@ -1,3 +1,5 @@
+const { readConfig } = require('../lib/config-store');
+
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
 module.exports = async function handler(req, res) {
@@ -13,6 +15,7 @@ module.exports = async function handler(req, res) {
     if (!text || typeof text !== 'string') return res.status(400).json({ ok: false, error: 'Texto requerido.' });
     if (text.length > 12000) return res.status(413).json({ ok: false, error: 'El texto es demasiado largo.' });
 
+    const config = await readConfig();
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
@@ -22,18 +25,7 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || process.env.OPENAI_TRANSLATION_MODEL || DEFAULT_MODEL,
         input: [
-          {
-            role: 'system',
-            content: [
-              'Mejora textos de atención al cliente en español colombiano.',
-              'Conserva estrictamente la intención y toda la información del texto original.',
-              'Corrige ortografía, puntuación, claridad y redacción.',
-              'Usa un tono profesional, amable, natural y humano.',
-              'Dirígete siempre al cliente de usted. Nunca uses tuteo ni formas como tú, tu, te, contigo o puedes.',
-              'No inventes datos, procedimientos, promesas, fechas, valores ni condiciones.',
-              'Devuelve únicamente el texto final mejorado, sin explicaciones, títulos, comillas ni notas.'
-            ].join(' ')
-          },
+          { role: 'system', content: config.improvePrompt },
           { role: 'user', content: text }
         ],
         temperature: 0.2,
