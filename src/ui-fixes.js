@@ -51,7 +51,28 @@
 
   function handlePanelClick(event) {
     const trigger = event.target.closest('[data-action="templates"], [data-action="followups"]');
-    if (trigger) activeTrigger = trigger;
+    if (trigger) {
+      const subview = observedPanel?.querySelector(SUBVIEW_SELECTOR);
+      const sameOpenTrigger = activeTrigger === trigger && Boolean(subview?.textContent.trim());
+      if (sameOpenTrigger) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        subview.innerHTML = '';
+        trigger.classList.remove('is-active');
+        activeTrigger = null;
+        positionSideWindow(observedPanel);
+        return;
+      }
+      activeTrigger?.classList.remove('is-active');
+      activeTrigger = trigger;
+      activeTrigger.classList.add('is-active');
+    }
+
+    const closeButton = event.target.closest('[data-close-sub]');
+    if (closeButton) {
+      activeTrigger?.classList.remove('is-active');
+      activeTrigger = null;
+    }
 
     const addButton = event.target.closest('[data-add]');
     if (addButton) {
