@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Administración | Asistente ONOFF</title>
+  <link rel="stylesheet" href="/admin/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section id="loginView" class="card login-card">
+      <div class="brand">ONOFF</div>
+      <h1>Administración del asistente</h1>
+      <p>Acceso privado para gestionar prompts y base de conocimiento.</p>
+      <form id="loginForm">
+        <label>Usuario<input id="username" autocomplete="username" required></label>
+        <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
+        <button type="submit">Ingresar</button>
+      </form>
+      <div id="loginStatus" class="status"></div>
+    </section>
+
+    <section id="adminView" class="hidden">
+      <header class="topbar">
+        <div><span class="brand">ONOFF</span><h1>Configuración del asistente</h1></div>
+        <button id="logoutButton" class="secondary">Cerrar sesión</button>
+      </header>
+      <div class="notice" id="storageNotice"></div>
+      <form id="configForm" class="grid">
+        <article class="card">
+          <h2>Prompt para mejorar texto</h2>
+          <p>Define tono, correcciones y restricciones de la herramienta de mejora.</p>
+          <textarea id="improvePrompt" rows="14" required></textarea>
+        </article>
+        <article class="card">
+          <h2>Prompt del asistente</h2>
+          <p>Define cómo interpreta el chat y cómo redacta respuestas.</p>
+          <textarea id="assistantPrompt" rows="14" required></textarea>
+        </article>
+        <article class="card knowledge-card">
+          <h2>Base de conocimiento</h2>
+          <p>Organice el contenido con títulos y párrafos. No incluya claves ni datos personales de clientes.</p>
+          <textarea id="knowledgeBase" rows="26" required></textarea>
+        </article>
+        <footer class="savebar">
+          <div id="configStatus" class="status"></div>
+          <div><span id="versionLabel"></span><button type="submit">Guardar nueva versión</button></div>
+        </footer>
+      </form>
+    </section>
+  </main>
+  <script src="/admin/app.js"></script>
+</body>
+</html>
