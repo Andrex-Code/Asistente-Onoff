@@ -1,12 +1,15 @@
 .onoff-panel-subview {
   box-sizing: border-box !important;
+  min-height: 0 !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  contain: layout paint;
 }
 
 .onoff-panel-subview:not(:empty) {
   display: grid !important;
   grid-auto-rows: max-content;
+  align-content: start;
   overflow-x: hidden !important;
   overflow-y: auto !important;
 }
@@ -16,15 +19,32 @@
   top: -12px !important;
   z-index: 4 !important;
   flex: 0 0 auto;
+  margin-bottom: 4px;
   box-shadow: 0 5px 12px rgba(23, 32, 27, 0.05);
 }
 
 .onoff-panel-subview .onoff-link-button {
   width: 100% !important;
   min-width: 0 !important;
+  min-height: 42px !important;
   box-sizing: border-box !important;
   overflow-wrap: anywhere;
   white-space: normal !important;
+}
+
+.onoff-panel-subview::-webkit-scrollbar {
+  width: 10px;
+}
+
+.onoff-panel-subview::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #b9c9bf;
+  background-clip: padding-box;
+}
+
+.onoff-panel-subview::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @media (max-width: 620px) {
