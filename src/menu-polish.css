@@ -165,7 +165,7 @@
 .onoff-notebook-host:not([hidden]),
 .onoff-bitrix-search:not([hidden]),
 .onoff-assistant-window:not([hidden]) {
-  animation: onoff-tool-enter 190ms cubic-bezier(.2,.8,.2,1) both;
+  animation: onoff-tool-fade 150ms ease both;
 }
 
 @keyframes onoff-panel-enter {
@@ -173,9 +173,9 @@
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
 
-@keyframes onoff-tool-enter {
-  from { opacity: 0; transform: translateY(7px) scale(.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes onoff-tool-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 620px) {
