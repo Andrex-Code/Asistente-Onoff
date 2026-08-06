@@ -14,6 +14,7 @@
   let characterCount;
   let saveTimer;
   let dragState;
+  let isOpen = false;
 
   init();
 
@@ -54,32 +55,40 @@
   async function toggleWindow(event) {
     event?.preventDefault();
     event?.stopPropagation();
-
     if (!host) buildWindow();
-    const willOpen = host.hidden;
-    host.hidden = !willOpen;
-    panel.querySelector('[data-action="notebook"]')?.classList.toggle('is-active', willOpen);
+    if (isOpen) await closeWindow();
+    else await openWindow();
+  }
 
-    if (willOpen) {
-      windowEl.classList.remove('is-minimized');
-      host.style.height = 'min(520px, calc(100vh - 24px))';
-      shadow.querySelector('[data-min]').textContent = '−';
-      await loadText();
-      await applyPosition();
-      window.setTimeout(() => {
-        editor.focus({ preventScroll: true });
-        const end = editor.value.length;
-        editor.setSelectionRange(end, end);
-      }, 0);
-    } else {
-      await saveNow();
-    }
+  async function openWindow() {
+    isOpen = true;
+    host.style.display = 'block';
+    host.removeAttribute('hidden');
+    windowEl.classList.remove('is-minimized');
+    host.style.height = 'min(520px, calc(100vh - 24px))';
+    shadow.querySelector('[data-min]').textContent = '−';
+    panel.querySelector('[data-action="notebook"]')?.classList.add('is-active');
+    await loadText();
+    await applyPosition();
+    window.setTimeout(() => {
+      editor.focus({ preventScroll: true });
+      const end = editor.value.length;
+      editor.setSelectionRange(end, end);
+    }, 0);
+  }
+
+  async function closeWindow() {
+    await saveNow();
+    isOpen = false;
+    host.style.display = 'none';
+    host.setAttribute('hidden', '');
+    panel.querySelector('[data-action="notebook"]')?.classList.remove('is-active');
   }
 
   function buildWindow() {
     host = document.createElement('div');
     host.className = 'onoff-notebook-host';
-    host.hidden = true;
+    host.setAttribute('hidden', '');
     Object.assign(host.style, {
       position: 'fixed',
       right: '22px',
@@ -87,7 +96,7 @@
       zIndex: '2147483647',
       width: 'min(560px, calc(100vw - 24px))',
       height: 'min(520px, calc(100vh - 24px))',
-      display: 'block',
+      display: 'none',
       pointerEvents: 'auto',
       isolation: 'isolate'
     });
@@ -210,12 +219,7 @@
     saveStatus = shadow.querySelector('[data-status]');
     characterCount = shadow.querySelector('[data-count]');
 
-    shadow.querySelector('[data-close]').addEventListener('click', async () => {
-      await saveNow();
-      host.hidden = true;
-      panel.querySelector('[data-action="notebook"]')?.classList.remove('is-active');
-    });
-
+    shadow.querySelector('[data-close]').addEventListener('click', closeWindow);
     shadow.querySelector('[data-min]').addEventListener('click', (event) => {
       windowEl.classList.toggle('is-minimized');
       const minimized = windowEl.classList.contains('is-minimized');
@@ -240,22 +244,14 @@
       'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'click',
       'keypress', 'keyup', 'beforeinput', 'input', 'paste', 'copy', 'cut',
       'compositionstart', 'compositionupdate', 'compositionend', 'focusin', 'focusout'
-    ].forEach((type) => {
-      editor.addEventListener(type, (event) => event.stopPropagation());
-    });
+    ].forEach((type) => editor.addEventListener(type, (event) => event.stopPropagation()));
 
     shadow.querySelector('header').addEventListener('pointerdown', startDrag);
     window.addEventListener('resize', keepInside);
   }
 
   async function loadText() {
-    const stored = await chrome.storage.local.get([
-      TEXT_KEY,
-      MIGRATION_KEY,
-      'onoffNotebookNotes',
-      'followUps'
-    ]);
-
+    const stored = await chrome.storage.local.get([TEXT_KEY, MIGRATION_KEY, 'onoffNotebookNotes', 'followUps']);
     let text = typeof stored[TEXT_KEY] === 'string' ? stored[TEXT_KEY] : '';
 
     if (!stored[MIGRATION_KEY] && !text) {
@@ -264,22 +260,16 @@
       const followUps = Array.isArray(stored.followUps) ? stored.followUps : [];
 
       oldNotes.forEach((note) => {
-        const title = String(note?.title || '').trim();
-        const content = String(note?.content || '').trim();
-        const combined = [title, content].filter(Boolean).join('\n');
+        const combined = [note?.title, note?.content].map((value) => String(value || '').trim()).filter(Boolean).join('\n');
         if (combined) sections.push(combined);
       });
-
       followUps.forEach((item) => {
-        const combined = [item?.name, item?.url].filter(Boolean).join('\n');
+        const combined = [item?.name, item?.url].map((value) => String(value || '').trim()).filter(Boolean).join('\n');
         if (combined) sections.push(combined);
       });
 
       text = sections.join('\n\n──────────\n\n');
-      await chrome.storage.local.set({
-        [TEXT_KEY]: text,
-        [MIGRATION_KEY]: true
-      });
+      await chrome.storage.local.set({ [TEXT_KEY]: text, [MIGRATION_KEY]: true });
     } else if (!stored[MIGRATION_KEY]) {
       await chrome.storage.local.set({ [MIGRATION_KEY]: true });
     }
@@ -311,11 +301,7 @@
   function startDrag(event) {
     if (event.button !== 0 || event.target.closest('button')) return;
     const rect = host.getBoundingClientRect();
-    dragState = {
-      pointerId: event.pointerId,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top
-    };
+    dragState = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
     windowEl.classList.add('is-dragging');
     event.currentTarget.setPointerCapture?.(event.pointerId);
     window.addEventListener('pointermove', moveDrag, true);
@@ -341,12 +327,7 @@
     window.removeEventListener('pointerup', endDrag, true);
     window.removeEventListener('pointercancel', endDrag, true);
     const rect = host.getBoundingClientRect();
-    await chrome.storage.local.set({
-      [POSITION_KEY]: {
-        left: Math.round(rect.left),
-        top: Math.round(rect.top)
-      }
-    });
+    await chrome.storage.local.set({ [POSITION_KEY]: { left: Math.round(rect.left), top: Math.round(rect.top) } });
   }
 
   async function applyPosition() {
@@ -361,7 +342,7 @@
   }
 
   function keepInside() {
-    if (!host || host.hidden) return;
+    if (!host || !isOpen) return;
     const rect = host.getBoundingClientRect();
     host.style.left = `${clamp(rect.left, 8, Math.max(8, window.innerWidth - rect.width - 8))}px`;
     host.style.top = `${clamp(rect.top, 8, Math.max(8, window.innerHeight - rect.height - 8))}px`;
