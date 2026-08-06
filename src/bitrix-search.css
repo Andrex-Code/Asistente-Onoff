@@ -1,0 +1,252 @@
+.onoff-bitrix-search {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 16px);
+  overflow: auto;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #17201b;
+  border: 1px solid #dce5df;
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(23, 32, 27, 0.22);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.onoff-bitrix-search[hidden] {
+  display: none !important;
+}
+
+.onoff-bitrix-search header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #dce5df;
+}
+
+.onoff-bitrix-search header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.onoff-bitrix-search header strong {
+  font-size: 15px;
+}
+
+.onoff-bitrix-search header small {
+  color: #66736b;
+  font-size: 12px;
+}
+
+.onoff-bitrix-search header button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid #dce5df;
+  border-radius: 9px;
+  background: #f7f9f8;
+  color: #17201b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 22px;
+}
+
+.onoff-bitrix-search-form {
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px 10px;
+}
+
+.onoff-bitrix-search-form label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #33413a;
+}
+
+.onoff-bitrix-search-form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.onoff-bitrix-search-form input {
+  min-width: 0;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17201b;
+  outline: none;
+  font: inherit;
+  user-select: text;
+}
+
+.onoff-bitrix-search-form input:focus {
+  border-color: #168447;
+  box-shadow: 0 0 0 3px rgba(22, 132, 71, 0.13);
+}
+
+.onoff-bitrix-search-form button,
+.onoff-bitrix-actions button {
+  border: 1px solid #168447;
+  border-radius: 10px;
+  background: #168447;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.onoff-bitrix-search-form button {
+  min-height: 42px;
+  padding: 0 14px;
+}
+
+.onoff-bitrix-search-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.onoff-bitrix-status {
+  min-height: 18px;
+  margin: 0 16px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #f7f9f8;
+  color: #66736b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.onoff-bitrix-status:empty {
+  display: none;
+}
+
+.onoff-bitrix-status[data-type="success"] {
+  background: #eaf7ef;
+  color: #0f5f35;
+}
+
+.onoff-bitrix-status[data-type="error"] {
+  background: #fff4f2;
+  color: #b42318;
+}
+
+.onoff-bitrix-status[data-type="loading"] {
+  background: #eef5ff;
+  color: #24558a;
+}
+
+.onoff-bitrix-results {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px 16px;
+}
+
+.onoff-bitrix-empty {
+  margin: 0;
+  padding: 14px;
+  text-align: center;
+  color: #66736b;
+  background: #f7f9f8;
+  border: 1px dashed #dce5df;
+  border-radius: 11px;
+  font-size: 13px;
+}
+
+.onoff-bitrix-card {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #dce5df;
+  border-radius: 13px;
+  background: #ffffff;
+}
+
+.onoff-bitrix-card-title {
+  display: grid;
+  gap: 3px;
+}
+
+.onoff-bitrix-card-title strong {
+  color: #0f5f35;
+  font-size: 13px;
+}
+
+.onoff-bitrix-card-title span {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.onoff-bitrix-card dl {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 6px 10px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.onoff-bitrix-card dt {
+  color: #66736b;
+  font-weight: 700;
+}
+
+.onoff-bitrix-card dd {
+  min-width: 0;
+  margin: 0;
+  color: #17201b;
+  overflow-wrap: anywhere;
+}
+
+.onoff-bitrix-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.onoff-bitrix-actions button {
+  min-height: 38px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #0f5f35;
+}
+
+.onoff-bitrix-actions button.is-primary {
+  background: #168447;
+  color: #ffffff;
+}
+
+.onoff-bitrix-actions button:hover {
+  background: #eaf7ef;
+}
+
+.onoff-bitrix-actions button.is-primary:hover {
+  background: #0f5f35;
+}
+
+@media (max-width: 520px) {
+  .onoff-bitrix-search {
+    left: 8px !important;
+    top: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 16px);
+  }
+
+  .onoff-bitrix-card dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .onoff-bitrix-card dd {
+    margin-bottom: 6px;
+  }
+}
