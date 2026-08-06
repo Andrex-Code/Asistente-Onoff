@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, bloc de notas, audios, búsqueda en Bitrix y asistencia conversacional.",
   "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs", "clipboardWrite"],
   "host_permissions": [
