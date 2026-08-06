@@ -28,7 +28,67 @@ module.exports = async function handler(req, res) {
       throw new Error('BITRIX_TC_FIELD no tiene un formato válido.');
     }
 
-    const list = await callBitrix(webhookUrl, 'crm.item.list', {
+    const rawItems = await findDeals(webhookUrl, tcField, tc);
+    if (!rawItems.length) {
+      return res.status(200).json({ ok: true, tc, count: 0, deals: [] });
+    }
+
+    const records = rawItems
+      .map(unwrapRecord)
+      .filter((item) => item && typeof item === 'object')
+      .slice(0, MAX_RESULTS);
+
+    const validRecords = records.filter((item) => String(pick(item, 'ID', 'id') || '').trim());
+    if (!validRecords.length) {
+      throw new Error('Bitrix encontró la TC, pero no devolvió el identificador de la negociación.');
+    }
+
+    const context = await loadContext(webhookUrl, validRecords);
+    const portalOrigin = new URL(webhookUrl).origin;
+    const deals = validRecords.map((item) => normalizeDeal(item, tc, tcField, context, portalOrigin));
+
+    return res.status(200).json({
+      ok: true,
+      tc,
+      count: deals.length,
+      deals
+    });
+  } catch (error) {
+    const message = cleanBitrixError(error);
+    const status = /credencial|autoriz|access denied|invalid/i.test(message) ? 502 : 500;
+    return res.status(status).json({ ok: false, error: message });
+  }
+};
+
+async function findDeals(webhookUrl, tcField, tc) {
+  let legacyError = null;
+
+  try {
+    const deals = await callBitrix(webhookUrl, 'crm.deal.list', {
+      [`filter[${tcField}]`]: tc,
+      'select[]': [
+        'ID',
+        'TITLE',
+        'STAGE_ID',
+        'CATEGORY_ID',
+        'COMPANY_ID',
+        'CONTACT_ID',
+        'ASSIGNED_BY_ID',
+        'DATE_CREATE',
+        'DATE_MODIFY',
+        tcField
+      ],
+      'order[DATE_MODIFY]': 'DESC',
+      start: 0
+    });
+
+    if (Array.isArray(deals) && deals.length) return deals;
+  } catch (error) {
+    legacyError = error;
+  }
+
+  try {
+    const result = await callBitrix(webhookUrl, 'crm.item.list', {
       entityTypeId: 2,
       useOriginalUfNames: 'Y',
       [`filter[${tcField}]`]: tc,
@@ -47,33 +107,17 @@ module.exports = async function handler(req, res) {
       start: 0
     });
 
-    const rawItems = Array.isArray(list?.items) ? list.items.slice(0, MAX_RESULTS) : [];
-    if (!rawItems.length) {
-      return res.status(200).json({ ok: true, tc, count: 0, deals: [] });
-    }
-
-    const context = await loadContext(webhookUrl, rawItems);
-    const portalOrigin = new URL(webhookUrl).origin;
-    const deals = rawItems.map((item) => normalizeDeal(item, tc, tcField, context, portalOrigin));
-
-    return res.status(200).json({
-      ok: true,
-      tc,
-      count: deals.length,
-      deals
-    });
+    return Array.isArray(result?.items) ? result.items : [];
   } catch (error) {
-    const message = cleanBitrixError(error);
-    const status = /credencial|autoriz|access denied|invalid/i.test(message) ? 502 : 500;
-    return res.status(status).json({ ok: false, error: message });
+    throw legacyError || error;
   }
-};
+}
 
 async function loadContext(webhookUrl, items) {
-  const assignedIds = unique(items.map((item) => pick(item, 'assignedById', 'ASSIGNED_BY_ID')).filter(Boolean));
-  const companyIds = unique(items.map((item) => pick(item, 'companyId', 'COMPANY_ID')).filter(Boolean));
-  const contactIds = unique(items.map((item) => pick(item, 'contactId', 'CONTACT_ID')).filter(Boolean));
-  const categories = unique(items.map((item) => Number(pick(item, 'categoryId', 'CATEGORY_ID') || 0)));
+  const assignedIds = unique(items.map((item) => pick(item, 'ASSIGNED_BY_ID', 'assignedById')).filter(Boolean));
+  const companyIds = unique(items.map((item) => pick(item, 'COMPANY_ID', 'companyId')).filter(Boolean));
+  const contactIds = unique(items.map((item) => pick(item, 'CONTACT_ID', 'contactId')).filter(Boolean));
+  const categories = uniqueNumbers(items.map((item) => pick(item, 'CATEGORY_ID', 'categoryId')));
 
   const [users, companies, contacts, stages] = await Promise.all([
     fetchUsers(webhookUrl, assignedIds),
@@ -95,7 +139,7 @@ async function fetchUsers(webhookUrl, ids) {
       const name = [user.NAME, user.LAST_NAME].filter(Boolean).join(' ').trim();
       map.set(String(id), name || `Usuario ${id}`);
     } catch {
-      // La negociación sigue siendo útil aunque no pueda resolverse el nombre.
+      // El ID seguirá visible si el webhook no tiene permiso para leer usuarios.
     }
   }));
   return map;
@@ -108,7 +152,7 @@ async function fetchCompanies(webhookUrl, ids) {
       const company = await callBitrix(webhookUrl, 'crm.company.get', { id });
       if (company) map.set(String(id), String(company.TITLE || company.title || `Empresa ${id}`));
     } catch {
-      // Se usa el identificador como respaldo.
+      // El ID seguirá visible si no puede resolverse el nombre.
     }
   }));
   return map;
@@ -123,7 +167,7 @@ async function fetchContacts(webhookUrl, ids) {
       const name = [contact.NAME || contact.name, contact.LAST_NAME || contact.lastName].filter(Boolean).join(' ').trim();
       map.set(String(id), name || `Contacto ${id}`);
     } catch {
-      // Se usa el identificador como respaldo.
+      // El ID seguirá visible si no puede resolverse el nombre.
     }
   }));
   return map;
@@ -151,14 +195,14 @@ async function fetchStages(webhookUrl, categories) {
 }
 
 function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
-  const id = String(pick(item, 'id', 'ID') || '');
-  const title = String(pick(item, 'title', 'TITLE') || `Negociación ${id}`).trim();
-  const stageId = String(pick(item, 'stageId', 'STAGE_ID') || '').trim();
-  const categoryId = Number(pick(item, 'categoryId', 'CATEGORY_ID') || 0);
-  const assignedById = String(pick(item, 'assignedById', 'ASSIGNED_BY_ID') || '').trim();
-  const companyId = String(pick(item, 'companyId', 'COMPANY_ID') || '').trim();
-  const contactId = String(pick(item, 'contactId', 'CONTACT_ID') || '').trim();
-  const storedTc = String(item[tcField] ?? item[tcField.toLowerCase()] ?? requestedTc).trim();
+  const id = String(pick(item, 'ID', 'id') || '').trim();
+  const title = String(pick(item, 'TITLE', 'title') || `Negociación ${id}`).trim();
+  const stageId = String(pick(item, 'STAGE_ID', 'stageId') || '').trim();
+  const categoryId = Number(pick(item, 'CATEGORY_ID', 'categoryId') || 0);
+  const assignedById = String(pick(item, 'ASSIGNED_BY_ID', 'assignedById') || '').trim();
+  const companyId = String(pick(item, 'COMPANY_ID', 'companyId') || '').trim();
+  const contactId = String(pick(item, 'CONTACT_ID', 'contactId') || '').trim();
+  const storedTc = String(readCustomField(item, tcField) || requestedTc).trim();
 
   const client = companyId
     ? context.companies.get(companyId) || `Empresa ${companyId}`
@@ -174,10 +218,18 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
     stage: context.stages.get(`${categoryId}:${stageId}`) || stageId || 'No especificado',
     client,
     responsible: assignedById ? context.users.get(assignedById) || `Usuario ${assignedById}` : 'No especificado',
-    createdAt: toIsoOrNull(pick(item, 'dateCreate', 'DATE_CREATE')),
-    updatedAt: toIsoOrNull(pick(item, 'dateModify', 'DATE_MODIFY')),
+    createdAt: toIsoOrNull(pick(item, 'DATE_CREATE', 'dateCreate')),
+    updatedAt: toIsoOrNull(pick(item, 'DATE_MODIFY', 'dateModify')),
     url: `${portalOrigin}/crm/deal/details/${encodeURIComponent(id)}/`
   };
+}
+
+function unwrapRecord(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (value.item && typeof value.item === 'object') return value.item;
+  if (value.fields && typeof value.fields === 'object') return value.fields;
+  if (value.deal && typeof value.deal === 'object') return value.deal;
+  return value;
 }
 
 async function callBitrix(webhookUrl, method, params = {}) {
@@ -231,11 +283,29 @@ function pick(object, ...keys) {
   for (const key of keys) {
     if (object?.[key] !== undefined && object?.[key] !== null) return object[key];
   }
+
+  const entries = Object.entries(object || {});
+  for (const key of keys) {
+    const match = entries.find(([name]) => name.toLowerCase() === String(key).toLowerCase());
+    if (match) return match[1];
+  }
   return null;
 }
 
+function readCustomField(object, apiName) {
+  const camelName = String(apiName)
+    .toLowerCase()
+    .replace(/_([a-z0-9])/g, (_, character) => character.toUpperCase());
+  return pick(object, apiName, apiName.toLowerCase(), camelName);
+}
+
 function unique(values) {
-  return [...new Set(values.map(String))];
+  return [...new Set(values.map(String).filter(Boolean))];
+}
+
+function uniqueNumbers(values) {
+  const numbers = values.map((value) => Number(value || 0)).filter((value) => Number.isFinite(value) && value >= 0);
+  return [...new Set(numbers.length ? numbers : [0])];
 }
 
 function toIsoOrNull(value) {
