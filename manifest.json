@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, bloc de notas, audios, búsqueda en Bitrix y asistencia conversacional.",
   "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs", "clipboardWrite"],
   "host_permissions": [
@@ -28,7 +28,7 @@
         "src/window-layout-fix.js",
         "src/notebook-resize.js",
         "src/menu-polish.js",
-        "src/templates-layout-fix.js"
+        "src/templates-window.js"
       ],
       "css": [
         "src/content.css",
@@ -38,7 +38,7 @@
         "src/notebook.css",
         "src/window-layout-fix.css",
         "src/menu-polish.css",
-        "src/templates-layout-fix.css"
+        "src/templates-window.css"
       ],
       "run_at": "document_idle"
     }
