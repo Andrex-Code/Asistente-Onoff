@@ -3,7 +3,7 @@
   const SUBVIEW_SELECTOR = '.onoff-panel-subview';
   const MOBILE_QUERY = '(max-width: 620px)';
   const DESKTOP_WIDTH = 360;
-  const DESKTOP_HEIGHT = 480;
+  const DESKTOP_HEIGHT = 430;
   const MARGIN = 8;
   const GAP = 10;
 
@@ -92,7 +92,9 @@
     setImportant(subview, 'width', `${Math.round(width)}px`);
     setImportant(subview, 'height', `${Math.round(height)}px`);
     setImportant(subview, 'max-height', `${Math.round(height)}px`);
-    setImportant(subview, 'overflow', 'hidden');
+    setImportant(subview, 'overflow-x', 'hidden');
+    setImportant(subview, 'overflow-y', 'auto');
+    setImportant(subview, 'overscroll-behavior', 'contain');
     setImportant(subview, 'right', 'auto');
     setImportant(subview, 'bottom', 'auto');
 
