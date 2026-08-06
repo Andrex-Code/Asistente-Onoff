@@ -1,9 +1,8 @@
 .onoff-panel-subview {
   box-sizing: border-box !important;
   min-height: 0 !important;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  contain: layout paint;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable !important;
 }
 
 .onoff-panel-subview:not(:empty) {
@@ -12,14 +11,24 @@
   align-content: start;
   overflow-x: hidden !important;
   overflow-y: auto !important;
+  scroll-behavior: smooth;
+  background: #ffffff !important;
+  border: 1px solid #dce5df !important;
+  border-radius: 16px !important;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.28) !important;
+  padding: 12px !important;
 }
 
 .onoff-panel-subview .onoff-subtitle {
   position: sticky !important;
   top: -12px !important;
-  z-index: 4 !important;
+  z-index: 5 !important;
   flex: 0 0 auto;
-  margin-bottom: 4px;
+  margin: -12px -12px 4px !important;
+  padding: 14px 12px 12px !important;
+  background: #ffffff !important;
+  color: #17201b !important;
+  border-bottom: 1px solid #dce5df !important;
   box-shadow: 0 5px 12px rgba(23, 32, 27, 0.05);
 }
 
@@ -36,20 +45,25 @@
   width: 10px;
 }
 
-.onoff-panel-subview::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
+.onoff-panel-subview::-webkit-scrollbar-track {
+  background: #f3f6f4;
   border-radius: 999px;
-  background: #b9c9bf;
-  background-clip: padding-box;
 }
 
-.onoff-panel-subview::-webkit-scrollbar-track {
-  background: transparent;
+.onoff-panel-subview::-webkit-scrollbar-thumb {
+  background: #a7b8ad;
+  border: 2px solid #f3f6f4;
+  border-radius: 999px;
+}
+
+.onoff-panel-subview::-webkit-scrollbar-thumb:hover {
+  background: #168447;
 }
 
 @media (max-width: 620px) {
   .onoff-panel-subview {
     width: calc(100vw - 16px) !important;
+    height: calc(100vh - 16px) !important;
     max-width: calc(100vw - 16px) !important;
     max-height: calc(100vh - 16px) !important;
     border-radius: 14px !important;
