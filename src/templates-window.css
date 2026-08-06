@@ -1,0 +1,183 @@
+.onoff-templates-window {
+  position: fixed;
+  z-index: 2147483647;
+  width: min(400px, calc(100vw - 24px));
+  height: min(540px, calc(100vh - 24px));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid #dce5df;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #17201b;
+  box-shadow: 0 24px 70px rgba(23, 32, 27, 0.26);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.onoff-templates-window[hidden] {
+  display: none !important;
+}
+
+.onoff-templates-window.is-minimized {
+  height: auto !important;
+}
+
+.onoff-templates-window.is-minimized .onoff-templates-content {
+  display: none;
+}
+
+.onoff-templates-window.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 30px 90px rgba(23, 32, 27, 0.34);
+}
+
+.onoff-templates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dce5df;
+  background: linear-gradient(135deg, #f4faf6, #ffffff);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.onoff-templates-heading {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.onoff-templates-heading strong {
+  font-size: 15px;
+}
+
+.onoff-templates-heading small {
+  overflow: hidden;
+  color: #66736b;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onoff-templates-window-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.onoff-templates-window-actions button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #dce5df;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #17201b;
+  cursor: pointer;
+  font: 20px/1 Inter, system-ui, sans-serif;
+  text-align: center;
+}
+
+.onoff-templates-window-actions button:hover {
+  border-color: #168447;
+  background: #eaf7ef;
+}
+
+.onoff-templates-content {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+  padding: 12px;
+  overflow: hidden;
+  background: #fbfcfb;
+}
+
+.onoff-templates-hint {
+  padding: 8px 10px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #f4faf6;
+  color: #66736b;
+  font-size: 11px;
+}
+
+.onoff-templates-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  outline: none;
+}
+
+.onoff-template-item {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #dce5df;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #17201b;
+  cursor: pointer;
+  font: 700 12px/1.35 Inter, system-ui, sans-serif;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.onoff-template-item:hover,
+.onoff-template-item:focus-visible {
+  border-color: #168447;
+  background: #eaf7ef;
+  transform: translateX(2px);
+  outline: none;
+}
+
+.onoff-templates-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.onoff-templates-list::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #9fb2a6;
+  background-clip: padding-box;
+}
+
+.onoff-templates-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 620px) {
+  .onoff-templates-window {
+    width: calc(100vw - 16px) !important;
+    height: calc(100vh - 16px) !important;
+    max-width: none;
+    max-height: none;
+    border-radius: 14px;
+  }
+
+  .onoff-templates-header {
+    padding: 12px;
+  }
+
+  .onoff-templates-content {
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onoff-template-item {
+    transition: none;
+  }
+}
