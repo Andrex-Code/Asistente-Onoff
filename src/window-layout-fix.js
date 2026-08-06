@@ -10,6 +10,11 @@
       action: 'assistant-chat',
       selector: '.onoff-assistant-window',
       positionKey: 'onoffAssistantPosition'
+    },
+    {
+      action: 'notebook',
+      selector: '.onoff-notebook-host',
+      positionKey: 'onoffNotebookPosition'
     }
   ];
 
@@ -76,6 +81,14 @@
     const margin = 8;
     const width = windowRect.width || windowEl.offsetWidth || 430;
     const height = windowRect.height || windowEl.offsetHeight || 500;
+
+    if (window.innerWidth <= 620) {
+      windowEl.style.left = `${margin}px`;
+      windowEl.style.top = `${margin}px`;
+      windowEl.style.right = 'auto';
+      windowEl.style.bottom = 'auto';
+      return;
+    }
 
     const roomRight = window.innerWidth - panelRect.right - gap - margin;
     const roomLeft = panelRect.left - gap - margin;
