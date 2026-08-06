@@ -176,15 +176,24 @@
 
       const actions = document.createElement('div');
       actions.className = 'onoff-bitrix-actions';
+      const validUrl = isValidDealUrl(deal.url, deal.id);
+
       const open = document.createElement('button');
       open.type = 'button';
       open.className = 'is-primary';
       open.textContent = 'Abrir negociación';
-      open.addEventListener('click', () => window.open(deal.url, '_blank', 'noopener'));
+      open.disabled = !validUrl;
+      open.title = validUrl ? '' : 'Bitrix no devolvió un identificador válido.';
+      open.addEventListener('click', () => {
+        if (validUrl) window.open(deal.url, '_blank', 'noopener');
+      });
+
       const copy = document.createElement('button');
       copy.type = 'button';
       copy.textContent = 'Copiar enlace';
+      copy.disabled = !validUrl;
       copy.addEventListener('click', async () => {
+        if (!validUrl) return;
         try {
           await navigator.clipboard.writeText(deal.url);
           const original = copy.textContent;
@@ -236,6 +245,16 @@
   function parseTc(value) {
     const match = String(value || '').match(/^\s*(?:TC\s*[-:]?\s*)?(\d+)\s*$/i);
     return match ? match[1] : '';
+  }
+
+  function isValidDealUrl(value, id) {
+    if (!String(id || '').trim()) return false;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && /\/crm\/deal\/details\/\d+\/?$/.test(url.pathname);
+    } catch {
+      return false;
+    }
   }
 
   function formatDate(value) {
