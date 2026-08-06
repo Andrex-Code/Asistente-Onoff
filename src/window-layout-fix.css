@@ -1,0 +1,53 @@
+.onoff-assistant-content {
+  grid-template-areas:
+    "actions"
+    "refresh"
+    "messages"
+    "form" !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+}
+
+.onoff-assistant-actions {
+  grid-area: actions;
+}
+
+.onoff-assistant-refresh {
+  position: static !important;
+  grid-area: refresh;
+  justify-self: stretch;
+  margin: 10px 12px 0;
+  min-height: 38px;
+  justify-content: center;
+  border: 1px solid #b9d8c5 !important;
+  border-radius: 11px !important;
+  padding: 8px 12px !important;
+  background: #eaf7ef !important;
+  color: #0f5f35 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.onoff-assistant-refresh:hover,
+.onoff-assistant-refresh.is-updated {
+  background: #dff2e6 !important;
+  transform: none !important;
+}
+
+.onoff-assistant-messages {
+  grid-area: messages;
+  padding: 14px !important;
+}
+
+.onoff-assistant-form {
+  grid-area: form;
+}
+
+.onoff-assistant-empty {
+  margin: auto;
+}
+
+@media (max-width: 520px) {
+  .onoff-assistant-refresh span:last-child {
+    display: inline !important;
+  }
+}
