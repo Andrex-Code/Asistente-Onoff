@@ -1,0 +1,37 @@
+.onoff-panel-subview {
+  box-sizing: border-box !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.onoff-panel-subview:not(:empty) {
+  display: grid !important;
+  grid-auto-rows: max-content;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.onoff-panel-subview .onoff-subtitle {
+  position: sticky !important;
+  top: -12px !important;
+  z-index: 4 !important;
+  flex: 0 0 auto;
+  box-shadow: 0 5px 12px rgba(23, 32, 27, 0.05);
+}
+
+.onoff-panel-subview .onoff-link-button {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+}
+
+@media (max-width: 620px) {
+  .onoff-panel-subview {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100vh - 16px) !important;
+    border-radius: 14px !important;
+  }
+}
