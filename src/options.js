@@ -1,124 +1,13 @@
-const provider = document.querySelector('#provider');
-const backendUrl = document.querySelector('#backendUrl');
-const libreTranslateUrl = document.querySelector('#libreTranslateUrl');
-const showCornerButton = document.querySelector('#showCornerButton');
-const showSelectionButtons = document.querySelector('#showSelectionButtons');
-const status = document.querySelector('#status');
-const authStatus = document.querySelector('#authStatus');
-const authUsername = document.querySelector('#authUsername');
-const authPassword = document.querySelector('#authPassword');
-const loginButton = document.querySelector('#login');
-const logoutButton = document.querySelector('#logout');
-const loginFields = document.querySelector('#loginFields');
-
-const DEFAULTS = {
-  provider: 'backend-openai',
-  backendUrl: 'https://asistente-onoff.vercel.app',
-  libreTranslateUrl: 'http://localhost:5000/translate',
-  showCornerButton: true,
-  showSelectionButtons: true
-};
-const AUTH_KEYS = ['onoffAuthToken', 'onoffAuthExpiresAt', 'onoffAuthUser'];
-
+const provider=document.querySelector('#provider');const backendUrl=document.querySelector('#backendUrl');const libreTranslateUrl=document.querySelector('#libreTranslateUrl');const showCornerButton=document.querySelector('#showCornerButton');const showSelectionButtons=document.querySelector('#showSelectionButtons');const status=document.querySelector('#status');const authStatus=document.querySelector('#authStatus');const activationFields=document.querySelector('#activationFields');const activationCode=document.querySelector('#activationCode');const activateButton=document.querySelector('#activate');const deviceInfo=document.querySelector('#deviceInfo');const deviceName=document.querySelector('#deviceName');const deviceExpiry=document.querySelector('#deviceExpiry');
+const DEFAULTS={provider:'backend-openai',backendUrl:'https://asistente-onoff.vercel.app',libreTranslateUrl:'http://localhost:5000/translate',showCornerButton:true,showSelectionButtons:true};
+const SESSION_KEYS=['onoffAuthToken','onoffAuthExpiresAt'];const DEVICE_KEYS=['onoffDeviceId','onoffDeviceName','onoffRefreshToken','onoffRefreshExpiresAt'];
 init();
-
-async function init() {
-  const settings = await chrome.storage.sync.get(Object.keys(DEFAULTS));
-  provider.value = settings.provider || DEFAULTS.provider;
-  backendUrl.value = settings.backendUrl || DEFAULTS.backendUrl;
-  libreTranslateUrl.value = settings.libreTranslateUrl || DEFAULTS.libreTranslateUrl;
-  showCornerButton.checked = settings.showCornerButton ?? DEFAULTS.showCornerButton;
-  showSelectionButtons.checked = settings.showSelectionButtons ?? DEFAULTS.showSelectionButtons;
-  updateVisibleProviderFields();
-  await renderAuthState();
-}
-
-provider.addEventListener('change', updateVisibleProviderFields);
-loginButton.addEventListener('click', login);
-logoutButton.addEventListener('click', logout);
-
-document.querySelector('#save').addEventListener('click', async () => {
-  try {
-    const secureBackend = normalizeBackendUrl(backendUrl.value || DEFAULTS.backendUrl);
-    chrome.storage.sync.set({
-      provider: provider.value,
-      backendUrl: secureBackend,
-      libreTranslateUrl: normalizeLocalLibreUrl(libreTranslateUrl.value || DEFAULTS.libreTranslateUrl),
-      showCornerButton: showCornerButton.checked,
-      showSelectionButtons: showSelectionButtons.checked
-    }, () => {
-      status.textContent = 'Opciones guardadas. Recargue iKono para aplicar los cambios visuales.';
-      setTimeout(() => { status.textContent = ''; }, 2600);
-    });
-  } catch (error) {
-    status.textContent = error.message;
-  }
-});
-
-async function login() {
-  const username = authUsername.value.trim();
-  const password = authPassword.value;
-  if (!username || !password) return setAuthStatus('Ingrese usuario y contraseña.', true);
-  loginButton.disabled = true;
-  setAuthStatus('Iniciando sesión…');
-  try {
-    const base = normalizeBackendUrl(backendUrl.value || DEFAULTS.backendUrl);
-    const response = await fetch(`${base}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.ok || !data?.token || !data?.expiresAt) throw new Error(data?.error || 'No fue posible iniciar sesión.');
-    await chrome.storage.local.set({ onoffAuthToken: data.token, onoffAuthExpiresAt: Number(data.expiresAt), onoffAuthUser: data.user || username });
-    authPassword.value = '';
-    await renderAuthState();
-  } catch (error) {
-    await chrome.storage.local.remove(AUTH_KEYS);
-    setAuthStatus(error.message || 'No fue posible iniciar sesión.', true);
-  } finally {
-    loginButton.disabled = false;
-  }
-}
-
-async function logout() {
-  await chrome.storage.local.remove(AUTH_KEYS);
-  authPassword.value = '';
-  await renderAuthState();
-}
-
-async function renderAuthState() {
-  const auth = await chrome.storage.local.get(AUTH_KEYS);
-  const active = Boolean(auth.onoffAuthToken && Number(auth.onoffAuthExpiresAt) > Date.now());
-  if (!active) {
-    if (auth.onoffAuthToken) await chrome.storage.local.remove(AUTH_KEYS);
-    loginFields.hidden = false;
-    logoutButton.hidden = true;
-    setAuthStatus('Sin sesión. Inicie sesión para usar IA y Bitrix.', true);
-    return;
-  }
-  loginFields.hidden = true;
-  logoutButton.hidden = false;
-  const expiry = new Intl.DateTimeFormat('es-CO', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(Number(auth.onoffAuthExpiresAt)));
-  setAuthStatus(`Sesión activa: ${auth.onoffAuthUser || 'usuario'} · vence ${expiry}`);
-}
-
-function setAuthStatus(message, error = false) {
-  authStatus.textContent = message;
-  authStatus.classList.toggle('is-error', error);
-}
-function updateVisibleProviderFields() {
-  document.querySelectorAll('[data-provider-box]').forEach((box) => { box.hidden = box.dataset.providerBox !== provider.value; });
-}
-function normalizeBackendUrl(value) {
-  const url = new URL(String(value || '').trim());
-  const local = ['localhost', '127.0.0.1'].includes(url.hostname);
-  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) throw new Error('El backend debe usar HTTPS. Solo localhost puede usar HTTP.');
-  if (!local && url.origin !== 'https://asistente-onoff.vercel.app') throw new Error('Por seguridad, use el backend oficial de Asistente ONOFF.');
-  return url.origin;
-}
-function normalizeLocalLibreUrl(value) {
-  const url = new URL(String(value || '').trim());
-  if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.protocol !== 'http:') throw new Error('LibreTranslate local debe usar http://localhost.');
-  return url.toString().replace(/\/$/, '');
-}
+async function init(){const settings=await chrome.storage.sync.get(Object.keys(DEFAULTS));provider.value=settings.provider||DEFAULTS.provider;backendUrl.value=settings.backendUrl||DEFAULTS.backendUrl;libreTranslateUrl.value=settings.libreTranslateUrl||DEFAULTS.libreTranslateUrl;showCornerButton.checked=settings.showCornerButton??true;showSelectionButtons.checked=settings.showSelectionButtons??true;updateVisibleProviderFields();await ensureDeviceId();await tryRefresh();await renderActivationState();}
+provider.addEventListener('change',updateVisibleProviderFields);activateButton.addEventListener('click',activateDevice);
+document.querySelector('#save').addEventListener('click',async()=>{try{chrome.storage.sync.set({provider:provider.value,backendUrl:normalizeBackendUrl(backendUrl.value||DEFAULTS.backendUrl),libreTranslateUrl:normalizeLocalLibreUrl(libreTranslateUrl.value||DEFAULTS.libreTranslateUrl),showCornerButton:showCornerButton.checked,showSelectionButtons:showSelectionButtons.checked},()=>{status.textContent='Opciones guardadas. Recargue iKono para aplicar los cambios visuales.';setTimeout(()=>status.textContent='',2600);});}catch(e){status.textContent=e.message;}});
+async function activateDevice(){const code=activationCode.value.trim();if(!code)return setAuthStatus('Ingrese el código de activación.',true);activateButton.disabled=true;setAuthStatus('Activando equipo…');try{const state=await chrome.storage.local.get('onoffDeviceId');const base=normalizeBackendUrl(backendUrl.value||DEFAULTS.backendUrl);const response=await fetch(`${base}/api/auth/activate-device`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,deviceId:state.onoffDeviceId})});const data=await response.json().catch(()=>null);if(!response.ok||!data?.ok)throw new Error(data?.error||'No fue posible activar el equipo.');await saveSession(data);activationCode.value='';await renderActivationState();}catch(e){setAuthStatus(e.message||'No fue posible activar el equipo.',true);}finally{activateButton.disabled=false;}}
+async function tryRefresh(){const s=await chrome.storage.local.get([...SESSION_KEYS,...DEVICE_KEYS]);if(!s.onoffDeviceId||!s.onoffRefreshToken||Number(s.onoffRefreshExpiresAt||0)<=Date.now())return false;if(s.onoffAuthToken&&Number(s.onoffAuthExpiresAt||0)>Date.now()+10*60*1000)return true;try{const base=normalizeBackendUrl(backendUrl.value||DEFAULTS.backendUrl);const r=await fetch(`${base}/api/auth/refresh-device`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:s.onoffDeviceId,refreshToken:s.onoffRefreshToken})});const d=await r.json().catch(()=>null);if(!r.ok||!d?.ok){if(r.status===401)await chrome.storage.local.remove([...SESSION_KEYS,...DEVICE_KEYS]);return false;}await saveSession(d);return true;}catch{return false;}}
+async function saveSession(data){await chrome.storage.local.set({onoffAuthToken:data.token,onoffAuthExpiresAt:Number(data.expiresAt),onoffDeviceId:data.device?.deviceId,onoffDeviceName:data.device?.deviceName||'Equipo ONOFF',onoffRefreshToken:data.refreshToken,onoffRefreshExpiresAt:Date.parse(data.refreshExpiresAt||'')||0});}
+async function renderActivationState(){const s=await chrome.storage.local.get([...SESSION_KEYS,...DEVICE_KEYS]);const active=Boolean(s.onoffRefreshToken&&Number(s.onoffRefreshExpiresAt||0)>Date.now());activationFields.hidden=active;deviceInfo.hidden=!active;if(!active){setAuthStatus('Este equipo no está activado.',true);return;}deviceName.textContent=s.onoffDeviceName||'Equipo ONOFF';const expiry=new Intl.DateTimeFormat('es-CO',{dateStyle:'medium'}).format(new Date(Number(s.onoffRefreshExpiresAt)));deviceExpiry.textContent=`Activación renovable hasta ${expiry}.`;setAuthStatus('Equipo activado correctamente.');}
+async function ensureDeviceId(){const s=await chrome.storage.local.get('onoffDeviceId');if(s.onoffDeviceId)return s.onoffDeviceId;const id=crypto.randomUUID();await chrome.storage.local.set({onoffDeviceId:id});return id;}
+function setAuthStatus(message,error=false){authStatus.textContent=message;authStatus.classList.toggle('is-error',error);}function updateVisibleProviderFields(){document.querySelectorAll('[data-provider-box]').forEach(box=>box.hidden=box.dataset.providerBox!==provider.value);}function normalizeBackendUrl(value){const u=new URL(String(value||'').trim());const local=['localhost','127.0.0.1'].includes(u.hostname);if(u.protocol!=='https:'&&!(local&&u.protocol==='http:'))throw new Error('El backend debe usar HTTPS.');if(!local&&u.origin!=='https://asistente-onoff.vercel.app')throw new Error('Use el backend oficial de Asistente ONOFF.');return u.origin;}function normalizeLocalLibreUrl(value){const u=new URL(String(value||'').trim());if(!['localhost','127.0.0.1'].includes(u.hostname)||u.protocol!=='http:')throw new Error('LibreTranslate local debe usar http://localhost.');return u.toString().replace(/\/$/,'');}
