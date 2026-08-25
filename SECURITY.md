@@ -1,41 +1,41 @@
 # Seguridad de Asistente ONOFF
 
-## Modelo de acceso de la extensión
+## Experiencia para los asesores
 
-La extensión usa activación por dispositivo, no cuentas individuales de asesores.
+La seguridad no cambia el uso diario de la extensión.
 
-1. Un administrador entra a `/admin` y genera un código de activación de un solo uso para un nombre como `SAC-PC-01`.
-2. El asesor instala la extensión, abre Opciones e ingresa ese código una sola vez.
-3. El backend registra el dispositivo en Vercel Blob privado y entrega una credencial renovable.
-4. La extensión obtiene tokens cortos automáticamente y los renueva sin pedir intervención al asesor.
-5. Si el equipo se revoca desde `/admin`, deja de renovar su acceso.
+1. Un administrador prepara un paquete de instalación autorizado.
+2. El asesor carga la carpeta de la extensión como lo hacía anteriormente.
+3. La extensión se registra automáticamente en segundo plano.
+4. No existe login de asesor, código de activación ni cuenta individual.
+5. IA, traducción, mejora de texto, audio y Bitrix funcionan con normalidad.
+
+El paquete contiene únicamente una credencial temporal de aprovisionamiento. Esa credencial no está en Git y sirve para registrar un número limitado de instalaciones durante un tiempo limitado. Cada instalación obtiene después su propia credencial renovable.
 
 ## Persistencia y reinstalaciones
 
-- Reiniciar Chrome/Edge: no requiere reactivación.
-- Reiniciar Windows: no requiere reactivación.
-- Actualizar o recargar la extensión: no requiere reactivación mientras el almacenamiento local siga intacto.
-- Borrar caché/cookies normales del navegador: no debería afectar la activación de `chrome.storage.local`.
-- Desinstalar completamente la extensión: Chrome elimina el almacenamiento local de la extensión; al reinstalar se debe generar un código nuevo.
-- Borrar/restablecer el perfil del navegador o limpiar datos de extensiones: requiere reactivación.
-- Migrar a otro PC/perfil: requiere una nueva activación.
-- Si se reactiva usando el mismo nombre de equipo, la activación anterior se revoca automáticamente para evitar dispositivos fantasma.
-
-Nunca se intenta recuperar automáticamente una credencial después de una desinstalación completa: eso exigiría guardar un secreto fuera del almacenamiento protegido de la extensión y reduciría la seguridad.
+- Reiniciar Chrome/Edge: no cambia nada.
+- Reiniciar Windows: no cambia nada.
+- Actualizar o recargar la extensión: no cambia nada mientras `chrome.storage.local` siga intacto.
+- Borrar caché/cookies/historial normales: no afecta la autorización.
+- Desinstalar completamente la extensión o borrar el perfil: Chrome elimina la credencial local.
+- Si el mismo paquete todavía está vigente y conserva cupos, la reinstalación se registra automáticamente sin pedir nada al asesor.
+- Si el paquete ya venció o agotó sus instalaciones, el administrador prepara una carpeta nueva y el asesor simplemente la instala. No se le pide login ni código.
+- Un equipo puede revocarse desde `/admin`; en ese caso deja de renovar acceso.
 
 ## Tokens y vencimientos
 
 - Token de API: corto, por defecto 1 hora (`EXTENSION_SESSION_SECONDS=3600`).
-- Credencial renovable del dispositivo: por defecto 180 días (`DEVICE_REFRESH_DAYS=180`). Cada uso normal la renueva automáticamente.
-- Código de activación: un solo uso y por defecto 10 minutos (`DEVICE_ENROLLMENT_SECONDS=600`).
+- Credencial renovable del dispositivo: por defecto 180 días (`DEVICE_REFRESH_DAYS=180`) y se renueva automáticamente con el uso.
+- Credencial del paquete: se define al crear el lote en `/admin`; se recomienda 72 horas y un máximo cercano al número real de equipos que se van a instalar.
 
 ## Controles aplicados
 
 - Todas las APIs de IA y Bitrix requieren autenticación.
 - Las claves `OPENAI_API_KEY` y `BITRIX_WEBHOOK_URL` permanecen solo en Vercel.
-- La extensión no contiene contraseñas compartidas ni secretos maestros.
-- Los códigos de activación no se guardan en texto plano en el registro del servidor.
-- Rate limiting y límites de tamaño protegen OpenAI, Bitrix y activaciones.
+- No hay contraseñas compartidas ni login para asesores.
+- El secreto del paquete no se guarda en Git; se inyecta únicamente al generar `dist/Asistente-Onoff`.
+- Rate limiting y límites de tamaño protegen OpenAI, Bitrix y aprovisionamiento.
 - Los endpoints devuelven errores genéricos para no exponer detalles internos.
 - El panel `/admin` usa cookie `HttpOnly`, `Secure`, `SameSite=Strict` y `AUTH_SECRET` independiente.
 - Los scripts de contenido se restringen a dominios iKono.
@@ -53,24 +53,39 @@ Nunca se intenta recuperar automáticamente una credencial después de una desin
 Recomendadas:
 
 - `EXTENSION_SESSION_SECONDS=3600`
-- `DEVICE_ENROLLMENT_SECONDS=600`
 - `DEVICE_REFRESH_DAYS=180`
 - `PUBLIC_BASE_URL=https://asistente-onoff.vercel.app`
 
-`ALLOWED_EXTENSION_IDS` debe dejarse vacío mientras la extensión se distribuya desempaquetada y su ID no esté garantizado como estable. Cuando exista una distribución empaquetada con ID estable, se puede configurar como defensa adicional.
+`ALLOWED_EXTENSION_IDS` debe dejarse vacío mientras la extensión sea desempaquetada y su ID no esté garantizado como estable. Cuando exista una distribución con ID estable, se puede activar esta restricción como capa adicional.
 
-## Orden seguro de despliegue
+## Preparar la carpeta que reciben los asesores
 
-1. Configure `AUTH_SECRET` y mantenga las demás credenciales de servidor en Vercel.
-2. Despliegue esta rama.
-3. Entre a `/admin` y genere un código para un equipo de prueba, por ejemplo `SAC-PC-TEST`.
-4. Recargue la extensión y active el equipo desde Opciones.
-5. Verifique IA, traducción, audio y las tres búsquedas de Bitrix.
-6. Reinicie navegador y PC: el equipo debe seguir activo.
-7. Recargue/actualice la extensión: debe seguir activo.
-8. Desinstale y reinstale la extensión: debe pedir un código nuevo; reactive con el mismo nombre y confirme que el registro anterior queda revocado.
-9. Revoque el dispositivo desde `/admin` y confirme que deja de renovar su acceso.
-10. Compruebe que llamadas directas a APIs protegidas sin `Authorization` devuelven `401`.
+1. Entre a `/admin` y genere un lote de instalación indicando nombre, número máximo de equipos y vigencia.
+2. Copie la credencial generada.
+3. En Windows PowerShell, desde el repositorio:
+
+```powershell
+$env:ONOFF_INSTALL_TOKEN="onoff_install_..."
+npm run build-extension
+```
+
+4. Entregue únicamente `dist/Asistente-Onoff`.
+5. Nunca entregue la carpeta del repositorio ni `src/install-config.js` del código fuente como mecanismo de aprovisionamiento.
+
+## Pruebas obligatorias antes de producción
+
+1. Generar un lote de prueba para 3 instalaciones.
+2. Construir `dist/Asistente-Onoff` con la credencial del lote.
+3. Instalar en Chrome/Edge: no debe mostrar login ni solicitar códigos.
+4. Probar IA, Mejorar, Traducir, Audio y las tres búsquedas de Bitrix.
+5. Reiniciar navegador y Windows: todo debe seguir funcionando.
+6. Recargar/actualizar la extensión: todo debe seguir funcionando.
+7. Borrar caché/historial: todo debe seguir funcionando.
+8. Desinstalar y reinstalar el mismo paquete mientras siga vigente: debe autorizarse solo.
+9. Agotar o revocar el lote y comprobar que una instalación nueva no se autoriza.
+10. Preparar un paquete nuevo y comprobar que el asesor solo necesita instalarlo.
+11. Revocar un dispositivo y confirmar que deja de renovar acceso.
+12. Las llamadas directas a APIs protegidas sin Bearer deben responder `401`.
 
 ## Respuesta ante posible exposición de secretos
 
