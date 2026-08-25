@@ -1,5 +1,6 @@
 (() => {
   const nativeFetch = globalThis.fetch.bind(globalThis);
+
   globalThis.fetch = async (input, init = {}) => {
     const url = resolveUrl(input);
     if (!url || !url.pathname.startsWith('/api/') || url.pathname === '/api/auth/login') return nativeFetch(input, init);
@@ -8,18 +9,22 @@
     const backendUrl = normalizeBackend(settings.backendUrl || 'https://asistente-onoff.vercel.app');
     if (!backendUrl || url.origin !== backendUrl.origin) return nativeFetch(input, init);
 
-    const auth = await chrome.storage.local.get(['onoffAuthToken', 'onoffAuthExpiresAt']);
-    const expiresAt = Number(auth.onoffAuthExpiresAt || 0);
-    if (!auth.onoffAuthToken || !expiresAt || expiresAt <= Date.now()) {
-      await chrome.storage.local.remove(['onoffAuthToken', 'onoffAuthExpiresAt', 'onoffAuthUser']);
-      throw new Error('La sesión del Asistente ONOFF está vencida. Inicie sesión desde Opciones.');
-    }
+    const requestHeaders = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+    requestHeaders.delete('Authorization');
+    const response = await chrome.runtime.sendMessage({
+      type: 'ONOFF_SECURE_API_FETCH',
+      url: url.toString(),
+      method: String(init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase(),
+      headers: Object.fromEntries(requestHeaders.entries()),
+      body: typeof init.body === 'string' ? init.body : null
+    });
 
-    const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
-    headers.set('Authorization', `Bearer ${auth.onoffAuthToken}`);
-    const response = await nativeFetch(input, { ...init, headers });
-    if (response.status === 401) await chrome.storage.local.remove(['onoffAuthToken', 'onoffAuthExpiresAt', 'onoffAuthUser']);
-    return response;
+    if (!response?.okTransport) throw new Error(response?.error || 'No fue posible conectar con el backend seguro.');
+    return new Response(response.body || '', {
+      status: response.status,
+      statusText: response.statusText || '',
+      headers: response.headers || { 'Content-Type': 'application/json' }
+    });
   };
 
   function resolveUrl(input) {
