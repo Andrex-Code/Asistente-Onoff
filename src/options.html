@@ -9,21 +9,7 @@
 <body>
   <main>
     <h1>Asistente ONOFF</h1>
-    <p>Configure la activación segura, el motor de traducción y las herramientas visuales.</p>
-
-    <section class="provider-box">
-      <h2>Activación del equipo</h2>
-      <p id="authStatus" class="auth-status">Validando activación…</p>
-      <div id="activationFields" hidden>
-        <label>Código de activación <input id="activationCode" type="text" autocomplete="off" maxlength="20" placeholder="ONOFF-ABCD-2345" /></label>
-        <button id="activate" type="button">Activar este equipo</button>
-      </div>
-      <div id="deviceInfo" hidden>
-        <p><strong id="deviceName"></strong></p>
-        <small id="deviceExpiry"></small>
-      </div>
-      <p class="warning">La activación se renueva automáticamente. Normalmente solo será necesario reactivar si la extensión se desinstala por completo, se borra el perfil del navegador o un administrador revoca este equipo.</p>
-    </section>
+    <p>Configure el motor de traducción y las herramientas visuales.</p>
 
     <label>
       Motor de traducción
@@ -40,7 +26,7 @@
 
     <section class="provider-box" data-provider-box="backend-openai">
       <label>URL del backend <input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app" /></label>
-      <p class="warning">No configure claves de OpenAI ni de Bitrix en el navegador. Las credenciales permanecen en Vercel.</p>
+      <p class="warning">Las credenciales de OpenAI y Bitrix permanecen protegidas en el servidor.</p>
     </section>
 
     <section class="provider-box" data-provider-box="libretranslate-local">
