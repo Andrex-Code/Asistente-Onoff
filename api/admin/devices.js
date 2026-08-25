@@ -1,6 +1,6 @@
 const { requireAdmin } = require('../../lib/admin-auth');
 const { setCommonSecurityHeaders, requireSameOrigin } = require('../../lib/http-security');
-const { createEnrollment, listDevices, revokeDevice } = require('../../lib/device-store');
+const { createInstallBatch, listDevices, listInstallBatches, revokeDevice, revokeInstallBatch } = require('../../lib/device-store');
 
 module.exports = async function handler(req, res) {
   setCommonSecurityHeaders(res);
@@ -10,23 +10,32 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const devices = await listDevices();
-      return res.status(200).json({ ok: true, devices });
+      const [devices, batches] = await Promise.all([listDevices(), listInstallBatches()]);
+      return res.status(200).json({ ok: true, devices, batches });
     }
 
     if (req.method === 'POST') {
-      const deviceName = String(req.body?.deviceName || '').trim();
-      if (!deviceName || deviceName.length > 80) return res.status(400).json({ ok: false, error: 'Ingrese un nombre de equipo válido.' });
-      const enrollment = await createEnrollment(deviceName, session.sub);
-      return res.status(201).json({ ok: true, enrollment });
+      const label = String(req.body?.label || 'Asesores ONOFF').trim();
+      const maxActivations = Number(req.body?.maxActivations || 50);
+      const validHours = Number(req.body?.validHours || 72);
+      const installBatch = await createInstallBatch({ label, maxActivations, validHours }, session.sub);
+      return res.status(201).json({ ok: true, installBatch });
     }
 
     if (req.method === 'DELETE') {
       const deviceId = String(req.body?.deviceId || '').trim();
-      if (!deviceId) return res.status(400).json({ ok: false, error: 'Dispositivo requerido.' });
-      const device = await revokeDevice(deviceId, session.sub);
-      if (!device) return res.status(404).json({ ok: false, error: 'Dispositivo no encontrado.' });
-      return res.status(200).json({ ok: true, device });
+      const tokenId = String(req.body?.tokenId || '').trim();
+      if (deviceId) {
+        const device = await revokeDevice(deviceId, session.sub);
+        if (!device) return res.status(404).json({ ok: false, error: 'Dispositivo no encontrado.' });
+        return res.status(200).json({ ok: true, device });
+      }
+      if (tokenId) {
+        const batch = await revokeInstallBatch(tokenId, session.sub);
+        if (!batch) return res.status(404).json({ ok: false, error: 'Paquete no encontrado.' });
+        return res.status(200).json({ ok: true, batch });
+      }
+      return res.status(400).json({ ok: false, error: 'Dispositivo o paquete requerido.' });
     }
 
     res.setHeader('Allow', 'GET, POST, DELETE');
