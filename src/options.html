@@ -9,18 +9,20 @@
 <body>
   <main>
     <h1>Asistente ONOFF</h1>
-    <p>Configure el acceso seguro, el motor de traducción y las herramientas visuales.</p>
+    <p>Configure la activación segura, el motor de traducción y las herramientas visuales.</p>
 
     <section class="provider-box">
-      <h2>Acceso seguro</h2>
-      <p id="authStatus" class="auth-status">Validando sesión…</p>
-      <div id="loginFields">
-        <label>Usuario <input id="authUsername" type="text" autocomplete="username" maxlength="100" /></label>
-        <label>Contraseña <input id="authPassword" type="password" autocomplete="current-password" maxlength="256" /></label>
-        <button id="login" type="button">Iniciar sesión</button>
+      <h2>Activación del equipo</h2>
+      <p id="authStatus" class="auth-status">Validando activación…</p>
+      <div id="activationFields" hidden>
+        <label>Código de activación <input id="activationCode" type="text" autocomplete="off" maxlength="20" placeholder="ONOFF-ABCD-2345" /></label>
+        <button id="activate" type="button">Activar este equipo</button>
       </div>
-      <button id="logout" type="button" class="secondary" hidden>Cerrar sesión</button>
-      <p class="warning">La contraseña no se guarda en Chrome. Solo se conserva un token temporal que vence automáticamente.</p>
+      <div id="deviceInfo" hidden>
+        <p><strong id="deviceName"></strong></p>
+        <small id="deviceExpiry"></small>
+      </div>
+      <p class="warning">La activación se renueva automáticamente. Normalmente solo será necesario reactivar si la extensión se desinstala por completo, se borra el perfil del navegador o un administrador revoca este equipo.</p>
     </section>
 
     <label>
