@@ -3,14 +3,14 @@ const SESSION_KEYS = ['onoffAuthToken', 'onoffAuthExpiresAt'];
 const DEVICE_KEYS = ['onoffDeviceId', 'onoffDeviceName', 'onoffRefreshToken', 'onoffRefreshExpiresAt'];
 let refreshPromise = null;
 
-chrome.runtime.onInstalled.addListener(async (details) => {
-  if (details.reason === 'install') await ensureDeviceId();
-  if (details.reason === 'update') await ensureDeviceId();
+chrome.runtime.onInstalled.addListener(async () => {
+  await ensureDeviceId();
+  await ensureProvisioned().catch(() => {});
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await ensureDeviceId();
-  await refreshSessionIfNeeded(true).catch(() => {});
+  await ensureProvisioned().catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -56,10 +56,10 @@ async function authenticatedFetch(input, init = {}) {
   const backendUrl = await getBackendUrl();
   if (!url || url.origin !== backendUrl.origin || !url.pathname.startsWith('/api/')) return nativeFetch(input, init);
 
-  await refreshSessionIfNeeded(false);
+  await ensureProvisioned();
   let auth = await chrome.storage.local.get(SESSION_KEYS);
   if (!auth.onoffAuthToken || Number(auth.onoffAuthExpiresAt || 0) <= Date.now()) {
-    throw new Error('Este equipo no está activado. Abra Opciones para activarlo.');
+    throw new Error('Asistente ONOFF no pudo autorizar esta instalación. Solicite reinstalar el paquete actualizado.');
   }
 
   const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
@@ -68,7 +68,7 @@ async function authenticatedFetch(input, init = {}) {
 
   if (response.status === 401) {
     await chrome.storage.local.remove(SESSION_KEYS);
-    const refreshed = await refreshSessionIfNeeded(true).catch(() => false);
+    const refreshed = await ensureProvisioned(true).catch(() => false);
     if (refreshed) {
       auth = await chrome.storage.local.get(SESSION_KEYS);
       headers.set('Authorization', `Bearer ${auth.onoffAuthToken}`);
@@ -78,22 +78,26 @@ async function authenticatedFetch(input, init = {}) {
   return response;
 }
 
-async function refreshSessionIfNeeded(force) {
+async function ensureProvisioned(force = false) {
   if (refreshPromise) return refreshPromise;
-  refreshPromise = refreshSession(force).finally(() => { refreshPromise = null; });
+  refreshPromise = provisionOrRefresh(force).finally(() => { refreshPromise = null; });
   return refreshPromise;
 }
 
-async function refreshSession(force) {
+async function provisionOrRefresh(force) {
   const state = await chrome.storage.local.get([...SESSION_KEYS, ...DEVICE_KEYS]);
   const sessionValidFor = Number(state.onoffAuthExpiresAt || 0) - Date.now();
   if (!force && state.onoffAuthToken && sessionValidFor > 10 * 60 * 1000) return true;
 
-  if (!state.onoffDeviceId || !state.onoffRefreshToken || Number(state.onoffRefreshExpiresAt || 0) <= Date.now()) {
-    await chrome.storage.local.remove(SESSION_KEYS);
-    return false;
+  if (state.onoffDeviceId && state.onoffRefreshToken && Number(state.onoffRefreshExpiresAt || 0) > Date.now()) {
+    const refreshed = await refreshDevice(state);
+    if (refreshed) return true;
   }
 
+  return activateSilently();
+}
+
+async function refreshDevice(state) {
   const backendUrl = await getBackendUrl();
   const response = await nativeFetch(`${backendUrl.origin}/api/auth/refresh-device`, {
     method: 'POST',
@@ -102,10 +106,25 @@ async function refreshSession(force) {
   });
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.ok || !data?.token || !data?.refreshToken) {
-    if (response.status === 401) await chrome.storage.local.remove([...SESSION_KEYS, ...DEVICE_KEYS]);
+    if (response.status === 401) await chrome.storage.local.remove([...SESSION_KEYS, 'onoffRefreshToken', 'onoffRefreshExpiresAt']);
     return false;
   }
+  await saveDeviceSession(data);
+  return true;
+}
 
+async function activateSilently() {
+  const installToken = String(globalThis.ONOFF_INSTALL_TOKEN || '').trim();
+  if (!installToken) return false;
+  const deviceId = await ensureDeviceId();
+  const backendUrl = await getBackendUrl();
+  const response = await nativeFetch(`${backendUrl.origin}/api/auth/activate-device`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ installToken, deviceId })
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.ok || !data?.token || !data?.refreshToken) return false;
   await saveDeviceSession(data);
   return true;
 }
