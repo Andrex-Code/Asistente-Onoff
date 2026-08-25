@@ -16,7 +16,11 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://*.ikono.co/*",
+        "https://*.ikono.com.co/*",
+        "https://*.ikono.im/*"
+      ],
       "js": [
         "src/api-auth-interceptor.js",
         "src/content.js",
@@ -47,7 +51,11 @@
   "web_accessible_resources": [
     {
       "resources": ["icons/*.png", "icons/*.jpg", "icons/*.jpeg", "icons/*.webp"],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "https://*.ikono.co/*",
+        "https://*.ikono.com.co/*",
+        "https://*.ikono.im/*"
+      ]
     }
   ],
   "options_page": "src/options.html",
