@@ -149,10 +149,13 @@ async function ensureDeviceId() {
 }
 
 async function getBackendUrl() {
+  const packaged = normalizeBackend(globalThis.ONOFF_BACKEND_URL || '');
+  if (packaged) return packaged;
+
   const settings = await chrome.storage.sync.get(['backendUrl']);
-  const backendUrl = normalizeBackend(settings.backendUrl || 'https://asistente-onoff.vercel.app');
-  if (!backendUrl) throw new Error('Backend no autorizado.');
-  return backendUrl;
+  const configured = normalizeBackend(settings.backendUrl || 'https://asistente-onoff.vercel.app');
+  if (!configured) throw new Error('Backend no autorizado.');
+  return configured;
 }
 function isPublicAuthEndpoint(pathname) {
   return pathname === '/api/auth/activate-device' || pathname === '/api/auth/refresh-device';
@@ -162,8 +165,10 @@ function normalizeBackend(value) {
   try {
     const url = new URL(String(value || '').trim());
     const local = ['localhost', '127.0.0.1'].includes(url.hostname);
-    if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) return null;
-    if (!local && url.origin !== 'https://asistente-onoff.vercel.app') return null;
-    return url;
+    if (local) return url.protocol === 'http:' ? new URL(url.origin) : null;
+    if (url.protocol !== 'https:') return null;
+    if (url.origin === 'https://asistente-onoff.vercel.app') return new URL(url.origin);
+    const isVercelPreview = url.hostname.endsWith('.vercel.app') && /^asistente-onoff[-.]/i.test(url.hostname);
+    return isVercelPreview ? new URL(url.origin) : null;
   } catch { return null; }
 }
