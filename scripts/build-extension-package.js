@@ -13,6 +13,18 @@ if (!backendUrl) {
   process.exit(1);
 }
 
+const vercelBypass = String(process.env.ONOFF_VERCEL_BYPASS || '').trim();
+const isPreview = backendUrl.origin !== 'https://asistente-onoff.vercel.app' && backendUrl.hostname.endsWith('.vercel.app');
+if (isPreview && !vercelBypass) {
+  console.error('Este paquete apunta a un Preview protegido. Falta ONOFF_VERCEL_BYPASS.');
+  console.error('Genere Protection Bypass for Automation en Vercel y vuelva a construir el paquete.');
+  process.exit(1);
+}
+if (vercelBypass && !/^[A-Za-z0-9._~-]{16,512}$/.test(vercelBypass)) {
+  console.error('ONOFF_VERCEL_BYPASS tiene un formato inválido.');
+  process.exit(1);
+}
+
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'dist', 'Asistente-Onoff');
 const include = ['manifest.json', 'src', 'icons'];
@@ -38,6 +50,7 @@ fs.writeFileSync(
     '// Generated distribution file. Do not commit.',
     `globalThis.ONOFF_INSTALL_TOKEN = ${JSON.stringify(installToken)};`,
     `globalThis.ONOFF_BACKEND_URL = ${JSON.stringify(backendUrl.origin)};`,
+    `globalThis.ONOFF_VERCEL_BYPASS = ${JSON.stringify(vercelBypass)};`,
     ''
   ].join('\n'),
   'utf8'
@@ -45,6 +58,7 @@ fs.writeFileSync(
 
 console.log(`Paquete listo en: ${out}`);
 console.log(`Backend del paquete: ${backendUrl.origin}`);
+console.log(`Bypass de Preview: ${vercelBypass ? 'configurado' : 'no requerido'}`);
 console.log('Entregue únicamente la carpeta dist/Asistente-Onoff a los asesores.');
 
 function normalizeBackend(value) {
