@@ -39,7 +39,7 @@ async function secureApiFetch(message) {
 
   const backendUrl = await getBackendUrl();
   const targetUrl = new URL(`${requestedUrl.pathname}${requestedUrl.search}`, backendUrl.origin);
-  const headers = new Headers(message.headers || {});
+  const headers = applyPreviewBypass(new Headers(message.headers || {}), backendUrl);
   headers.delete('Authorization');
   const response = await authenticatedFetch(targetUrl.toString(), {
     method: message.method,
@@ -71,7 +71,7 @@ async function authenticatedFetch(input, init = {}) {
     throw new Error('Asistente ONOFF no pudo autorizar esta instalación. Solicite reinstalar el paquete actualizado.');
   }
 
-  const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+  const headers = applyPreviewBypass(new Headers(init.headers || (input instanceof Request ? input.headers : undefined)), backendUrl);
   headers.set('Authorization', `Bearer ${auth.onoffAuthToken}`);
   let response = await nativeFetch(targetUrl.toString(), { ...init, headers });
 
@@ -109,9 +109,10 @@ async function provisionOrRefresh(force) {
 
 async function refreshDevice(state) {
   const backendUrl = await getBackendUrl();
+  const headers = applyPreviewBypass(new Headers({ 'Content-Type': 'application/json' }), backendUrl);
   const response = await nativeFetch(`${backendUrl.origin}/api/auth/refresh-device`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ deviceId: state.onoffDeviceId, refreshToken: state.onoffRefreshToken })
   });
   const data = await response.json().catch(() => null);
@@ -134,9 +135,10 @@ async function activateSilently() {
   const backendUrl = await getBackendUrl();
   let response;
   try {
+    const headers = applyPreviewBypass(new Headers({ 'Content-Type': 'application/json' }), backendUrl);
     response = await nativeFetch(`${backendUrl.origin}/api/auth/activate-device`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ installToken, deviceId })
     });
   } catch (error) {
@@ -186,6 +188,14 @@ async function getBackendUrl() {
   const configured = normalizeBackend(settings.backendUrl || 'https://asistente-onoff.vercel.app');
   if (!configured) throw new Error('Backend no autorizado.');
   return configured;
+}
+
+function applyPreviewBypass(headers, backendUrl) {
+  const bypass = String(globalThis.ONOFF_VERCEL_BYPASS || '').trim();
+  if (bypass && backendUrl?.hostname?.endsWith('.vercel.app') && backendUrl.origin !== 'https://asistente-onoff.vercel.app') {
+    headers.set('x-vercel-protection-bypass', bypass);
+  }
+  return headers;
 }
 function isPublicAuthEndpoint(pathname) {
   return pathname === '/api/auth/activate-device' || pathname === '/api/auth/refresh-device';
