@@ -1,7 +1,7 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const LAUNCHER_SELECTOR = '.ikono-translator-launcher';
-  const VERSION = '1';
+  const VERSION = '2';
 
   const BUTTONS = {
     translate: {
@@ -14,7 +14,7 @@
     },
     improve: {
       label: 'Mejorar texto seleccionado',
-      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.25 3.75L17 8l-3.75 1.25L12 13l-1.25-3.75L7 8l3.75-1.25L12 3Z"/><path d="m18.5 13 .75 2.25L21.5 16l-2.25.75L18.5 19l-.75-2.25L15.5 16l2.25-.75.75-2.25ZM5.5 13l.75 2.25L8.5 16l-2.25.75L5.5 19l-.75-2.25L2.5 16l2.25-.75L5.5 13Z"/></svg>'
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.25 3.75L17 8l-3.75 1.25L12 13l-1.25-3.75L7 8l3.75-1.25L12 3Z"/><path d="m18.5 13 .75 2.25L21.5 16l-2.25.75L18.5 19l-.75-2.25L15.5 16l2.25-.75.75-2.25ZM5.5 13l.75 2.25L8.5 16l-2.25.75L5.5 19l-.75-2.25L2.5 16l2.25-.75.75-2.25Z"/></svg>'
     },
     audio: {
       label: 'Cargar audio',
@@ -157,9 +157,17 @@
 
   function bindLauncher() {
     const launcher = document.querySelector(LAUNCHER_SELECTOR);
-    if (!launcher || launcherBound) return;
-    launcherBound = true;
+    if (!launcher) return;
+
+    // En algunas versiones el launcher heredaba el icon48 rosado. Se elimina del DOM
+    // para conservar de forma determinista el botón clásico de la 1.6.0: círculo verde ON.
+    launcher.querySelectorAll('img').forEach((image) => image.remove());
+    launcher.removeAttribute('style');
+    launcher.setAttribute('aria-label', 'Asistente ONOFF');
     launcher.dataset.onoffTooltip = 'Asistente ONOFF';
+
+    if (launcherBound) return;
+    launcherBound = true;
     launcher.addEventListener('pointerup', () => {
       launcher.classList.remove('is-clicked');
       void launcher.offsetWidth;
