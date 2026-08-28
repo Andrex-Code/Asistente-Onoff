@@ -7,6 +7,12 @@ if (!/^onoff_install_[A-Za-z0-9_-]{30,120}$/.test(installToken)) {
   process.exit(1);
 }
 
+const backendUrl = normalizeBackend(process.env.ONOFF_BACKEND_URL || 'https://asistente-onoff.vercel.app');
+if (!backendUrl) {
+  console.error('ONOFF_BACKEND_URL no corresponde al backend oficial ni a un Preview válido de Asistente ONOFF.');
+  process.exit(1);
+}
+
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'dist', 'Asistente-Onoff');
 const include = ['manifest.json', 'src', 'icons'];
@@ -18,11 +24,39 @@ for (const entry of include) {
   fs.cpSync(path.join(root, entry), path.join(out, entry), { recursive: true });
 }
 
+const manifestPath = path.join(out, 'manifest.json');
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+manifest.host_permissions = Array.from(new Set([
+  ...(manifest.host_permissions || []),
+  `${backendUrl.origin}/*`
+]));
+fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+
 fs.writeFileSync(
   path.join(out, 'src', 'install-config.js'),
-  `// Generated distribution file. Do not commit.\nglobalThis.ONOFF_INSTALL_TOKEN = ${JSON.stringify(installToken)};\n`,
+  [
+    '// Generated distribution file. Do not commit.',
+    `globalThis.ONOFF_INSTALL_TOKEN = ${JSON.stringify(installToken)};`,
+    `globalThis.ONOFF_BACKEND_URL = ${JSON.stringify(backendUrl.origin)};`,
+    ''
+  ].join('\n'),
   'utf8'
 );
 
 console.log(`Paquete listo en: ${out}`);
+console.log(`Backend del paquete: ${backendUrl.origin}`);
 console.log('Entregue únicamente la carpeta dist/Asistente-Onoff a los asesores.');
+
+function normalizeBackend(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    const local = ['localhost', '127.0.0.1'].includes(url.hostname);
+    if (local) return url.protocol === 'http:' ? new URL(url.origin) : null;
+    if (url.protocol !== 'https:') return null;
+    if (url.origin === 'https://asistente-onoff.vercel.app') return new URL(url.origin);
+    const isVercelPreview = url.hostname.endsWith('.vercel.app') && /^asistente-onoff[-.]/i.test(url.hostname);
+    return isVercelPreview ? new URL(url.origin) : null;
+  } catch {
+    return null;
+  }
+}
