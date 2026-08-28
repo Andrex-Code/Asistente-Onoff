@@ -5,12 +5,14 @@ let refreshPromise = null;
 
 chrome.runtime.onInstalled.addListener(async () => {
   await ensureDeviceId();
-  await ensureProvisioned().catch(() => {});
+  const ok = await ensureProvisioned().catch(() => false);
+  await saveProvisioningStatus(ok ? 'authorized' : 'pending');
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await ensureDeviceId();
-  await ensureProvisioned().catch(() => {});
+  const ok = await ensureProvisioned().catch(() => false);
+  await saveProvisioningStatus(ok ? 'authorized' : 'pending');
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -29,17 +31,17 @@ globalThis.fetch = async (input, init = {}) => {
 };
 
 async function secureApiFetch(message) {
-  const url = resolveUrl(message.url);
-  if (!url) throw new Error('URL de backend inválida.');
-  const backendUrl = await getBackendUrl();
-  if (url.origin !== backendUrl.origin || !url.pathname.startsWith('/api/') || isPublicAuthEndpoint(url.pathname)) {
+  const requestedUrl = resolveUrl(message.url);
+  if (!requestedUrl || !requestedUrl.pathname.startsWith('/api/') || isPublicAuthEndpoint(requestedUrl.pathname)) {
     throw new Error('Destino de API no autorizado.');
   }
   if (!['POST', 'GET', 'PUT', 'DELETE'].includes(message.method)) throw new Error('Método no autorizado.');
 
+  const backendUrl = await getBackendUrl();
+  const targetUrl = new URL(`${requestedUrl.pathname}${requestedUrl.search}`, backendUrl.origin);
   const headers = new Headers(message.headers || {});
   headers.delete('Authorization');
-  const response = await authenticatedFetch(url.toString(), {
+  const response = await authenticatedFetch(targetUrl.toString(), {
     method: message.method,
     headers,
     body: ['GET', 'HEAD'].includes(message.method) ? undefined : (message.body || undefined)
@@ -52,19 +54,26 @@ async function secureApiFetch(message) {
 }
 
 async function authenticatedFetch(input, init = {}) {
-  const url = resolveUrl(input);
+  const requestedUrl = resolveUrl(input);
   const backendUrl = await getBackendUrl();
-  if (!url || url.origin !== backendUrl.origin || !url.pathname.startsWith('/api/')) return nativeFetch(input, init);
+  if (!requestedUrl || !requestedUrl.pathname.startsWith('/api/')) return nativeFetch(input, init);
 
-  await ensureProvisioned();
+  const targetUrl = new URL(`${requestedUrl.pathname}${requestedUrl.search}`, backendUrl.origin);
+  const provisioned = await ensureProvisioned();
+  if (!provisioned) {
+    await saveProvisioningStatus('pending');
+    throw new Error('Asistente ONOFF no pudo autorizar esta instalación. Solicite reinstalar el paquete actualizado.');
+  }
+
   let auth = await chrome.storage.local.get(SESSION_KEYS);
   if (!auth.onoffAuthToken || Number(auth.onoffAuthExpiresAt || 0) <= Date.now()) {
+    await saveProvisioningStatus('pending');
     throw new Error('Asistente ONOFF no pudo autorizar esta instalación. Solicite reinstalar el paquete actualizado.');
   }
 
   const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
   headers.set('Authorization', `Bearer ${auth.onoffAuthToken}`);
-  let response = await nativeFetch(input, { ...init, headers });
+  let response = await nativeFetch(targetUrl.toString(), { ...init, headers });
 
   if (response.status === 401) {
     await chrome.storage.local.remove(SESSION_KEYS);
@@ -72,9 +81,10 @@ async function authenticatedFetch(input, init = {}) {
     if (refreshed) {
       auth = await chrome.storage.local.get(SESSION_KEYS);
       headers.set('Authorization', `Bearer ${auth.onoffAuthToken}`);
-      response = await nativeFetch(input, { ...init, headers });
+      response = await nativeFetch(targetUrl.toString(), { ...init, headers });
     }
   }
+  if (response.ok) await saveProvisioningStatus('authorized');
   return response;
 }
 
@@ -107,6 +117,7 @@ async function refreshDevice(state) {
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.ok || !data?.token || !data?.refreshToken) {
     if (response.status === 401) await chrome.storage.local.remove([...SESSION_KEYS, 'onoffRefreshToken', 'onoffRefreshExpiresAt']);
+    await saveProvisioningStatus(`refresh-${response.status || 'failed'}`);
     return false;
   }
   await saveDeviceSession(data);
@@ -115,17 +126,32 @@ async function refreshDevice(state) {
 
 async function activateSilently() {
   const installToken = String(globalThis.ONOFF_INSTALL_TOKEN || '').trim();
-  if (!installToken) return false;
+  if (!installToken) {
+    await saveProvisioningStatus('missing-install-token');
+    return false;
+  }
   const deviceId = await ensureDeviceId();
   const backendUrl = await getBackendUrl();
-  const response = await nativeFetch(`${backendUrl.origin}/api/auth/activate-device`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ installToken, deviceId })
-  });
+  let response;
+  try {
+    response = await nativeFetch(`${backendUrl.origin}/api/auth/activate-device`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ installToken, deviceId })
+    });
+  } catch (error) {
+    console.warn('[onoff-provisioning] activation network error', String(error?.message || error).slice(0, 160));
+    await saveProvisioningStatus('activation-network-error');
+    return false;
+  }
   const data = await response.json().catch(() => null);
-  if (!response.ok || !data?.ok || !data?.token || !data?.refreshToken) return false;
+  if (!response.ok || !data?.ok || !data?.token || !data?.refreshToken) {
+    console.warn('[onoff-provisioning] activation failed', response.status);
+    await saveProvisioningStatus(`activation-${response.status || 'failed'}`);
+    return false;
+  }
   await saveDeviceSession(data);
+  await saveProvisioningStatus('authorized');
   return true;
 }
 
@@ -138,6 +164,10 @@ async function saveDeviceSession(data) {
     onoffRefreshToken: data.refreshToken,
     onoffRefreshExpiresAt: Date.parse(data.refreshExpiresAt || '') || 0
   });
+}
+
+async function saveProvisioningStatus(status) {
+  await chrome.storage.local.set({ onoffProvisioningStatus: String(status || 'unknown'), onoffProvisioningCheckedAt: Date.now() });
 }
 
 async function ensureDeviceId() {
