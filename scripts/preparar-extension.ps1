@@ -29,7 +29,6 @@ Write-Host '=== Preparador Asistente ONOFF ===' -ForegroundColor Green
 if (Test-Path (Join-Path $nodeDir 'node.exe')) {
   $env:PATH = "$nodeDir;$env:PATH"
 }
-
 $env:NODE_USE_SYSTEM_CA = '1'
 
 try { $nodeVersion = (& node -v) } catch { Fail "No se encontró Node. Debe existir en $nodeDir" }
@@ -84,8 +83,10 @@ if (-not $env:ONOFF_VERCEL_BYPASS) {
 $installToken = (Get-Clipboard -Raw).Trim()
 if ($installToken -notmatch '^onoff_install_[A-Za-z0-9_-]{30,120}$') {
   Write-Host ''
-  Write-Host 'El portapapeles no contiene un token de instalación válido.' -ForegroundColor Yellow
-  Write-Host 'Entre a /admin, genere un paquete de instalación y, apenas diga que fue copiado, vuelva a ejecutar PREPARAR-EXTENSION.cmd.'
+  Write-Host 'Falta una credencial de paquete en el portapapeles.' -ForegroundColor Yellow
+  Write-Host 'Se abrirá el panel administrativo.'
+  Write-Host 'Genere un paquete, deje que copie la credencial y vuelva a hacer doble clic en PREPARAR-EXTENSION.cmd.'
+  Start-Process "$defaultBackend/admin"
   exit 2
 }
 $env:ONOFF_INSTALL_TOKEN = $installToken
