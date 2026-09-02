@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vercel dev",
     "start": "vercel dev",
-    "hash-password": "node scripts/hash-password.js"
+    "hash-password": "node scripts/hash-password.js",
+    "build-extension": "node scripts/build-extension-package.js"
   },
   "dependencies": {
     "@vercel/blob": "^2.0.0"

@@ -1,54 +1,11 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Administración | Asistente ONOFF</title>
-  <link rel="stylesheet" href="/admin/styles.css">
-</head>
-<body>
-  <main class="shell">
-    <section id="loginView" class="card login-card">
-      <div class="brand">ONOFF</div>
-      <h1>Administración del asistente</h1>
-      <p>Acceso privado para gestionar prompts y base de conocimiento.</p>
-      <form id="loginForm">
-        <label>Usuario<input id="username" autocomplete="username" required></label>
-        <label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label>
-        <button type="submit">Ingresar</button>
-      </form>
-      <div id="loginStatus" class="status"></div>
-    </section>
-
-    <section id="adminView" class="hidden">
-      <header class="topbar">
-        <div><span class="brand">ONOFF</span><h1>Configuración del asistente</h1></div>
-        <button id="logoutButton" class="secondary">Cerrar sesión</button>
-      </header>
-      <div class="notice" id="storageNotice"></div>
-      <form id="configForm" class="grid">
-        <article class="card">
-          <h2>Prompt para mejorar texto</h2>
-          <p>Define tono, correcciones y restricciones de la herramienta de mejora.</p>
-          <textarea id="improvePrompt" rows="14" required></textarea>
-        </article>
-        <article class="card">
-          <h2>Prompt del asistente</h2>
-          <p>Define cómo interpreta el chat y cómo redacta respuestas.</p>
-          <textarea id="assistantPrompt" rows="14" required></textarea>
-        </article>
-        <article class="card knowledge-card">
-          <h2>Base de conocimiento</h2>
-          <p>Organice el contenido con títulos y párrafos. No incluya claves ni datos personales de clientes.</p>
-          <textarea id="knowledgeBase" rows="26" required></textarea>
-        </article>
-        <footer class="savebar">
-          <div id="configStatus" class="status"></div>
-          <div><span id="versionLabel"></span><button type="submit">Guardar nueva versión</button></div>
-        </footer>
-      </form>
-    </section>
-  </main>
-  <script src="/admin/app.js"></script>
-</body>
-</html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración | Asistente ONOFF</title><link rel="stylesheet" href="/admin/styles.css"></head>
+<body><main class="shell">
+<section id="loginView" class="card login-card"><div class="brand">ONOFF</div><h1>Administración del asistente</h1><p>Acceso privado para gestionar configuración y equipos autorizados.</p><form id="loginForm"><label>Usuario<input id="username" autocomplete="username" required></label><label>Contraseña<input id="password" type="password" autocomplete="current-password" required></label><button type="submit">Ingresar</button></form><div id="loginStatus" class="status"></div></section>
+<section id="adminView" class="hidden"><header class="topbar"><div><span class="brand">ONOFF</span><h1>Configuración del asistente</h1></div><button id="logoutButton" class="secondary">Cerrar sesión</button></header><div class="notice" id="storageNotice"></div>
+<article class="card"><h2>Paquetes de instalación</h2><p>Genere una credencial temporal para preparar la carpeta que se entrega a los asesores. Ellos únicamente instalan la extensión; no deben iniciar sesión ni ingresar códigos.</p><form id="deviceForm"><label>Nombre del lote<input id="batchLabel" maxlength="60" placeholder="SAC Agosto 2026" required></label><label>Máximo de instalaciones<input id="batchMax" type="number" min="1" max="250" value="50" required></label><label>Vigencia del paquete (horas)<input id="batchHours" type="number" min="1" max="336" value="72" required></label><button type="submit">Generar credencial de paquete</button></form><div id="enrollmentResult" class="status"></div><div id="batchList"></div></article>
+<article class="card"><h2>Equipos autorizados</h2><p>Los equipos aparecen automáticamente después de instalar el paquete distribuido.</p><div id="deviceList"></div></article>
+<article class="card"><h2>Base Afacturar</h2><p>Permite mostrar el botón <strong>Abrir en Afacturar</strong> cuando se consulta una TC o identificación. Exporte el archivo interno a CSV y cárguelo aquí. Debe contener las columnas PLATAFORMA, NIT-CC y ACCESO DIRECTO.</p><div id="afacturarMeta" class="meta-box">Cargando estado de la base…</div><form id="afacturarForm" class="upload-row"><input id="afacturarFile" type="file" accept=".csv,text/csv" required><button type="submit">Actualizar base Afacturar</button></form><div id="afacturarStatus" class="status"></div></article>
+<form id="configForm" class="grid"><article class="card"><h2>Prompt para mejorar texto</h2><p>Define tono, correcciones y restricciones de la herramienta de mejora.</p><textarea id="improvePrompt" rows="14" required></textarea></article><article class="card"><h2>Prompt del asistente</h2><p>Define cómo interpreta el chat y cómo redacta respuestas.</p><textarea id="assistantPrompt" rows="14" required></textarea></article><article class="card knowledge-card"><h2>Base de conocimiento</h2><p>Organice el contenido con títulos y párrafos. No incluya claves ni datos personales de clientes.</p><textarea id="knowledgeBase" rows="26" required></textarea></article><footer class="savebar"><div id="configStatus" class="status"></div><div><span id="versionLabel"></span><button type="submit">Guardar nueva versión</button></div></footer></form></section>
+</main><script src="/admin/app.js"></script></body></html>

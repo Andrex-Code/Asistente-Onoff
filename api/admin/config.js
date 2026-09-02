@@ -1,8 +1,14 @@
 const { requireAdmin } = require('../../lib/admin-auth');
 const { readConfig, writeConfig } = require('../../lib/config-store');
+const { setCommonSecurityHeaders, requireSameOrigin } = require('../../lib/http-security');
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
+  setCommonSecurityHeaders(res);
+  if (!requireSameOrigin(req, res)) return;
+
+  const size = Number(req.headers['content-length'] || 0);
+  if (Number.isFinite(size) && size > 600 * 1024) return res.status(413).json({ ok: false, error: 'Solicitud demasiado grande.' });
+
   const session = requireAdmin(req, res);
   if (!session) return;
 
@@ -26,6 +32,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(405).json({ ok: false, error: 'Método no permitido.' });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'Error interno.' });
+    console.error('[admin-config]', String(error?.message || error).slice(0, 200));
+    return res.status(500).json({ ok: false, error: 'Error interno administrando la configuración.' });
   }
 };

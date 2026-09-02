@@ -9,7 +9,7 @@
 <body>
   <main>
     <h1>Asistente ONOFF</h1>
-    <p>Configure el motor de traducción y las herramientas visuales. El modo recomendado es Backend seguro, porque la clave permanece en Vercel y no en el navegador.</p>
+    <p>Configure el motor de traducción y las herramientas visuales.</p>
 
     <label>
       Motor de traducción
@@ -21,32 +21,19 @@
       </select>
     </label>
 
-    <label class="toggle-row">
-      <input id="showCornerButton" type="checkbox" />
-      <span>Mostrar botón fijo ONOFF en la esquina inferior derecha</span>
-    </label>
-
-    <label class="toggle-row">
-      <input id="showSelectionButtons" type="checkbox" />
-      <span>Mostrar botones flotantes Traducir / Falar / Mejorar al seleccionar texto</span>
-    </label>
+    <label class="toggle-row"><input id="showCornerButton" type="checkbox" /><span>Mostrar botón fijo ONOFF en la esquina inferior derecha</span></label>
+    <label class="toggle-row"><input id="showSelectionButtons" type="checkbox" /><span>Mostrar botones flotantes Traducir / Falar / Mejorar al seleccionar texto</span></label>
 
     <section class="provider-box" data-provider-box="backend-openai">
-      <label>
-        URL del backend
-        <input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app" />
-      </label>
-      <p class="warning">Los asesores no deben configurar ninguna clave en el navegador. La API se administra desde Vercel.</p>
+      <label>URL del backend <input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app" /></label>
+      <p class="warning">Las credenciales de OpenAI y Bitrix permanecen protegidas en el servidor.</p>
     </section>
 
     <section class="provider-box" data-provider-box="libretranslate-local">
-      <label>
-        URL de LibreTranslate local
-        <input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate" />
-      </label>
+      <label>URL de LibreTranslate local <input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate" /></label>
     </section>
 
-    <button id="save">Guardar</button>
+    <button id="save">Guardar opciones</button>
     <p id="status" role="status"></p>
   </main>
   <script src="options.js"></script>

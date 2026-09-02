@@ -29,6 +29,7 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 900;
+  z-index: 2;
 }
 
 .ikono-translator-launcher.is-dragging {
@@ -38,13 +39,7 @@
 }
 
 .ikono-translator-launcher img {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-  pointer-events: none;
+  display: none !important;
 }
 
 .ikono-translator-panel {

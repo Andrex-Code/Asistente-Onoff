@@ -25,16 +25,20 @@ chrome.storage.sync.get(Object.keys(DEFAULTS), (settings) => {
 provider.addEventListener('change', updateVisibleProviderFields);
 
 document.querySelector('#save').addEventListener('click', () => {
-  chrome.storage.sync.set({
-    provider: provider.value,
-    backendUrl: normalizeUrl(backendUrl.value || DEFAULTS.backendUrl),
-    libreTranslateUrl: libreTranslateUrl.value || DEFAULTS.libreTranslateUrl,
-    showCornerButton: showCornerButton.checked,
-    showSelectionButtons: showSelectionButtons.checked
-  }, () => {
-    status.textContent = 'Opciones guardadas. Recargue la página de iKono para aplicar los cambios visuales.';
-    setTimeout(() => { status.textContent = ''; }, 2600);
-  });
+  try {
+    chrome.storage.sync.set({
+      provider: provider.value,
+      backendUrl: normalizeBackendUrl(backendUrl.value || DEFAULTS.backendUrl),
+      libreTranslateUrl: normalizeLocalLibreUrl(libreTranslateUrl.value || DEFAULTS.libreTranslateUrl),
+      showCornerButton: showCornerButton.checked,
+      showSelectionButtons: showSelectionButtons.checked
+    }, () => {
+      status.textContent = 'Opciones guardadas. Recargue iKono para aplicar los cambios visuales.';
+      setTimeout(() => { status.textContent = ''; }, 2600);
+    });
+  } catch (error) {
+    status.textContent = error.message;
+  }
 });
 
 function updateVisibleProviderFields() {
@@ -43,7 +47,16 @@ function updateVisibleProviderFields() {
   });
 }
 
-function normalizeUrl(value) {
-  const raw = String(value || '').trim();
-  return raw.endsWith('/') ? raw.slice(0, -1) : raw;
+function normalizeBackendUrl(value) {
+  const url = new URL(String(value || '').trim());
+  const local = ['localhost', '127.0.0.1'].includes(url.hostname);
+  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:')) throw new Error('El backend debe usar HTTPS.');
+  if (!local && url.origin !== 'https://asistente-onoff.vercel.app') throw new Error('Use el backend oficial de Asistente ONOFF.');
+  return url.origin;
+}
+
+function normalizeLocalLibreUrl(value) {
+  const url = new URL(String(value || '').trim());
+  if (!['localhost', '127.0.0.1'].includes(url.hostname) || url.protocol !== 'http:') throw new Error('LibreTranslate local debe usar http://localhost.');
+  return url.toString().replace(/\/$/, '');
 }
