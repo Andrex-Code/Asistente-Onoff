@@ -1,7 +1,7 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const POSITION_KEY = 'onoffBitrixSearchPosition';
-  let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState, afacturarIndexPromise;
+  let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState;
 
   init();
 
@@ -88,24 +88,16 @@
     finally { submitButton.disabled = false; input.disabled = false; }
   }
 
-  async function loadLocalAfacturarIndex() {
-    if (afacturarIndexPromise) return afacturarIndexPromise;
-    afacturarIndexPromise = fetch(chrome.runtime.getURL('data/afacturar-index.json'), { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => Array.isArray(data?.records) ? data.records : [])
-      .catch(() => []);
-    return afacturarIndexPromise;
-  }
-
   async function enrichDealsWithLocalAfacturar(deals) {
-    const records = await loadLocalAfacturarIndex();
-    if (!records.length) return deals;
-    const byPlatform = new Map(records.map(record => [normalizePlatform(record.platform), record]));
-    return deals.map(deal => {
+    return Promise.all(deals.map(async deal => {
       if (deal.afacturar?.url) return deal;
-      const match = byPlatform.get(normalizePlatform(deal.tc));
-      return match?.url ? { ...deal, afacturar: { url: match.url, status: match.status || '', platform: match.platform } } : deal;
-    });
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'ONOFF_LOOKUP_AFACTURAR', platform: deal.tc });
+        return response?.afacturar?.url ? { ...deal, afacturar: response.afacturar } : deal;
+      } catch {
+        return deal;
+      }
+    }));
   }
 
   function normalizePlatform(value) {
