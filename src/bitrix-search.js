@@ -91,7 +91,7 @@
   function renderDeals(deals, tc) {
     if (!deals.length) return empty(`No se encontró ninguna negociación asociada a TC${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
-    resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación')));
+    resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación', deal.afacturar)));
   }
 
   function renderCompanies(companies, masked) {
@@ -116,11 +116,11 @@
     resultBox.appendChild(card(`Radicado ${task.id}`,task.title,details,task.url,'Abrir tarea'));
   }
 
-  function card(kicker,title,details,url,openLabel) {
+  function card(kicker,title,details,url,openLabel,afacturar) {
     const article=document.createElement('article'); article.className='onoff-bitrix-card';
     const heading=document.createElement('div'); heading.className='onoff-bitrix-card-title'; heading.innerHTML=`<strong>${escapeHtml(kicker)}</strong><span>${escapeHtml(title || '')}</span>`; article.appendChild(heading);
     const dl=document.createElement('dl'); details.forEach(([l,v])=>{const dt=document.createElement('dt');dt.textContent=l;const dd=document.createElement('dd');dd.textContent=v||'No especificado';dl.append(dt,dd);}); article.appendChild(dl);
-    const actions=document.createElement('div');actions.className='onoff-bitrix-actions'; const open=document.createElement('button');open.className='is-primary';open.textContent=openLabel;open.onclick=()=>window.open(url,'_blank','noopener'); const copy=document.createElement('button');copy.textContent='Copiar enlace';copy.onclick=async()=>{await navigator.clipboard.writeText(url);copy.textContent='Enlace copiado';setTimeout(()=>copy.textContent='Copiar enlace',1200);}; actions.append(open,copy); article.appendChild(actions); return article;
+    const actions=document.createElement('div');actions.className='onoff-bitrix-actions'; const open=document.createElement('button');open.className='is-primary';open.textContent=openLabel;open.onclick=()=>window.open(url,'_blank','noopener'); actions.appendChild(open); if(afacturar?.url){const af=document.createElement('button');af.className='is-afacturar';af.textContent='Abrir en Afacturar';af.title=afacturar.status?`Estado Afacturar: ${afacturar.status}`:'Abrir perfil en Afacturar';af.onclick=()=>window.open(afacturar.url,'_blank','noopener');actions.appendChild(af);} const copy=document.createElement('button');copy.textContent='Copiar enlace';copy.onclick=async()=>{await navigator.clipboard.writeText(url);copy.textContent='Enlace copiado';setTimeout(()=>copy.textContent='Copiar enlace',1200);}; actions.appendChild(copy); article.appendChild(actions); return article;
   }
   function empty(message){setStatus(message,'empty');resultBox.innerHTML='<p class="onoff-bitrix-empty">Verifique el dato e intente nuevamente.</p>';}
   function setStatus(message,type){statusBox.textContent=message;statusBox.dataset.type=type||'';}
