@@ -268,8 +268,8 @@ async function callBitrix(webhookUrl, method, params = {}) {
 }
 
 function parseTc(value) {
-  const match = String(value || '').match(/^\s*(?:TC\s*[-:]?\s*)?(\d+)\s*$/i);
-  return match ? match[1] : '';
+  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)$/i);
+  return match ? match[1].replace(/\s+/g, '') : '';
 }
 
 function normalizeWebhookUrl(value) {
