@@ -1,3 +1,4 @@
+const { lookupAfacturar } = require('../../lib/afacturar-store');
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
 
@@ -45,7 +46,11 @@ module.exports = async function handler(req, res) {
 
     const context = await loadContext(webhookUrl, validRecords);
     const portalOrigin = new URL(webhookUrl).origin;
-    const deals = validRecords.map((item) => normalizeDeal(item, tc, tcField, context, portalOrigin));
+    const normalizedDeals = validRecords.map((item) => normalizeDeal(item, tc, tcField, context, portalOrigin));
+    const deals = await Promise.all(normalizedDeals.map(async (deal) => ({
+      ...deal,
+      afacturar: await lookupAfacturar({ platform: deal.tc }).catch(() => null)
+    })));
 
     return res.status(200).json({
       ok: true,
@@ -263,8 +268,8 @@ async function callBitrix(webhookUrl, method, params = {}) {
 }
 
 function parseTc(value) {
-  const match = String(value || '').match(/^\s*(?:TC\s*[-:]?\s*)?(\d+)\s*$/i);
-  return match ? match[1] : '';
+  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)$/i);
+  return match ? match[1].replace(/\s+/g, '') : '';
 }
 
 function normalizeWebhookUrl(value) {

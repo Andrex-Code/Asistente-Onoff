@@ -26,6 +26,16 @@
         <button id="logoutButton" class="secondary">Cerrar sesión</button>
       </header>
       <div class="notice" id="storageNotice"></div>
+      <article class="card afacturar-card">
+        <h2>Base Afacturar</h2>
+        <p>Permite mostrar el botón <strong>Abrir en Afacturar</strong> cuando se consulta una TC. Cargue un CSV con las columnas PLATAFORMA y ACCESO DIRECTO.</p>
+        <div id="afacturarMeta" class="meta-box">Cargando estado de la base…</div>
+        <form id="afacturarForm" class="upload-row">
+          <input id="afacturarFile" type="file" accept=".csv,text/csv" required>
+          <button type="submit">Actualizar base Afacturar</button>
+        </form>
+        <div id="afacturarStatus" class="status"></div>
+      </article>
       <form id="configForm" class="grid">
         <article class="card">
           <h2>Prompt para mejorar texto</h2>
