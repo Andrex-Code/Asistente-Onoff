@@ -1,6 +1,6 @@
 const loginView=document.getElementById('loginView');const adminView=document.getElementById('adminView');const loginForm=document.getElementById('loginForm');const configForm=document.getElementById('configForm');const afacturarForm=document.getElementById('afacturarForm');const loginStatus=document.getElementById('loginStatus');const configStatus=document.getElementById('configStatus');const storageNotice=document.getElementById('storageNotice');const versionLabel=document.getElementById('versionLabel');const afacturarMeta=document.getElementById('afacturarMeta');const afacturarStatus=document.getElementById('afacturarStatus');
 
-loginForm.addEventListener('submit',async(e)=>{e.preventDefault();setStatus(loginStatus,'Ingresando...');const response=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('username').value,password:document.getElementById('password').value})});const data=await safeJson(response);if(!response.ok){setStatus(loginStatus,data?.error||'No fue posible ingresar.','error');return}document.getElementById('password').value='';await loadConfig().then(()=>{if(!adminView.classList.contains('hidden'))loadAfacturar()});await loadAfacturar()});
+loginForm.addEventListener('submit',async(e)=>{e.preventDefault();setStatus(loginStatus,'Ingresando...');const response=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('username').value,password:document.getElementById('password').value})});const data=await safeJson(response);if(!response.ok){setStatus(loginStatus,data?.error||'No fue posible ingresar.','error');return}document.getElementById('password').value='';await loadConfig();await loadAfacturar()});
 
 document.getElementById('logoutButton').addEventListener('click',async()=>{await fetch('/api/admin/login',{method:'DELETE'});showLogin()});
 
@@ -15,4 +15,4 @@ function applyConfig(config){document.getElementById('improvePrompt').value=conf
 function showLogin(){adminView.classList.add('hidden');loginView.classList.remove('hidden');setStatus(loginStatus,'')}
 function setStatus(element,text,type=''){element.textContent=text;element.className=`status ${type}`.trim()}
 async function safeJson(response){try{return await response.json()}catch{return null}}
-loadConfig();
+loadConfig().then(()=>{if(!adminView.classList.contains('hidden'))loadAfacturar()});
