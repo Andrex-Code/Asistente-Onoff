@@ -17,7 +17,7 @@ Extensión de navegador para apoyar la atención en iKono Chat con traducción, 
 - Búsqueda de negociaciones por `TC5900`, `TC 5900`, `TC-5900` o `5900`.
 - Visualización de título, etapa, cliente, responsable, última actualización e ID de la negociación.
 - Botones para abrir la negociación en Bitrix o copiar su enlace directo.
-- Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo cargado en la base administrativa.
+- Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo en la base privada de Afacturar.
 
 ## Instalación en Chrome o Edge
 
@@ -63,9 +63,7 @@ BITRIX_TC_FIELD
 UF_CRM_1642606760058
 ```
 
-La base de conocimiento, los prompts y la base de enlaces de Afacturar se administran desde `/admin` y se guardan en Vercel Blob privado.
-
-Para Afacturar, cargue un archivo CSV con al menos las columnas `PLATAFORMA` y `ACCESO DIRECTO`. `PLATAFORMA` debe contener la TC y `ACCESO DIRECTO` el enlace `https://afacturar.com/obligado/...`.
+La base de conocimiento y los prompts se administran desde `/admin`. La base de Afacturar puede mantenerse en Vercel Blob privado y los paquetes internos de distribución pueden incluir `data/afacturar-index.json`, generado a partir del archivo corporativo `NIT HIPERVINCULO AFACTURAR.xlsx`. Ese índice privado está excluido de Git. El buscador conserva la TC exacta, incluidos sufijos como `-C` y `-R`, y admite enlaces `/obligado/...` y `/empresas-registro-get/...`.
 
 ## Buscador de negociaciones
 
