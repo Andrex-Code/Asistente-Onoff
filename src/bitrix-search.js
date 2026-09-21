@@ -1,7 +1,7 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const POSITION_KEY = 'onoffBitrixSearchPosition';
-  let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState;
+  let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState, afacturarIndexPromise;
 
   init();
 
@@ -61,7 +61,7 @@
     mode = next; resultBox.innerHTML = ''; statusBox.textContent = '';
     searchWindow.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('is-active', b.dataset.mode === mode));
     const map = {
-      tc: ['Número de TC', 'TC5900 o 5900'],
+      tc: ['Número de TC', 'TC5900, 5900 o TC6143-C'],
       identification: ['Número de identificación', 'CC 1053790482 o 1.053.790.482'],
       task: ['Número de radicado', '505942 o RAD-505942']
     };
@@ -81,11 +81,35 @@
       const response = await fetch(`${backend}/api/bitrix/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(data?.error || `El servidor respondió ${response.status}.`);
-      if (mode === 'tc') renderDeals(data.deals || [], parsed);
+      if (mode === 'tc') renderDeals(await enrichDealsWithLocalAfacturar(data.deals || []), parsed);
       else if (mode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
     } catch (error) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); }
     finally { submitButton.disabled = false; input.disabled = false; }
+  }
+
+  async function loadLocalAfacturarIndex() {
+    if (afacturarIndexPromise) return afacturarIndexPromise;
+    afacturarIndexPromise = fetch(chrome.runtime.getURL('data/afacturar-index.json'), { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => Array.isArray(data?.records) ? data.records : [])
+      .catch(() => []);
+    return afacturarIndexPromise;
+  }
+
+  async function enrichDealsWithLocalAfacturar(deals) {
+    const records = await loadLocalAfacturarIndex();
+    if (!records.length) return deals;
+    const byPlatform = new Map(records.map(record => [normalizePlatform(record.platform), record]));
+    return deals.map(deal => {
+      if (deal.afacturar?.url) return deal;
+      const match = byPlatform.get(normalizePlatform(deal.tc));
+      return match?.url ? { ...deal, afacturar: { url: match.url, status: match.status || '', platform: match.platform } } : deal;
+    });
+  }
+
+  function normalizePlatform(value) {
+    return String(value || '').trim().toUpperCase().replace(/^TC\s*/i, '').replace(/\s+/g, '');
   }
 
   function renderDeals(deals, tc) {
@@ -124,7 +148,7 @@
   }
   function empty(message){setStatus(message,'empty');resultBox.innerHTML='<p class="onoff-bitrix-empty">Verifique el dato e intente nuevamente.</p>';}
   function setStatus(message,type){statusBox.textContent=message;statusBox.dataset.type=type||'';}
-  function parseValue(value){const text=String(value||''); if(mode==='tc')return text.match(/^\s*(?:TC\s*[-:]?\s*)?(\d+)\s*$/i)?.[1]||''; if(mode==='task')return text.match(/^\s*(?:RAD(?:ICADO)?\s*[-:#]?\s*|#\s*)?(\d+)\s*$/i)?.[1]||''; const digits=text.replace(/\D/g,''); return digits.length>=5&&digits.length<=20?digits:'';}
+  function parseValue(value){const text=String(value||''); if(mode==='tc')return normalizePlatform(text.match(/^\s*(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)\s*$/i)?.[1]||''); if(mode==='task')return text.match(/^\s*(?:RAD(?:ICADO)?\s*[-:#]?\s*|#\s*)?(\d+)\s*$/i)?.[1]||''; const digits=text.replace(/\D/g,''); return digits.length>=5&&digits.length<=20?digits:'';}
   function formatDate(value){if(!value)return'No especificada';const d=new Date(value);return Number.isNaN(d.getTime())?'No especificada':new Intl.DateTimeFormat('es-CO',{dateStyle:'medium',timeStyle:'short'}).format(d);}
   function startDrag(e){if(e.button!==0||e.target.closest('button'))return;const r=searchWindow.getBoundingClientRect();dragState={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};window.addEventListener('pointermove',moveDrag,true);window.addEventListener('pointerup',endDrag,true);}
   function moveDrag(e){if(!dragState||e.pointerId!==dragState.id)return;searchWindow.style.left=`${clamp(e.clientX-dragState.x,8,window.innerWidth-searchWindow.offsetWidth-8)}px`;searchWindow.style.top=`${clamp(e.clientY-dragState.y,8,window.innerHeight-searchWindow.offsetHeight-8)}px`;searchWindow.style.right='auto';searchWindow.style.bottom='auto';}
