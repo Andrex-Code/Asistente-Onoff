@@ -22,10 +22,6 @@ module.exports = async function handler(req, res) {
 
     const tcField = String(process.env.BITRIX_TC_FIELD || DEFAULT_TC_FIELD).trim();
     const deals = await findDeals(webhookUrl, tcField, tc);
-    if (!deals.length) {
-      return res.status(200).json({ ok: true, tc, open: [], recentClosed: [], counts: { open: 0, closed: 0 } });
-    }
-
     const bindings = buildCrmBindings(deals);
     const taskGroups = await Promise.all([
       ...bindings.map((binding) => listTasks(webhookUrl, { 'filter[UF_CRM_TASK]': binding })),
@@ -109,7 +105,7 @@ async function listTasks(webhookUrl, extraParams = {}) {
       'select[]': [
         'ID', 'TITLE', 'STATUS', 'RESPONSIBLE_ID', 'CREATED_BY', 'GROUP_ID',
         'DEADLINE', 'CREATED_DATE', 'CHANGED_DATE', 'CLOSED_DATE', 'PRIORITY',
-        'UF_CRM_TASK'
+        'UF_CRM_TASK', 'RESPONSIBLE'
       ],
       start
     });
@@ -173,6 +169,7 @@ function normalizeTask(task, users, portalOrigin) {
   const groupId = String(task.groupId || task.GROUP_ID || '');
   const responsibleId = String(task.responsibleId || task.RESPONSIBLE_ID || '');
   const statusId = String(task.status || task.STATUS || '');
+  const responsibleName = String(task.responsible?.name || task.RESPONSIBLE?.name || '').trim();
   const url = groupId && groupId !== '0'
     ? `${portalOrigin}/workgroups/group/${encodeURIComponent(groupId)}/tasks/task/view/${encodeURIComponent(id)}/`
     : `${portalOrigin}/company/personal/user/0/tasks/task/view/${encodeURIComponent(id)}/`;
@@ -182,7 +179,7 @@ function normalizeTask(task, users, portalOrigin) {
     title: String(task.title || task.TITLE || `Radicado ${id}`),
     statusId,
     status: taskStatus(statusId),
-    responsible: responsibleId ? users.get(responsibleId) || `Usuario ${responsibleId}` : 'No especificado',
+    responsible: responsibleName || (responsibleId ? users.get(responsibleId) || `Usuario ${responsibleId}` : 'No especificado'),
     priority: String(task.priority || task.PRIORITY || '1') === '2' ? 'Alta' : 'Normal',
     deadline: toIso(task.deadline || task.DEADLINE),
     createdAt: toIso(task.createdDate || task.CREATED_DATE),
