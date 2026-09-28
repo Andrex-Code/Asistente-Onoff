@@ -2,3 +2,7 @@
 node_modules/
 dist/
 *.zip
+
+# Base interna Afacturar: se inyecta solo en paquetes de distribución
+data/afacturar-index.json
+data/*.xlsx

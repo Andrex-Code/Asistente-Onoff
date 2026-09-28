@@ -55,8 +55,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === 'ONOFF_LOOKUP_AFACTURAR') {
+    lookupPackagedAfacturar(message.platform)
+      .then((afacturar) => sendResponse({ ok: true, afacturar }))
+      .catch(() => sendResponse({ ok: true, afacturar: null }));
+    return true;
+  }
+
   return false;
 });
+
+let packagedAfacturarPromise;
+
+async function loadPackagedAfacturar() {
+  if (packagedAfacturarPromise) return packagedAfacturarPromise;
+  packagedAfacturarPromise = fetch(chrome.runtime.getURL('data/afacturar-index.json'), { cache: 'no-store' })
+    .then((response) => response.ok ? response.json() : null)
+    .then((data) => Array.isArray(data?.records) ? data.records : [])
+    .catch(() => []);
+  return packagedAfacturarPromise;
+}
+
+async function lookupPackagedAfacturar(value) {
+  const platform = normalizePlatform(value);
+  if (!platform) return null;
+  const records = await loadPackagedAfacturar();
+  const record = records.find((item) => normalizePlatform(item?.platform) === platform);
+  if (!record?.url) return null;
+  return {
+    platform: normalizePlatform(record.platform),
+    url: String(record.url),
+    status: String(record.status || '')
+  };
+}
+
+function normalizePlatform(value) {
+  return String(value || '').trim().toUpperCase().replace(/^TC\s*/i, '').replace(/\s+/g, '');
+}
 
 async function translate(text, direction) {
   const settings = await chrome.storage.sync.get(Object.keys(DEFAULTS));
