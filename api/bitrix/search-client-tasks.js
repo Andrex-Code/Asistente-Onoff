@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       tc,
-      open,
+      open: open.slice(0, 3),
       recentClosed: closed.slice(0, 2),
       counts: { open: open.length, closed: closed.length }
     });
