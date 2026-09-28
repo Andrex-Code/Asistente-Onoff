@@ -81,7 +81,10 @@
       const response = await fetch(`${backend}/api/bitrix/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(data?.error || `El servidor respondió ${response.status}.`);
-      if (mode === 'tc') renderDeals(await enrichDealsWithLocalAfacturar(data.deals || []), parsed);
+      if (mode === 'tc') {
+        renderDeals(await enrichDealsWithLocalAfacturar(data.deals || []), parsed);
+        void loadClientTasks(backend, parsed);
+      }
       else if (mode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
     } catch (error) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); }
@@ -108,6 +111,74 @@
     if (!deals.length) return empty(`No se encontró ninguna negociación asociada a TC${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
     resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación', deal.afacturar)));
+  }
+
+  async function loadClientTasks(backend, tc) {
+    const section=document.createElement('section');
+    section.className='onoff-bitrix-tasks';
+    section.innerHTML='<div class="onoff-bitrix-tasks-head"><div><strong>Tareas del cliente</strong><small>Consultando tareas asociadas a esta TC…</small></div><span class="onoff-bitrix-task-count">…</span></div><div class="onoff-bitrix-task-loading">Cargando tareas…</div>';
+    resultBox.appendChild(section);
+    try {
+      const response=await fetch(`${backend}/api/bitrix/search-client-tasks`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tc})});
+      const data=await response.json().catch(()=>null);
+      if(!response.ok||!data?.ok)throw new Error(data?.error||`El servidor respondió ${response.status}.`);
+      renderClientTasks(section,data);
+    } catch(error) {
+      section.innerHTML='<div class="onoff-bitrix-tasks-head"><div><strong>Tareas del cliente</strong><small>No fue posible cargar las tareas.</small></div></div>';
+      const message=document.createElement('p');message.className='onoff-bitrix-task-error';message.textContent=error.message||'No fue posible consultar las tareas en Bitrix.';section.appendChild(message);
+    }
+  }
+
+  function renderClientTasks(section,data) {
+    const open=Array.isArray(data.open)?data.open:[];
+    const closed=Array.isArray(data.recentClosed)?data.recentClosed:[];
+    const openCount=Number(data.counts?.open||open.length);
+    const closedCount=Number(data.counts?.closed||closed.length);
+    section.innerHTML='';
+
+    const head=document.createElement('div');head.className='onoff-bitrix-tasks-head';
+    const titleWrap=document.createElement('div');
+    const title=document.createElement('strong');title.textContent='Tareas del cliente';
+    const subtitle=document.createElement('small');subtitle.textContent=`${openCount} abierta${openCount===1?'':'s'} · ${closedCount} cerrada${closedCount===1?'':'s'} en total`;
+    titleWrap.append(title,subtitle);
+    const count=document.createElement('span');count.className='onoff-bitrix-task-count';count.textContent=String(openCount);
+    head.append(titleWrap,count);section.appendChild(head);
+
+    const openBlock=document.createElement('div');openBlock.className='onoff-bitrix-task-group';
+    const openTitle=document.createElement('div');openTitle.className='onoff-bitrix-task-group-title';openTitle.textContent=`Abiertas (${openCount})`;openBlock.appendChild(openTitle);
+    if(open.length)open.forEach(task=>openBlock.appendChild(taskItem(task,false)));
+    else {const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent='No hay tareas abiertas asociadas a esta TC.';openBlock.appendChild(p);}
+    section.appendChild(openBlock);
+
+    const closedBlock=document.createElement('div');closedBlock.className='onoff-bitrix-task-group';
+    const closedTitle=document.createElement('div');closedTitle.className='onoff-bitrix-task-group-title';closedTitle.textContent='Últimas cerradas';closedBlock.appendChild(closedTitle);
+    if(closed.length)closed.forEach(task=>closedBlock.appendChild(taskItem(task,true)));
+    else {const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent='No se encontraron tareas cerradas.';closedBlock.appendChild(p);}
+    section.appendChild(closedBlock);
+  }
+
+  function taskItem(task,closed) {
+    const article=document.createElement('article');article.className=`onoff-bitrix-task ${closed?'is-closed':'is-open'}`;
+    const top=document.createElement('div');top.className='onoff-bitrix-task-top';
+    const info=document.createElement('div');
+    const rad=document.createElement('small');rad.textContent=`Radicado ${task.id}`;
+    const title=document.createElement('strong');title.textContent=task.title||`Radicado ${task.id}`;
+    info.append(rad,title);
+    const badge=document.createElement('span');badge.className='onoff-bitrix-task-status';badge.textContent=task.status||'Sin estado';
+    top.append(info,badge);article.appendChild(top);
+
+    const meta=document.createElement('div');meta.className='onoff-bitrix-task-meta';
+    addTaskMeta(meta,'Responsable',task.responsible||'No especificado');
+    addTaskMeta(meta,closed?'Cerrada':'Fecha límite',formatDate(closed?(task.closedAt||task.updatedAt):task.deadline));
+    if(task.priority==='Alta')addTaskMeta(meta,'Prioridad','Alta');
+    article.appendChild(meta);
+
+    const open=document.createElement('button');open.type='button';open.className='onoff-bitrix-task-open';open.textContent='Abrir tarea';open.onclick=()=>window.open(task.url,'_blank','noopener');article.appendChild(open);
+    return article;
+  }
+
+  function addTaskMeta(container,label,value) {
+    const row=document.createElement('div');const key=document.createElement('span');key.textContent=label;const val=document.createElement('strong');val.textContent=value||'No especificado';row.append(key,val);container.appendChild(row);
   }
 
   function renderCompanies(companies, masked) {
