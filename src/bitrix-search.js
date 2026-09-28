@@ -139,13 +139,13 @@
     const head=document.createElement('div');head.className='onoff-bitrix-tasks-head';
     const titleWrap=document.createElement('div');
     const title=document.createElement('strong');title.textContent='Tareas del cliente';
-    const subtitle=document.createElement('small');subtitle.textContent=`${openCount} abierta${openCount===1?'':'s'} · ${closedCount} cerrada${closedCount===1?'':'s'} en total`;
+    const subtitle=document.createElement('small');subtitle.textContent=openCount>open.length?`Mostrando ${open.length} de ${openCount} abiertas · ${closedCount} cerradas en total`:`${openCount} abierta${openCount===1?'':'s'} · ${closedCount} cerrada${closedCount===1?'':'s'} en total`;
     titleWrap.append(title,subtitle);
     const count=document.createElement('span');count.className='onoff-bitrix-task-count';count.textContent=String(openCount);
     head.append(titleWrap,count);section.appendChild(head);
 
     const openBlock=document.createElement('div');openBlock.className='onoff-bitrix-task-group';
-    const openTitle=document.createElement('div');openTitle.className='onoff-bitrix-task-group-title';openTitle.textContent=`Abiertas (${openCount})`;openBlock.appendChild(openTitle);
+    const openTitle=document.createElement('div');openTitle.className='onoff-bitrix-task-group-title';openTitle.textContent=openCount>open.length?`Abiertas · mostrando ${open.length} de ${openCount}`:`Abiertas (${openCount})`;openBlock.appendChild(openTitle);
     if(open.length)open.forEach(task=>openBlock.appendChild(taskItem(task,false)));
     else {const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent='No hay tareas abiertas asociadas a esta TC.';openBlock.appendChild(p);}
     section.appendChild(openBlock);
