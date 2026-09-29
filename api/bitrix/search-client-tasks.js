@@ -138,11 +138,7 @@ function isRelatedTask(task, bindings, tc) {
 }
 
 function taskMentionsTc(title, tc) {
-  const escaped = String(tc).replace(/[.*+?^$()|[\]\\]/g, '\\function taskMentionsTc(title, tc) {
   const escaped = String(tc).replace(/[.*+?^$()|[\]\\]/g, '\\$&');
-  return new RegExp(`(?:^|\\b)TC\\s*[-:]?\\s*${escaped}(?![A-Z0-9-])`, 'i').test(String(title || ''));
-}
-');
   return new RegExp(`(?:^|\\b)TC\\s*[-:]?\\s*${escaped}(?![A-Z0-9-])`, 'i').test(String(title || ''));
 }
 
