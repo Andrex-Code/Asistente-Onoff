@@ -131,7 +131,7 @@
 
   function renderClientTasks(section,data) {
     const open=Array.isArray(data.open)?data.open:[];
-    const closed=Array.isArray(data.recentClosed)?data.recentClosed:[];
+    const closed=Array.isArray(data.closed)?data.closed:(Array.isArray(data.recentClosed)?data.recentClosed:[]);
     const openCount=Number(data.counts?.open||open.length);
     const closedCount=Number(data.counts?.closed||closed.length);
     section.innerHTML='';
@@ -139,22 +139,59 @@
     const head=document.createElement('div');head.className='onoff-bitrix-tasks-head';
     const titleWrap=document.createElement('div');
     const title=document.createElement('strong');title.textContent='Tareas del cliente';
-    const subtitle=document.createElement('small');subtitle.textContent=openCount>open.length?`Mostrando ${open.length} de ${openCount} abiertas · ${closedCount} cerradas en total`:`${openCount} abierta${openCount===1?'':'s'} · ${closedCount} cerrada${closedCount===1?'':'s'} en total`;
+    const subtitle=document.createElement('small');subtitle.textContent=`${openCount} abierta${openCount===1?'':'s'} · ${closedCount} cerrada${closedCount===1?'':'s'} en total`;
     titleWrap.append(title,subtitle);
     const count=document.createElement('span');count.className='onoff-bitrix-task-count';count.textContent=String(openCount);
     head.append(titleWrap,count);section.appendChild(head);
 
-    const openBlock=document.createElement('div');openBlock.className='onoff-bitrix-task-group';
-    const openTitle=document.createElement('div');openTitle.className='onoff-bitrix-task-group-title';openTitle.textContent=openCount>open.length?`Abiertas · mostrando ${open.length} de ${openCount}`:`Abiertas (${openCount})`;openBlock.appendChild(openTitle);
-    if(open.length)open.forEach(task=>openBlock.appendChild(taskItem(task,false)));
-    else {const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent='No hay tareas abiertas asociadas a esta TC.';openBlock.appendChild(p);}
-    section.appendChild(openBlock);
+    section.appendChild(renderTaskGroup({
+      title:'Abiertas',
+      items:open,
+      total:openCount,
+      closed:false,
+      initialLimit:3,
+      emptyText:'No hay tareas abiertas asociadas a esta TC.'
+    }));
 
-    const closedBlock=document.createElement('div');closedBlock.className='onoff-bitrix-task-group';
-    const closedTitle=document.createElement('div');closedTitle.className='onoff-bitrix-task-group-title';closedTitle.textContent='Últimas cerradas';closedBlock.appendChild(closedTitle);
-    if(closed.length)closed.forEach(task=>closedBlock.appendChild(taskItem(task,true)));
-    else {const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent='No se encontraron tareas cerradas.';closedBlock.appendChild(p);}
-    section.appendChild(closedBlock);
+    section.appendChild(renderTaskGroup({
+      title:'Cerradas recientes',
+      items:closed,
+      total:closedCount,
+      closed:true,
+      initialLimit:3,
+      emptyText:'No se encontraron tareas cerradas.'
+    }));
+  }
+
+  function renderTaskGroup({title,items,total,closed,initialLimit,emptyText}) {
+    const block=document.createElement('div');block.className='onoff-bitrix-task-group';
+    const groupTitle=document.createElement('div');groupTitle.className='onoff-bitrix-task-group-title';groupTitle.textContent=`${title} (${total})`;block.appendChild(groupTitle);
+
+    if(!items.length){
+      const p=document.createElement('p');p.className='onoff-bitrix-task-empty';p.textContent=emptyText;block.appendChild(p);return block;
+    }
+
+    const list=document.createElement('div');list.className='onoff-bitrix-task-list';block.appendChild(list);
+    let expanded=false;
+
+    const paint=()=>{
+      list.innerHTML='';
+      const visible=expanded?items:items.slice(0,initialLimit);
+      visible.forEach(task=>list.appendChild(taskItem(task,closed)));
+      if(toggle)toggle.textContent=expanded?'Ver menos':`Ver ${items.length-initialLimit} más`;
+    };
+
+    let toggle=null;
+    if(items.length>initialLimit){
+      toggle=document.createElement('button');
+      toggle.type='button';
+      toggle.className='onoff-bitrix-task-toggle';
+      toggle.onclick=()=>{expanded=!expanded;paint();};
+      block.appendChild(toggle);
+    }
+
+    paint();
+    return block;
   }
 
   function taskItem(task,closed) {
