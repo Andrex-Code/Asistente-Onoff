@@ -27,3 +27,7 @@
 .onoff-bitrix-task-open{justify-self:start;min-height:32px;padding:6px 10px;border:1px solid #168447;border-radius:9px;background:#fff;color:#0f5f35;font:inherit;font-size:11px;font-weight:900;cursor:pointer}
 .onoff-bitrix-task-open:hover{background:#eaf7ef}
 @media(max-width:520px){.onoff-bitrix-task-meta{grid-template-columns:1fr}.onoff-bitrix-task-top{display:grid}.onoff-bitrix-task-status{justify-self:start}}
+
+.onoff-bitrix-task-list{display:grid;gap:7px}
+.onoff-bitrix-task-toggle{justify-self:start;min-height:32px;padding:6px 10px;border:1px solid #cbd7cf;border-radius:9px;background:#f7f9f8;color:#33413a;font:inherit;font-size:11px;font-weight:900;cursor:pointer}
+.onoff-bitrix-task-toggle:hover{border-color:#168447;background:#eaf7ef;color:#0f5f35}
