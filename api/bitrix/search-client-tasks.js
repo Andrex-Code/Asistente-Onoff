@@ -29,6 +29,7 @@ module.exports = async function handler(req, res) {
     ]);
 
     const tasks = dedupeTasks(taskGroups.flat())
+      .filter((task) => isRootTask(task))
       .filter((task) => isRelatedTask(task, bindings, tc))
       .filter((task) => !isExcludedTask(task));
 
@@ -107,7 +108,7 @@ async function listTasks(webhookUrl, extraParams = {}) {
       'select[]': [
         'ID', 'TITLE', 'STATUS', 'RESPONSIBLE_ID', 'CREATED_BY', 'GROUP_ID',
         'DEADLINE', 'CREATED_DATE', 'CHANGED_DATE', 'CLOSED_DATE', 'PRIORITY',
-        'UF_CRM_TASK', 'RESPONSIBLE'
+        'PARENT_ID', 'UF_CRM_TASK', 'RESPONSIBLE'
       ],
       start
     });
@@ -145,6 +146,11 @@ function taskMentionsTc(title, tc) {
 function isExcludedTask(task) {
   const title = String(task?.title || task?.TITLE || '').trim();
   return /^tareas\s+de\s+proceso\b/i.test(title);
+}
+
+function isRootTask(task) {
+  const parentId = task?.parentId ?? task?.PARENT_ID ?? null;
+  return parentId === null || parentId === undefined || String(parentId).trim() === '' || String(parentId) === '0';
 }
 
 function dedupeTasks(tasks) {
@@ -192,6 +198,7 @@ function normalizeTask(task, users, portalOrigin) {
     createdAt: toIso(task.createdDate || task.CREATED_DATE),
     updatedAt: toIso(task.changedDate || task.CHANGED_DATE),
     closedAt: toIso(task.closedDate || task.CLOSED_DATE),
+    parentId: task.parentId ?? task.PARENT_ID ?? null,
     url
   };
 }
