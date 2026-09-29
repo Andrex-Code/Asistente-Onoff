@@ -29,7 +29,8 @@ module.exports = async function handler(req, res) {
     ]);
 
     const tasks = dedupeTasks(taskGroups.flat())
-      .filter((task) => isRelatedTask(task, bindings, tc));
+      .filter((task) => isRelatedTask(task, bindings, tc))
+      .filter((task) => !isExcludedTask(task));
 
     const userIds = unique(tasks.map((task) => task.responsibleId || task.RESPONSIBLE_ID).filter(Boolean));
     const users = await resolveUsers(webhookUrl, userIds);
@@ -47,8 +48,9 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       tc,
-      open: open.slice(0, 3),
-      recentClosed: closed.slice(0, 2),
+      open,
+      closed,
+      recentClosed: closed.slice(0, 3),
       counts: { open: open.length, closed: closed.length }
     });
   } catch (error) {
@@ -136,8 +138,17 @@ function isRelatedTask(task, bindings, tc) {
 }
 
 function taskMentionsTc(title, tc) {
+  const escaped = String(tc).replace(/[.*+?^$()|[\]\\]/g, '\\function taskMentionsTc(title, tc) {
   const escaped = String(tc).replace(/[.*+?^$()|[\]\\]/g, '\\$&');
   return new RegExp(`(?:^|\\b)TC\\s*[-:]?\\s*${escaped}(?![A-Z0-9-])`, 'i').test(String(title || ''));
+}
+');
+  return new RegExp(`(?:^|\\b)TC\\s*[-:]?\\s*${escaped}(?![A-Z0-9-])`, 'i').test(String(title || ''));
+}
+
+function isExcludedTask(task) {
+  const title = String(task?.title || task?.TITLE || '').trim();
+  return /^tareas\s+de\s+proceso\b/i.test(title);
 }
 
 function dedupeTasks(tasks) {
