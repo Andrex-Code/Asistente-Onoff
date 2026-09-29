@@ -172,13 +172,22 @@
     }
 
     const list=document.createElement('div');list.className='onoff-bitrix-task-list';block.appendChild(list);
-    let expanded=false;
+    const step=5;
+    let visibleCount=Math.min(initialLimit,items.length);
 
     const paint=()=>{
       list.innerHTML='';
-      const visible=expanded?items:items.slice(0,initialLimit);
-      visible.forEach(task=>list.appendChild(taskItem(task,closed)));
-      if(toggle)toggle.textContent=expanded?'Ver menos':`Ver ${items.length-initialLimit} más`;
+      items.slice(0,visibleCount).forEach(task=>list.appendChild(taskItem(task,closed)));
+      if(!toggle)return;
+
+      const remaining=items.length-visibleCount;
+      if(remaining>0){
+        toggle.textContent=`Ver ${Math.min(step,remaining)} más`;
+        toggle.dataset.action='more';
+      }else{
+        toggle.textContent='Ver menos';
+        toggle.dataset.action='less';
+      }
     };
 
     let toggle=null;
@@ -186,7 +195,11 @@
       toggle=document.createElement('button');
       toggle.type='button';
       toggle.className='onoff-bitrix-task-toggle';
-      toggle.onclick=()=>{expanded=!expanded;paint();};
+      toggle.onclick=()=>{
+        if(toggle.dataset.action==='less') visibleCount=Math.min(initialLimit,items.length);
+        else visibleCount=Math.min(visibleCount+step,items.length);
+        paint();
+      };
       block.appendChild(toggle);
     }
 
