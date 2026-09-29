@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, bloc de notas, audios, búsqueda en Bitrix y asistencia conversacional.",
-  "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs", "clipboardWrite"],
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "clipboardWrite"
+  ],
   "host_permissions": [
     "<all_urls>",
     "https://*.vercel.app/*",
@@ -16,7 +23,9 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "src/content.js",
         "src/ui-fixes.js",
@@ -45,8 +54,15 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.png", "icons/*.jpg", "icons/*.jpeg", "icons/*.webp"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "icons/*.png",
+        "icons/*.jpg",
+        "icons/*.jpeg",
+        "icons/*.webp"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "options_page": "src/options.html",
