@@ -66,10 +66,11 @@ module.exports = async function handler(req, res) {
 };
 
 async function handleOwnerTasks(webhookUrl, body, res) {
-  const ownerId = parseOwnerId(body?.ownerId);
+  const ownerIds = parseOwnerIds(body?.ownerIds, body?.ownerId);
+  const ownerLabel = parseOwnerLabel(body?.ownerLabel);
 
-  if (ownerId) {
-    return respondWithOwnerTasks(webhookUrl, ownerId, res);
+  if (ownerIds.length) {
+    return respondWithOwnerTasks(webhookUrl, ownerIds, res, ownerLabel);
   }
 
   const query = parseOwnerName(body?.name);
@@ -96,58 +97,82 @@ async function handleOwnerTasks(webhookUrl, body, res) {
   }
 
   const matches = matchOwners(owners, query);
+  const grouped = mergeOwnersByName(matches);
 
-  if (!matches.length) {
+  if (!grouped.length) {
     return res.status(404).json({
       ok: false,
       error: 'No se encontró un propietario que coincida con la búsqueda.'
     });
   }
 
-  const exact = matches.filter(
+  const exact = grouped.filter(
     (owner) => normalizeOwnerName(owner.fullName) === normalizeOwnerName(query)
   );
 
   if (exact.length === 1) {
-    return respondWithOwnerTasks(webhookUrl, exact[0].id, res, exact[0].fullName);
+    return respondWithOwnerTasks(
+      webhookUrl,
+      exact[0].ownerIds,
+      res,
+      exact[0].fullName
+    );
   }
 
-  if (matches.length === 1) {
-    return respondWithOwnerTasks(webhookUrl, matches[0].id, res, matches[0].fullName);
+  if (grouped.length === 1) {
+    return respondWithOwnerTasks(
+      webhookUrl,
+      grouped[0].ownerIds,
+      res,
+      grouped[0].fullName
+    );
   }
+
+  const enriched = await attachOpenTaskCounts(webhookUrl, grouped.slice(0, 12));
 
   return res.status(200).json({
     ok: true,
     requiresSelection: true,
-    users: matches.slice(0, 10).map((owner) => ({
-      id: String(owner.id),
-      fullName: String(owner.fullName)
-    }))
+    query,
+    users: enriched
   });
 }
 
-async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
-  const rawTasks = await listTasks(webhookUrl, {
-    'filter[CREATED_BY]': ownerId,
-    'filter[!REAL_STATUS]': '5'
-  });
+async function respondWithOwnerTasks(webhookUrl, ownerIds, res, knownName = '') {
+  const ids = unique(
+    (Array.isArray(ownerIds) ? ownerIds : [ownerIds])
+      .map(String)
+      .filter((id) => /^\d{1,12}$/.test(id))
+  );
 
-  const openTasks = rawTasks.filter((task) => {
-    const statusId = String(task.status || task.STATUS || '');
-    return !CLOSED_STATUSES.has(statusId);
-  });
+  if (!ids.length) {
+    return res.status(400).json({
+      ok: false,
+      error: 'No se recibió un propietario válido.'
+    });
+  }
 
-  let ownerName = knownName;
+  const taskGroups = await Promise.all(
+    ids.map((ownerId) =>
+      listTasks(webhookUrl, {
+        'filter[CREATED_BY]': ownerId
+      })
+    )
+  );
+
+  const openTasks = dedupeTasks(taskGroups.flat()).filter(isOpenOwnerTask);
+
+  let ownerName = String(knownName || '').trim();
   if (!ownerName) {
     try {
-      const owner = await getBriefUserById(webhookUrl, ownerId);
+      const owner = await getBriefUserById(webhookUrl, ids[0]);
       ownerName = owner?.fullName || '';
     } catch {
       ownerName = '';
     }
   }
 
-  ownerName = ownerName || `Usuario ${ownerId}`;
+  ownerName = ownerName || (ids.length === 1 ? `Usuario ${ids[0]}` : 'Propietario seleccionado');
   const portalOrigin = new URL(webhookUrl).origin;
 
   const responsibleIds = unique(
@@ -165,12 +190,45 @@ async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
     ok: true,
     requiresSelection: false,
     owner: {
-      id: String(ownerId),
+      id: ids[0],
+      ownerIds: ids,
       fullName: ownerName
     },
     tasks,
     count: tasks.length
   });
+}
+
+async function attachOpenTaskCounts(webhookUrl, owners) {
+  const enriched = await Promise.all(
+    owners.map(async (owner) => {
+      const ids = unique(owner.ownerIds || [owner.id]);
+      const taskGroups = await Promise.all(
+        ids.map((ownerId) =>
+          listTasks(webhookUrl, {
+            'filter[CREATED_BY]': ownerId
+          })
+        )
+      );
+
+      const openTaskCount = dedupeTasks(taskGroups.flat())
+        .filter(isOpenOwnerTask)
+        .length;
+
+      return {
+        id: owner.id,
+        ownerIds: ids,
+        fullName: owner.fullName,
+        openTaskCount
+      };
+    })
+  );
+
+  return enriched.sort(
+    (a, b) =>
+      b.openTaskCount - a.openTaskCount ||
+      a.fullName.localeCompare(b.fullName, 'es')
+  );
 }
 
 async function searchOwnerUsers(webhookUrl, query) {
@@ -220,56 +278,6 @@ async function getBriefUserById(webhookUrl, userId) {
   };
 }
 
-async function discoverOwnersFromTasks(webhookUrl, tasks) {
-  const samples = new Map();
-
-  for (const task of tasks) {
-    const ownerId = String(task.createdBy || task.CREATED_BY || '').trim();
-    const taskId = String(task.id || task.ID || '').trim();
-
-    if (ownerId && taskId && !samples.has(ownerId)) {
-      samples.set(ownerId, task);
-    }
-
-    if (samples.size >= 80) break;
-  }
-
-  const owners = await Promise.all(
-    [...samples.entries()].map(async ([ownerId, task]) => {
-      const embeddedName = creatorNameFromTask(task);
-      if (embeddedName) return { id: ownerId, fullName: embeddedName };
-
-      try {
-        const fullName = await getCreatorNameFromTask(webhookUrl, task);
-        return fullName ? { id: ownerId, fullName } : null;
-      } catch {
-        return null;
-      }
-    })
-  );
-
-  return owners.filter(Boolean);
-}
-
-async function getCreatorNameFromTask(webhookUrl, task) {
-  const embeddedName = creatorNameFromTask(task);
-  if (embeddedName) return embeddedName;
-
-  const taskId = String(task.id || task.ID || '').trim();
-  if (!taskId) return '';
-
-  const result = await callBitrix(webhookUrl, 'tasks.task.get', { taskId });
-  const fullTask = result?.task || result;
-  return creatorNameFromTask(fullTask);
-}
-
-function creatorNameFromTask(task) {
-  const creator = task?.creator || task?.CREATOR;
-  return String(creator?.name || creator?.NAME || '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function matchOwners(owners, query) {
   const normalizedQuery = normalizeOwnerName(query);
   const queryTokens = normalizedQuery.split(' ').filter(Boolean);
@@ -308,6 +316,35 @@ function matchOwners(owners, query) {
     .map(({ score, ...owner }) => owner);
 }
 
+function mergeOwnersByName(owners) {
+  const grouped = new Map();
+
+  for (const owner of owners) {
+    const key = normalizeOwnerName(owner.fullName);
+    if (!key) continue;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        id: String(owner.id),
+        ownerIds: [String(owner.id)],
+        fullName: String(owner.fullName).trim()
+      });
+      continue;
+    }
+
+    const current = grouped.get(key);
+    if (!current.ownerIds.includes(String(owner.id))) {
+      current.ownerIds.push(String(owner.id));
+    }
+
+    if (String(owner.fullName).trim().length > current.fullName.length) {
+      current.fullName = String(owner.fullName).trim();
+    }
+  }
+
+  return [...grouped.values()];
+}
+
 function normalizeOwnerTask(task, ownerName, portalOrigin, responsibleUsers = new Map()) {
   const id = String(task.id || task.ID || '').trim();
   const groupId = String(task.groupId || task.GROUP_ID || '');
@@ -330,7 +367,11 @@ function normalizeOwnerTask(task, ownerName, portalOrigin, responsibleUsers = ne
     statusId,
     status: taskStatus(statusId),
     owner: ownerName,
-    responsible: responsibleName || (responsibleId ? responsibleUsers.get(responsibleId) || `Usuario ${responsibleId}` : 'No especificado'),
+    responsible: responsibleName || (
+      responsibleId
+        ? responsibleUsers.get(responsibleId) || `Usuario ${responsibleId}`
+        : 'No especificado'
+    ),
     priority: String(task.priority || task.PRIORITY || '1') === '2' ? 'Alta' : 'Normal',
     deadline: toIso(task.deadline || task.DEADLINE),
     createdAt: toIso(task.createdDate || task.CREATED_DATE),
@@ -338,6 +379,11 @@ function normalizeOwnerTask(task, ownerName, portalOrigin, responsibleUsers = ne
     parentId: task.parentId ?? task.PARENT_ID ?? null,
     url
   };
+}
+
+function isOpenOwnerTask(task) {
+  const statusId = String(task.status || task.STATUS || '');
+  return !CLOSED_STATUSES.has(statusId);
 }
 
 function compareOwnerTasks(a, b) {
@@ -352,14 +398,27 @@ function compareOwnerTasks(a, b) {
   return dateValue(b.updatedAt) - dateValue(a.updatedAt);
 }
 
-function parseOwnerId(value) {
-  const text = String(value || '').trim();
-  return /^\d{1,12}$/.test(text) ? text : '';
+function parseOwnerIds(ownerIds, ownerId) {
+  const values = Array.isArray(ownerIds)
+    ? ownerIds
+    : ownerId !== undefined && ownerId !== null
+      ? [ownerId]
+      : [];
+
+  return unique(
+    values
+      .map((value) => String(value || '').trim())
+      .filter((value) => /^\d{1,12}$/.test(value))
+  );
 }
 
 function parseOwnerName(value) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   return text.length >= 2 && text.length <= 80 ? text : '';
+}
+
+function parseOwnerLabel(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
 function normalizeOwnerName(value) {
