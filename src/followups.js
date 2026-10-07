@@ -128,10 +128,10 @@
 
     try {
       const backend = String((await chrome.storage.sync.get('backendUrl')).backendUrl || 'https://asistente-onoff.vercel.app').replace(/\/$/, '');
-      const response = await fetch(`${backend}/api/bitrix/search-owner-tasks`, {
+      const response = await fetch(`${backend}/api/bitrix/search-client-tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload.ownerId ? { ownerId: payload.ownerId } : { name })
+        body: JSON.stringify(payload.ownerId ? { mode: 'owner', ownerId: payload.ownerId } : { mode: 'owner', name })
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) {
@@ -145,8 +145,14 @@
 
       renderTasks(data.owner, data.tasks || [], Boolean(data.truncated));
     } catch (error) {
-      setStatus(error?.message || 'No fue posible consultar las tareas.', 'error');
-      resultBox.innerHTML = '<p class="onoff-followups-empty">Verifique el nombre e intente nuevamente.</p>';
+      const rawMessage = String(error?.message || '');
+      const friendlyMessage = /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)
+        ? 'No fue posible conectar con el backend de Asistente ONOFF.'
+        : (/higher privileges|insufficient_scope/i.test(rawMessage)
+          ? 'El webhook de Bitrix no tiene permisos suficientes para esta consulta.'
+          : (rawMessage || 'No fue posible consultar las tareas.'));
+      setStatus(friendlyMessage, 'error');
+      resultBox.innerHTML = '<p class="onoff-followups-empty">No se pudo completar la consulta. Intente nuevamente.</p>';
     } finally {
       setBusy(false);
     }
