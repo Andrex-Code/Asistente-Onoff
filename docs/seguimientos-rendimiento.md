@@ -7,7 +7,7 @@ La version 1.8.0 consultaba hasta 20 paginas del historial por propietario, filt
 ## Cambios
 
 - Busqueda de usuarios inmediata, separada de los conteos. Los conteos se solicitan en bloques de 4 y no bloquean la seleccion.
-- Filtro de propietario CREATED_BY y de estados reales abiertos desde Bitrix; se conserva la exclusion local del prefijo Tareas de proceso, tanto en listas como en conteos.
+- Filtro de propietario CREATED_BY y de estados reales abiertos desde Bitrix. Solo se consideran tareas principales (PARENT_ID vacio/0); las subtareas y el prefijo Tareas de proceso se excluyen tanto de listas como de conteos.
 - Cache por propietario durante 45 segundos y reutilizacion entre conteos y consulta. Cache de usuarios por 5 minutos y equipo SAC por 10 minutos. Cache en el service worker para reutilizar respuestas entre pestanas. No se usan nombres precargados ni claves en la extension.
 - Maximo de tres llamadas simultaneas a Bitrix por instancia; solicitudes identicas comparten la misma promesa. Se aprovechan los nombres incluidos en las tareas y se resuelven solo los faltantes, por bloques.
 - Actualizar fuerza lectura reciente. Se muestra la fecha de consulta. Cancelar descarta respuestas para esta ventana; no interrumpe una consulta compartida que pueda estar usando otra pestana.
@@ -18,11 +18,11 @@ La version 1.8.0 consultaba hasta 20 paginas del historial por propietario, filt
 
 ## Fuente de la lista SAC
 
-Se usan usuarios activos de Bitrix. Precedencia opcional de variables: BITRIX_SAC_OWNER_IDS, BITRIX_SAC_DEPARTMENT_IDS y BITRIX_SAC_DEPARTMENT_NAMES. En modo automatico se usa user.search con UF_DEPARTMENT_NAME para SAC y Servicio al cliente. Si no hay coincidencias, se indica que falta configurar la lista; nunca se sustituye por todos los empleados ni por nombres usados en pruebas. Los homonimos exactos se agrupan por nombre normalizado y conservan sus IDs; no se mezclan apellidos parecidos.
+Se usan usuarios activos de Bitrix. Precedencia opcional de variables: BITRIX_SAC_OWNER_IDS, BITRIX_SAC_DEPARTMENT_IDS y BITRIX_SAC_MEMBER_NAMES. Si no se configura ninguna, el backend resuelve por nombre un roster SAC aprobado de 12 integrantes y solo devuelve coincidencias de esa lista; nunca se sustituye por todos los empleados. Si algun integrante no puede resolverse, el selector informa cuantos faltan. Los homonimos exactos se agrupan por nombre normalizado y conservan sus IDs.
 
 ## Pruebas
 
-Ejecutar npm test (Node 22). Pruebas sin credenciales: busqueda sin consultar tareas, filtros de propietario/estado, exclusion de procesos, paginacion, cache/coalescencia, caducidad/refresh, conteos fallidos, limites de concurrencia, fuente SAC, validacion de IDs y transporte restringido. La interfaz tambien se verifico en Chromium con respuestas simuladas: selector, legibilidad, orden, paginas, volver, limpiar, actualizar, minimizar y pantalla pequena. La comprobacion final con datos reales se hace en el Preview.
+Ejecutar npm test (Node 22). Pruebas sin credenciales: busqueda sin consultar tareas, filtros de propietario/estado/PARENT_ID, exclusion de subtareas y procesos, paginacion, cache/coalescencia, caducidad/refresh, conteos fallidos, limites de concurrencia, roster SAC, validacion de IDs y transporte restringido. La interfaz tambien se verifico en Chromium con respuestas simuladas: selector, legibilidad, orden, paginas, volver, limpiar, actualizar, minimizar y pantalla pequena. La comprobacion final con datos reales se hace en el Preview.
 
 ## Otros frentes detectados (no mezclados con esta entrega)
 
