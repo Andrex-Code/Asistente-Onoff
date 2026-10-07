@@ -1,5 +1,5 @@
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
-const MAX_PAGES = 10;
+const MAX_PAGES = 20;
 const CLOSED_STATUSES = new Set(['5', '7']);
 
 module.exports = async function handler(req, res) {
@@ -15,6 +15,10 @@ module.exports = async function handler(req, res) {
     const webhookUrl = normalizeWebhookUrl(process.env.BITRIX_WEBHOOK_URL);
     if (!webhookUrl) {
       return res.status(503).json({ ok: false, error: 'La búsqueda de Bitrix no está configurada.' });
+    }
+
+    if (req.method === 'POST' && req.body?.mode === 'owner') {
+      return handleOwnerTasks(webhookUrl, req.body, res);
     }
 
     const tc = parseTc(previewGet ? req.query?.tc : req.body?.tc);
@@ -60,6 +64,257 @@ module.exports = async function handler(req, res) {
     return res.status(status).json({ ok: false, error: cleanError(message) });
   }
 };
+
+async function handleOwnerTasks(webhookUrl, body, res) {
+  const ownerId = parseOwnerId(body?.ownerId);
+
+  if (ownerId) {
+    return respondWithOwnerTasks(webhookUrl, ownerId, res);
+  }
+
+  const query = parseOwnerName(body?.name);
+  if (!query) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Escriba el nombre del asesor que desea consultar.'
+    });
+  }
+
+  const discovery = await listTasks(webhookUrl, {});
+  const openTasks = discovery.filter((task) => {
+    const statusId = String(task.status || task.STATUS || '');
+    return !CLOSED_STATUSES.has(statusId);
+  });
+
+  if (!openTasks.length) {
+    return res.status(200).json({
+      ok: true,
+      requiresSelection: false,
+      owner: null,
+      tasks: [],
+      count: 0
+    });
+  }
+
+  const owners = await discoverOwnersFromTasks(webhookUrl, openTasks);
+  const matches = matchOwners(owners, query);
+
+  if (!matches.length) {
+    return res.status(404).json({
+      ok: false,
+      error: 'No se encontró un propietario que coincida con la búsqueda.'
+    });
+  }
+
+  const exact = matches.filter(
+    (owner) => normalizeOwnerName(owner.fullName) === normalizeOwnerName(query)
+  );
+
+  if (exact.length === 1) {
+    return respondWithOwnerTasks(webhookUrl, exact[0].id, res, exact[0].fullName);
+  }
+
+  if (matches.length === 1) {
+    return respondWithOwnerTasks(webhookUrl, matches[0].id, res, matches[0].fullName);
+  }
+
+  return res.status(200).json({
+    ok: true,
+    requiresSelection: true,
+    users: matches.slice(0, 10).map((owner) => ({
+      id: String(owner.id),
+      fullName: String(owner.fullName)
+    }))
+  });
+}
+
+async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
+  const rawTasks = await listTasks(webhookUrl, {
+    'filter[CREATED_BY]': ownerId
+  });
+
+  const openTasks = rawTasks.filter((task) => {
+    const statusId = String(task.status || task.STATUS || '');
+    return !CLOSED_STATUSES.has(statusId);
+  });
+
+  let ownerName = knownName;
+  const sample = openTasks[0] || rawTasks[0];
+
+  if (!ownerName && sample) {
+    ownerName = await getCreatorNameFromTask(webhookUrl, sample);
+  }
+
+  ownerName = ownerName || `Usuario ${ownerId}`;
+  const portalOrigin = new URL(webhookUrl).origin;
+
+  const tasks = openTasks
+    .map((task) => normalizeOwnerTask(task, ownerName, portalOrigin))
+    .sort(compareOwnerTasks);
+
+  return res.status(200).json({
+    ok: true,
+    requiresSelection: false,
+    owner: {
+      id: String(ownerId),
+      fullName: ownerName
+    },
+    tasks,
+    count: tasks.length
+  });
+}
+
+async function discoverOwnersFromTasks(webhookUrl, tasks) {
+  const samples = new Map();
+
+  for (const task of tasks) {
+    const ownerId = String(task.createdBy || task.CREATED_BY || '').trim();
+    const taskId = String(task.id || task.ID || '').trim();
+
+    if (ownerId && taskId && !samples.has(ownerId)) {
+      samples.set(ownerId, task);
+    }
+
+    if (samples.size >= 80) break;
+  }
+
+  const owners = await Promise.all(
+    [...samples.entries()].map(async ([ownerId, task]) => {
+      const embeddedName = creatorNameFromTask(task);
+      if (embeddedName) return { id: ownerId, fullName: embeddedName };
+
+      try {
+        const fullName = await getCreatorNameFromTask(webhookUrl, task);
+        return fullName ? { id: ownerId, fullName } : null;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return owners.filter(Boolean);
+}
+
+async function getCreatorNameFromTask(webhookUrl, task) {
+  const embeddedName = creatorNameFromTask(task);
+  if (embeddedName) return embeddedName;
+
+  const taskId = String(task.id || task.ID || '').trim();
+  if (!taskId) return '';
+
+  const result = await callBitrix(webhookUrl, 'tasks.task.get', { taskId });
+  const fullTask = result?.task || result;
+  return creatorNameFromTask(fullTask);
+}
+
+function creatorNameFromTask(task) {
+  const creator = task?.creator || task?.CREATOR;
+  return String(creator?.name || creator?.NAME || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchOwners(owners, query) {
+  const normalizedQuery = normalizeOwnerName(query);
+  const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+
+  return owners
+    .map((owner) => {
+      const normalizedName = normalizeOwnerName(owner.fullName);
+      const nameTokens = normalizedName.split(' ').filter(Boolean);
+
+      const matches = queryTokens.every(
+        (token) =>
+          normalizedName.includes(token) ||
+          nameTokens.some((nameToken) => nameToken.startsWith(token))
+      );
+
+      if (!matches) return null;
+
+      let score = 4;
+      if (normalizedName === normalizedQuery) score = 0;
+      else if (normalizedName.startsWith(normalizedQuery)) score = 1;
+      else if (
+        queryTokens.every((token) =>
+          nameTokens.some((nameToken) => nameToken.startsWith(token))
+        )
+      ) score = 2;
+      else if (normalizedName.includes(normalizedQuery)) score = 3;
+
+      return { ...owner, score };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        a.fullName.localeCompare(b.fullName, 'es')
+    )
+    .map(({ score, ...owner }) => owner);
+}
+
+function normalizeOwnerTask(task, ownerName, portalOrigin) {
+  const id = String(task.id || task.ID || '').trim();
+  const groupId = String(task.groupId || task.GROUP_ID || '');
+  const statusId = String(task.status || task.STATUS || '');
+  const responsibleId = String(task.responsibleId || task.RESPONSIBLE_ID || '');
+  const responsibleName = String(
+    task.responsible?.name ||
+    task.RESPONSIBLE?.name ||
+    task.RESPONSIBLE?.NAME ||
+    ''
+  ).replace(/\s+/g, ' ').trim();
+
+  const url = groupId && groupId !== '0'
+    ? `${portalOrigin}/workgroups/group/${encodeURIComponent(groupId)}/tasks/task/view/${encodeURIComponent(id)}/`
+    : `${portalOrigin}/company/personal/user/0/tasks/task/view/${encodeURIComponent(id)}/`;
+
+  return {
+    id,
+    title: String(task.title || task.TITLE || `Radicado ${id}`),
+    statusId,
+    status: taskStatus(statusId),
+    owner: ownerName,
+    responsible: responsibleName || (responsibleId ? `Usuario ${responsibleId}` : 'No especificado'),
+    priority: String(task.priority || task.PRIORITY || '1') === '2' ? 'Alta' : 'Normal',
+    deadline: toIso(task.deadline || task.DEADLINE),
+    createdAt: toIso(task.createdDate || task.CREATED_DATE),
+    updatedAt: toIso(task.changedDate || task.CHANGED_DATE),
+    parentId: task.parentId ?? task.PARENT_ID ?? null,
+    url
+  };
+}
+
+function compareOwnerTasks(a, b) {
+  const aDeadline = dateValue(a.deadline);
+  const bDeadline = dateValue(b.deadline);
+
+  if (aDeadline && bDeadline && aDeadline !== bDeadline) return aDeadline - bDeadline;
+  if (aDeadline && !bDeadline) return -1;
+  if (!aDeadline && bDeadline) return 1;
+
+  if (a.priority !== b.priority) return a.priority === 'Alta' ? -1 : 1;
+  return dateValue(b.updatedAt) - dateValue(a.updatedAt);
+}
+
+function parseOwnerId(value) {
+  const text = String(value || '').trim();
+  return /^\d{1,12}$/.test(text) ? text : '';
+}
+
+function parseOwnerName(value) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return text.length >= 2 && text.length <= 80 ? text : '';
+}
+
+function normalizeOwnerName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+    .replace(/[^a-z0-9\s'-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 async function findDeals(webhookUrl, tcField, tc) {
   try {
