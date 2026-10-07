@@ -160,7 +160,9 @@ async function respondWithOwnerTasks(webhookUrl, ownerIds, res, knownName = '') 
     )
   );
 
-  const openTasks = dedupeTasks(taskGroups.flat()).filter(isOpenOwnerTask);
+  const openTasks = dedupeTasks(taskGroups.flat())
+    .filter(isOpenOwnerTask)
+    .filter((task) => !isExcludedTask(task));
 
   let ownerName = String(knownName || '').trim();
   if (!ownerName) {
@@ -213,6 +215,7 @@ async function attachOpenTaskCounts(webhookUrl, owners) {
 
       const openTaskCount = dedupeTasks(taskGroups.flat())
         .filter(isOpenOwnerTask)
+        .filter((task) => !isExcludedTask(task))
         .length;
 
       return {
