@@ -147,7 +147,6 @@ function renderMainPanel() {
     hideEdgePanel();
   });
   edgePanel.querySelector('[data-action="templates"]').addEventListener('click', renderTemplates);
-  edgePanel.querySelector('[data-action="followups"]').addEventListener('click', renderFollowUps);
   edgePanel.querySelector('[data-action="audio"]').addEventListener('click', () => {
     edgeAudioInput.value = '';
     edgeAudioInput.click();
@@ -165,39 +164,6 @@ function renderTemplates() {
   view.innerHTML = `<div class="onoff-subtitle"><strong>Plantillas Bitrix</strong><button type="button" data-close-sub>×</button></div>${TEMPLATES.map(([name, url]) => `<button type="button" class="onoff-link-button" data-url="${url}">${escapeHtml(name)}</button>`).join('')}`;
   view.querySelector('[data-close-sub]').onclick = () => { view.innerHTML = ''; positionEdgePanelNearLauncher(); };
   view.querySelectorAll('[data-url]').forEach((button) => button.onclick = () => window.open(button.dataset.url, '_blank', 'noopener'));
-  positionEdgePanelNearLauncher();
-}
-
-async function renderFollowUps() {
-  const { followUps = [] } = await chrome.storage.local.get('followUps');
-  const view = edgePanel.querySelector('[data-subview]');
-  view.innerHTML = `
-    <div class="onoff-subtitle"><strong>Seguimientos</strong><div><button type="button" data-add>+</button><button type="button" data-close-sub>×</button></div></div>
-    <div class="onoff-follow-form" data-form hidden>
-      <input type="text" data-name placeholder="Nombre del seguimiento" />
-      <input type="url" data-url placeholder="Link de la tarea de Bitrix" />
-      <button type="button" data-save>Guardar</button>
-    </div>
-    <div class="onoff-follow-list">${followUps.length ? followUps.map((item) => `<div class="onoff-follow-item"><button type="button" data-open="${escapeHtml(item.url)}">${escapeHtml(item.name)}</button><button type="button" data-delete="${item.id}" title="Eliminar">×</button></div>`).join('') : '<small>No hay seguimientos guardados.</small>'}</div>
-  `;
-  view.querySelector('[data-close-sub]').onclick = () => { view.innerHTML = ''; positionEdgePanelNearLauncher(); };
-  view.querySelector('[data-add]').onclick = () => { view.querySelector('[data-form]').hidden = false; positionEdgePanelNearLauncher(); };
-  view.querySelector('[data-save]').onclick = async () => {
-    const name = view.querySelector('[data-name]').value.trim();
-    const url = view.querySelector('[data-url]').value.trim();
-    if (!/^https:\/\/onoff\.bitrix24\.es\//i.test(url)) {
-      showBubble({ title: 'Seguimientos', original: url, translated: 'Ingrese un enlace válido de una tarea de Bitrix24.' });
-      return;
-    }
-    followUps.unshift({ id: crypto.randomUUID(), name: name || 'Seguimiento Bitrix', url, createdAt: Date.now() });
-    await chrome.storage.local.set({ followUps });
-    renderFollowUps();
-  };
-  view.querySelectorAll('[data-open]').forEach((button) => button.onclick = () => window.open(button.dataset.open, '_blank', 'noopener'));
-  view.querySelectorAll('[data-delete]').forEach((button) => button.onclick = async () => {
-    await chrome.storage.local.set({ followUps: followUps.filter((item) => item.id !== button.dataset.delete) });
-    renderFollowUps();
-  });
   positionEdgePanelNearLauncher();
 }
 
