@@ -105,7 +105,7 @@
 .ikono-translator-panel > button[data-action="improve"] { background: #dbeafe; color: #172554; }
 .ikono-translator-panel > button[data-action="templates"] { background: #fef3c7; color: #78350f; }
 .ikono-translator-panel > button[data-action="followups"] { background: #ede9fe; color: #4c1d95; }
-.ikono-translator-panel > button[data-action="audio"] { background: #ffffff; }
+.ikono-translator-panel > button[data-action="audio"] { background: #dcfce7; color: #052e16; }
 
 .onoff-panel-subview {
   display: grid;
