@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.7.0",
-  "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, bloc de notas, audios, búsqueda en Bitrix y asistencia conversacional.",
+  "version": "1.8.0",
+  "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, seguimientos, audios, búsqueda en Bitrix y asistencia conversacional.",
   "permissions": [
     "contextMenus",
     "storage",
@@ -33,9 +33,8 @@
         "src/assistant-chat.js",
         "src/assistant-enhancements.js",
         "src/bitrix-search.js",
-        "src/notebook.js",
+        "src/followups.js",
         "src/window-layout-fix.js",
-        "src/notebook-resize.js",
         "src/menu-polish.js",
         "src/templates-window.js"
       ],
@@ -44,7 +43,7 @@
         "src/ui-fixes.css",
         "src/assistant-chat.css",
         "src/bitrix-search.css",
-        "src/notebook.css",
+        "src/followups.css",
         "src/window-layout-fix.css",
         "src/menu-polish.css",
         "src/templates-window.css"
