@@ -1,8 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createService, groupUsers, parseIds, excluded } = require('../lib/followups-service');
-const record = (id, owner='10', status='2', title='Solicitud') => ({ id: String(id), createdBy: owner, status, title, responsibleId: '20', responsible: { name: 'Cliente Responsable' }, createdDate: '2026-10-01T09:00:00-05:00' });
+const { createService, groupUsers, parseIds, excluded, isRootTask } = require('../lib/followups-service');
+const record = (id, owner='10', status='2', title='Solicitud', parentId='0', responsible='Cliente Responsable') => ({ id: String(id), createdBy: owner, status, title, parentId: String(parentId), responsibleId: '20', responsible: { name: responsible }, createdDate: '2026-10-01T09:00:00-05:00' });
 const user = (id, name='Cliente') => ({ ID: id, NAME: name, LAST_NAME: 'Prueba', ACTIVE: true });
 const webhookUrl = 'https://example.bitrix24.es/rest/1/test/';
 function harness(fn, env = {}) {
@@ -18,23 +18,29 @@ test('owner IDs are validated rather than silently accepting malformed values',(
  assert.deepEqual(parseIds(['2','1','2']),['1','2']);
  for(const ids of [[],['1','bad'],Array(31).fill('1'),['-1']]) assert.throws(()=>parseIds(ids));
 });
-test('process task exclusion retains normal support tasks',()=>{
+test('process task exclusion and root-task detection retain only principal tasks',()=>{
  assert.equal(excluded({title:'  Tareas de proceso Trycontroller Tiendas'}),true);
  assert.equal(excluded({title:'TAREAS DE PROCESO'}),true);
  assert.equal(excluded({title:'Revisar tareas de proceso'}),false);
+ assert.equal(isRootTask({parentId:'0'}),true);
+ assert.equal(isRootTask({PARENT_ID:null}),true);
+ assert.equal(isRootTask({parentId:'518700'}),false);
 });
 test('search returns grouped names before making ANY task call',async()=>{
  const h=harness(m=>{assert.equal(m,'user.get');return {result:[user('10'),user('11')]};});
  const data=await h.service.execute({action:'search',name:'Cliente'});
  assert.equal(data.users.length,1);assert.equal(data.users[0].ownerIds.length,2);assert.equal(data.users[0].openTaskCount,null);assert.equal(h.calls.length,1);
 });
-test('task filter uses CREATED_BY and REAL_STATUS and follows all pages',async()=>{
- const h=harness((m,p)=> m==='user.get'?{result:[user('10')]} : p.start===0?{result:{tasks:[record(1),record(2,'10','5')]},next:50}:{result:{tasks:[record(3,'10','2','Tareas de proceso Trycontroller Tiendas'),record(4)]}});
+test('task filter uses CREATED_BY, open statuses and only principal tasks across all pages',async()=>{
+ const h=harness((m,p)=> m==='user.get'?{result:[user('10')]} : p.start===0
+   ?{result:{tasks:[record(1,'10','2','TC72211- SOLICITUD DE RETIRO','0','Guadalupe Ríos Pelaez'),record(2,'10','5')]},next:50}
+   :{result:{tasks:[record(3,'10','2','Tareas de proceso Trycontroller Tiendas'),record(4),record(5,'10','2','TC72211- SOLICITUD DE RETIRO','518700','Stefany Castillo Solorzano')]}} );
  const data=await h.service.execute({action:'tasks',ownerIds:['10']});
  assert.deepEqual(data.tasks.map(t=>t.id),['1','4']); assert.equal(data.count,2); assert.equal(data.complete,true);
  const calls=h.calls.filter(c=>c.method==='tasks.task.list');assert.equal(calls.length,2);
- assert.equal(calls[0].params['filter[CREATED_BY]'],'10');assert.deepEqual(calls[0].params['filter[!REAL_STATUS]'],[5,7]);
- assert.equal(data.tasks[0].responsible,'Cliente Responsable');
+ assert.equal(calls[0].params['filter[CREATED_BY]'],'10');assert.deepEqual(calls[0].params['filter[!REAL_STATUS]'],[5,7]);assert.equal(calls[0].params['filter[PARENT_ID]'],0);
+ assert.equal(data.tasks[0].responsible,'Guadalupe Ríos Pelaez');
+ assert.equal(data.tasks.some(t=>t.responsible==='Stefany Castillo Solorzano'),false);
 });
 test('counts and selection reuse snapshots; repeated concurrent calls coalesce',async()=>{
  const h=harness(async m=>{await new Promise(r=>setTimeout(r,5));return m==='user.get'?{result:[user('10')]}:{result:{tasks:[record(1)]}};});
@@ -53,13 +59,22 @@ test('rejects wrong-owner data and broken pagination',async()=>{
  let h=harness(()=>({result:{tasks:[record(1,'99')]}})); await assert.rejects(()=>h.service.execute({action:'tasks',ownerIds:['10']}),{code:'BITRIX_FILTER'});
  h=harness(()=>({result:{tasks:[record(1)]},next:0})); await assert.rejects(()=>h.service.execute({action:'tasks',ownerIds:['10']}),{code:'BITRIX_PAGING'});
 });
-test('SAC automatic list filters by department, never by example names',async()=>{
- const h=harness((m,p)=>{assert.equal(m,'user.search');assert.ok(p['FILTER[UF_DEPARTMENT_NAME]']);return {result:[user('10')]};});
- const data=await h.service.execute({action:'sac'});assert.equal(data.users.length,1);assert.ok(data.source.includes('Departamentos'));
- await h.service.execute({action:'sac'});assert.equal(h.calls.length,2);
+test('SAC default selector resolves only the approved roster by name',async()=>{
+ let id=100;
+ const h=harness((m,p)=>{
+   assert.equal(m,'user.get');assert.ok(p['FILTER[NAME_SEARCH]']);
+   const parts=String(p['FILTER[NAME_SEARCH]']).split(' ');
+   return {result:[{ID:String(id++),NAME:parts.slice(0,-1).join(' '),LAST_NAME:parts.at(-1),ACTIVE:true}]};
+ });
+ const data=await h.service.execute({action:'sac'});
+ assert.equal(data.users.length,12);assert.ok(data.source.includes('lista aprobada'));assert.equal(data.warning,null);
+ assert.equal(h.calls.length,12);assert.ok(data.users.some(u=>u.fullName==='Andres Felipe Valencia Velez'));assert.ok(data.users.some(u=>u.fullName==='Stefany Castillo Solorzano'));
+ await h.service.execute({action:'sac'});assert.equal(h.calls.length,12);
 });
-test('empty SAC roster is explicit and does not fall back to all employees',async()=>{
- const h=harness(()=>({result:[]}));const data=await h.service.execute({action:'sac'});assert.equal(data.users.length,0);assert.ok(data.warning);assert.equal(h.calls.length,2);
+test('missing approved SAC members are reported without falling back to all employees',async()=>{
+ const h=harness(()=>({result:[]}));
+ const data=await h.service.execute({action:'sac'});
+ assert.equal(data.users.length,0);assert.ok(data.warning.includes('0 de 12'));assert.equal(h.calls.length,12);
 });
 test('configured SAC department and user IDs use restricted user.get filters',async()=>{
  const a=harness((m,p)=>{assert.deepEqual(p['FILTER[UF_DEPARTMENT]'],['9']);return {result:[user('10')]};},{BITRIX_SAC_DEPARTMENT_IDS:'9'});
