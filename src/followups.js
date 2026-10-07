@@ -18,6 +18,7 @@
   let lastTasks = [];
   let lastOwner = null;
   let currentPage = 1;
+  let currentSort = 'created-desc';
 
   init();
 
@@ -336,7 +337,7 @@
   }
 
   function renderTasks() {
-    const tasks = lastTasks;
+    const tasks = sortTasks(lastTasks, currentSort);
     const ownerName = lastOwner?.fullName || 'Propietario seleccionado';
 
     setStatus(
@@ -377,6 +378,40 @@
 
     summary.append(copy, count);
     resultBox.appendChild(summary);
+
+    const sortBar = document.createElement('div');
+    sortBar.className = 'onoff-followups-sortbar';
+
+    const sortLabel = document.createElement('label');
+    sortLabel.textContent = 'Ordenar tareas';
+
+    const sortSelect = document.createElement('select');
+    sortSelect.className = 'onoff-followups-sort-select';
+    sortSelect.setAttribute('aria-label', 'Ordenar tareas');
+
+    const sortOptions = [
+      ['created-desc', 'Fecha de creación: más reciente'],
+      ['created-asc', 'Fecha de creación: más antigua'],
+      ['priority', 'Prioridad: alta primero']
+    ];
+
+    sortOptions.forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      option.selected = currentSort === value;
+      sortSelect.appendChild(option);
+    });
+
+    sortSelect.addEventListener('change', () => {
+      currentSort = sortSelect.value;
+      currentPage = 1;
+      renderTasks();
+      scrollResultsTop();
+    });
+
+    sortBar.append(sortLabel, sortSelect);
+    resultBox.appendChild(sortBar);
 
     if (!tasks.length) {
       const empty = document.createElement('div');
@@ -597,6 +632,42 @@
     );
   }
 
+  function sortTasks(tasks, mode) {
+    const copy = [...(tasks || [])];
+
+    if (mode === 'created-asc') {
+      return copy.sort((a, b) => compareCreated(a, b, true));
+    }
+
+    if (mode === 'priority') {
+      return copy.sort((a, b) => {
+        const aHigh = a?.priority === 'Alta' ? 1 : 0;
+        const bHigh = b?.priority === 'Alta' ? 1 : 0;
+        if (aHigh !== bHigh) return bHigh - aHigh;
+        return compareCreated(a, b, false);
+      });
+    }
+
+    return copy.sort((a, b) => compareCreated(a, b, false));
+  }
+
+  function compareCreated(a, b, ascending) {
+    const aTime = taskTime(a?.createdAt);
+    const bTime = taskTime(b?.createdAt);
+
+    if (!aTime && !bTime) return 0;
+    if (!aTime) return 1;
+    if (!bTime) return -1;
+
+    return ascending ? aTime - bTime : bTime - aTime;
+  }
+
+  function taskTime(value) {
+    if (!value) return 0;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  }
+
   function normalizeName(value) {
     return String(value || '')
       .normalize('NFD')
@@ -613,6 +684,7 @@
     lastTasks = [];
     lastOwner = null;
     currentPage = 1;
+    currentSort = 'created-desc';
 
     resultBox.innerHTML = '';
     setStatus('', '');
