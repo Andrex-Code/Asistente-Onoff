@@ -35,10 +35,10 @@
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M9 11h.01M15 11h.01M9 15h6M12 7V4M9.5 4h5"/></svg>'
     },
-    notebook: {
-      label: 'Bloc de notas',
+    followups: {
+      label: 'Seguimientos',
       chevron: true,
-      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4M8 11h8M8 15h8M8 19h5"/></svg>'
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2Z"/><path d="M9 9h6M9 13h6M9 17h4"/><path d="m7 4 1.5-2h7L17 4"/></svg>'
     }
   };
 
@@ -46,7 +46,7 @@
     'bitrix-search': '.onoff-bitrix-search',
     templates: '.onoff-templates-window',
     'assistant-chat': '.onoff-assistant-window',
-    notebook: '.onoff-notebook-host'
+    followups: '.onoff-followups-window'
   };
 
   let panel;
@@ -142,7 +142,7 @@
       find('button[data-action="bitrix-search"]'),
       find('button[data-action="templates"]'),
       find('button[data-action="assistant-chat"]'),
-      find('button[data-action="notebook"]'),
+      find('button[data-action="followups"]'),
       find('.ikono-translator-audio-input'),
       find('[data-subview]')
     ].filter(Boolean);

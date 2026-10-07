@@ -162,7 +162,7 @@
   background: linear-gradient(90deg, transparent, #dce5df 15%, #dce5df 85%, transparent);
 }
 
-.onoff-notebook-host:not([hidden]),
+.onoff-followups-window:not([hidden]),
 .onoff-bitrix-search:not([hidden]),
 .onoff-assistant-window:not([hidden]) {
   animation: onoff-tool-fade 150ms ease both;
@@ -189,7 +189,7 @@
   .ikono-translator-panel > button.onoff-menu-button,
   .onoff-menu-icon,
   .onoff-chevron,
-  .onoff-notebook-host,
+  .onoff-followups-window,
   .onoff-bitrix-search,
   .onoff-assistant-window {
     animation: none !important;

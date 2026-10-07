@@ -1,78 +1,19 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.7.0",
-  "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, bloc de notas, audios, búsqueda en Bitrix y asistencia conversacional.",
-  "permissions": [
-    "contextMenus",
-    "storage",
-    "activeTab",
-    "scripting",
-    "tabs",
-    "clipboardWrite"
-  ],
-  "host_permissions": [
-    "<all_urls>",
-    "https://*.vercel.app/*",
-    "http://localhost:3000/*",
-    "https://api.mymemory.translated.net/*"
-  ],
-  "background": {
-    "service_worker": "src/background.js",
-    "type": "module"
-  },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content.js",
-        "src/ui-fixes.js",
-        "src/panel-position-fix.js",
-        "src/assistant-chat.js",
-        "src/assistant-enhancements.js",
-        "src/bitrix-search.js",
-        "src/notebook.js",
-        "src/window-layout-fix.js",
-        "src/notebook-resize.js",
-        "src/menu-polish.js",
-        "src/templates-window.js"
-      ],
-      "css": [
-        "src/content.css",
-        "src/ui-fixes.css",
-        "src/assistant-chat.css",
-        "src/bitrix-search.css",
-        "src/notebook.css",
-        "src/window-layout-fix.css",
-        "src/menu-polish.css",
-        "src/templates-window.css"
-      ],
-      "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "icons/*.png",
-        "icons/*.jpg",
-        "icons/*.jpeg",
-        "icons/*.webp"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ],
+  "version": "1.9.0",
+  "description": "Asistente ONOFF para traducci\u00f3n, mejora de textos, plantillas, seguimientos, audios, b\u00fasqueda en Bitrix y asistencia conversacional.",
+  "permissions": ["contextMenus", "storage", "activeTab", "scripting", "tabs", "clipboardWrite"],
+  "host_permissions": ["<all_urls>", "https://*.vercel.app/*", "http://localhost:3000/*", "https://api.mymemory.translated.net/*"],
+  "background": {"service_worker": "src/background-entry.js", "type": "module"},
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["src/content.js", "src/ui-fixes.js", "src/panel-position-fix.js", "src/assistant-chat.js", "src/assistant-enhancements.js", "src/bitrix-search.js", "src/followups.js", "src/window-layout-fix.js", "src/menu-polish.js", "src/templates-window.js"],
+    "css": ["src/content.css", "src/ui-fixes.css", "src/assistant-chat.css", "src/bitrix-search.css", "src/followups.css", "src/window-layout-fix.css", "src/menu-polish.css", "src/templates-window.css"],
+    "run_at": "document_idle"
+  }],
+  "web_accessible_resources": [{"resources": ["icons/*.png", "icons/*.jpg", "icons/*.jpeg", "icons/*.webp"], "matches": ["<all_urls>"]}],
   "options_page": "src/options.html",
-  "action": {
-    "default_title": "Asistente ONOFF",
-    "default_popup": "src/popup.html"
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  }
+  "action": {"default_title": "Asistente ONOFF", "default_popup": "src/popup.html"},
+  "icons": {"16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png"}
 }
