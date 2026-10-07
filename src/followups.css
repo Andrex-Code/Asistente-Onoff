@@ -3,17 +3,17 @@
   right: 22px;
   bottom: 22px;
   z-index: 2147483647;
-  width: min(520px, calc(100vw - 24px));
-  height: min(620px, calc(100vh - 24px));
+  width: min(550px, calc(100vw - 24px));
+  height: min(660px, calc(100vh - 24px));
   display: grid;
   grid-template-rows: auto 1fr;
   box-sizing: border-box;
   overflow: hidden;
   border: 1px solid #dce5df;
-  border-radius: 18px;
-  background: #fff;
+  border-radius: 20px;
+  background: #f7faf8;
   color: #17201b;
-  box-shadow: 0 24px 70px rgba(23, 32, 27, .26);
+  box-shadow: 0 26px 76px rgba(23, 32, 27, .24);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -34,9 +34,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-bottom: 1px solid #dce5df;
-  background: linear-gradient(135deg, #f4faf6, #fff);
+  background: linear-gradient(135deg, #eef8f1, #fff 72%);
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -49,7 +49,8 @@
 }
 
 .onoff-followups-header strong {
-  font-size: 15px;
+  font-size: 17px;
+  font-weight: 900;
 }
 
 .onoff-followups-header small {
@@ -82,13 +83,18 @@
 .onoff-followups-content {
   min-height: 0;
   overflow: auto;
-  background: #fbfcfb;
+  padding: 14px;
+  background: #f7faf8;
 }
 
 .onoff-followups-form {
   display: grid;
-  gap: 7px;
-  padding: 14px 16px 10px;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #e1e9e3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(23, 32, 27, .045);
 }
 
 .onoff-followups-form label {
@@ -105,12 +111,12 @@
 
 .onoff-followups-form input {
   min-width: 0;
-  min-height: 42px;
+  min-height: 46px;
   box-sizing: border-box;
   padding: 0 11px;
   border: 1px solid #dce5df;
-  border-radius: 10px;
-  background: #fff;
+  border-radius: 12px;
+  background: #fbfcfb;
   color: #17201b;
   outline: none;
   font: inherit;
@@ -118,7 +124,7 @@
 
 .onoff-followups-form input:focus {
   border-color: #168447;
-  box-shadow: 0 0 0 3px rgba(22, 132, 71, .13);
+  box-shadow: 0 0 0 4px rgba(22, 132, 71, .11);
 }
 
 .onoff-followups-form button {
@@ -140,9 +146,10 @@
 
 .onoff-followups-status {
   min-height: 18px;
-  margin: 0 16px;
-  padding: 8px 10px;
-  border-radius: 9px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
   background: #f7f9f8;
   color: #66736b;
   font-size: 12px;
@@ -155,12 +162,14 @@
 
 .onoff-followups-status[data-type="success"] {
   background: #eaf7ef;
+  border-color: #cde6d5;
   color: #0f5f35;
 }
 
 .onoff-followups-status[data-type="error"] {
-  background: #fff4f2;
-  color: #b42318;
+  background: #fff3f2;
+  border-color: #f2d2cf;
+  color: #a8271d;
 }
 
 .onoff-followups-status[data-type="loading"] {
@@ -171,7 +180,7 @@
 .onoff-followups-results {
   display: grid;
   gap: 10px;
-  padding: 12px 16px 16px;
+  padding: 12px 0 0;
 }
 
 .onoff-followups-summary {
@@ -181,7 +190,7 @@
   gap: 12px;
   padding: 12px;
   border: 1px solid #dce5df;
-  border-radius: 13px;
+  border-radius: 15px;
   background: #fff;
 }
 
@@ -256,11 +265,12 @@
 .onoff-followups-task {
   display: grid;
   gap: 10px;
-  padding: 11px;
-  border: 1px solid #dce5df;
+  padding: 13px 14px;
+  border: 1px solid #e1e9e3;
   border-left: 4px solid #168447;
-  border-radius: 11px;
+  border-radius: 14px;
   background: #fff;
+  box-shadow: 0 4px 16px rgba(23, 32, 27, .04);
 }
 
 .onoff-followups-task-top {
@@ -378,6 +388,8 @@
   .onoff-followups-window.is-minimized {
     height: auto;
   }
+
+  .onoff-followups-content { padding: 10px; }
 
   .onoff-followups-form > div,
   .onoff-followups-task-meta {
