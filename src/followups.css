@@ -1,0 +1,394 @@
+.onoff-followups-window {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 2147483647;
+  width: min(520px, calc(100vw - 24px));
+  height: min(620px, calc(100vh - 24px));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid #dce5df;
+  border-radius: 18px;
+  background: #fff;
+  color: #17201b;
+  box-shadow: 0 24px 70px rgba(23, 32, 27, .26);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.onoff-followups-window[hidden] {
+  display: none !important;
+}
+
+.onoff-followups-window.is-minimized {
+  height: auto;
+}
+
+.onoff-followups-window.is-minimized .onoff-followups-content {
+  display: none;
+}
+
+.onoff-followups-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dce5df;
+  background: linear-gradient(135deg, #f4faf6, #fff);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.onoff-followups-header > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.onoff-followups-header strong {
+  font-size: 15px;
+}
+
+.onoff-followups-header small {
+  color: #66736b;
+  font-size: 11px;
+}
+
+.onoff-followups-window-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.onoff-followups-window-actions button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dce5df;
+  border-radius: 9px;
+  background: #fff;
+  color: #17201b;
+  cursor: pointer;
+  font: 20px/1 Inter, system-ui, sans-serif;
+}
+
+.onoff-followups-window-actions button:hover {
+  border-color: #168447;
+  background: #eaf7ef;
+}
+
+.onoff-followups-content {
+  min-height: 0;
+  overflow: auto;
+  background: #fbfcfb;
+}
+
+.onoff-followups-form {
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px 10px;
+}
+
+.onoff-followups-form label {
+  color: #33413a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onoff-followups-form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.onoff-followups-form input {
+  min-width: 0;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  background: #fff;
+  color: #17201b;
+  outline: none;
+  font: inherit;
+}
+
+.onoff-followups-form input:focus {
+  border-color: #168447;
+  box-shadow: 0 0 0 3px rgba(22, 132, 71, .13);
+}
+
+.onoff-followups-form button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid #168447;
+  border-radius: 10px;
+  background: #168447;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.onoff-followups-form button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.onoff-followups-status {
+  min-height: 18px;
+  margin: 0 16px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #f7f9f8;
+  color: #66736b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.onoff-followups-status:empty {
+  display: none;
+}
+
+.onoff-followups-status[data-type="success"] {
+  background: #eaf7ef;
+  color: #0f5f35;
+}
+
+.onoff-followups-status[data-type="error"] {
+  background: #fff4f2;
+  color: #b42318;
+}
+
+.onoff-followups-status[data-type="loading"] {
+  background: #eef5ff;
+  color: #24558a;
+}
+
+.onoff-followups-results {
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px 16px;
+}
+
+.onoff-followups-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dce5df;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.onoff-followups-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.onoff-followups-summary small {
+  color: #66736b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.onoff-followups-summary strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.onoff-followups-count {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #168447;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.onoff-followups-users {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dce5df;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.onoff-followups-users > strong {
+  font-size: 12px;
+}
+
+.onoff-followups-user {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #dce5df;
+  border-radius: 9px;
+  background: #f7f9f8;
+  color: #17201b;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.onoff-followups-user:hover {
+  border-color: #168447;
+  background: #eaf7ef;
+  color: #0f5f35;
+}
+
+.onoff-followups-list {
+  display: grid;
+  gap: 9px;
+}
+
+.onoff-followups-task {
+  display: grid;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #dce5df;
+  border-left: 4px solid #168447;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.onoff-followups-task-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.onoff-followups-task-top > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.onoff-followups-task-top small {
+  color: #7a867f;
+  font-size: 10px;
+}
+
+.onoff-followups-task-top strong {
+  color: #17201b;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.onoff-followups-task-status {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #eaf7ef;
+  color: #0f5f35;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.onoff-followups-task-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 10px;
+  margin: 0;
+}
+
+.onoff-followups-task-meta > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.onoff-followups-task-meta dt {
+  color: #7a867f;
+  font-size: 10px;
+}
+
+.onoff-followups-task-meta dd {
+  margin: 0;
+  color: #33413a;
+  font-size: 11px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.onoff-followups-task-actions {
+  display: flex;
+}
+
+.onoff-followups-task-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #168447;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f5f35;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.onoff-followups-task-actions button:hover {
+  background: #eaf7ef;
+}
+
+.onoff-followups-empty,
+.onoff-followups-warning {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.onoff-followups-empty {
+  border: 1px dashed #dce5df;
+  background: #f7f9f8;
+  color: #66736b;
+  text-align: center;
+}
+
+.onoff-followups-warning {
+  background: #fff8e8;
+  color: #805b10;
+}
+
+@media (max-width: 620px) {
+  .onoff-followups-window {
+    left: 8px !important;
+    top: 8px !important;
+    width: calc(100vw - 16px);
+    height: calc(100vh - 16px);
+  }
+
+  .onoff-followups-window.is-minimized {
+    height: auto;
+  }
+
+  .onoff-followups-form > div,
+  .onoff-followups-task-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .onoff-followups-task-top {
+    display: grid;
+  }
+
+  .onoff-followups-task-status {
+    justify-self: start;
+  }
+}
