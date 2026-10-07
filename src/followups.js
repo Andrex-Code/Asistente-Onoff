@@ -1,840 +1,324 @@
 (() => {
-  const PANEL_SELECTOR = '.ikono-translator-panel';
-  const ACTION = 'followups';
-  const POSITION_KEY = 'onoffFollowupsPosition';
+  'use strict';
   const PAGE_SIZE = 10;
-
-  let panel;
-  let observer;
-  let followWindow;
-  let input;
-  let statusBox;
-  let resultBox;
-  let submitButton;
-  let dragState;
-
-  let lastMatches = [];
-  let lastQuery = '';
-  let lastTasks = [];
-  let lastOwner = null;
-  let currentPage = 1;
-  let currentSort = 'created-desc';
-
+  const POSITION_KEY = 'onoffFollowupsPosition';
+  const state = { view: 'start', query: '', matches: [], sac: [], owner: null, tasks: [], page: 1, sort: 'created-desc', queryToken: 0, jobToken: 0, busy: false, updatedAt: null, clientCache: false };
+  const dates = new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
+  let panel, win, input, sacSelect, results, status, content, submit, cancel, refresh, back;
+  let drag, observer, attempt = 0, sortedTasks = [], sortedFor = null, sortedMode = '';
+  let sacLoading = false;
   init();
 
   function init() {
-    panel = document.querySelector(PANEL_SELECTOR);
-    if (!panel) {
-      window.setTimeout(init, 250);
-      return;
-    }
-
+    panel = document.querySelector('.ikono-translator-panel');
+    if (!panel) { if (++attempt < 100) setTimeout(init, 250); return; }
     bindButton();
-    observer?.disconnect();
     observer = new MutationObserver(bindButton);
-    observer.observe(panel, { childList: true, subtree: true });
+    observer.observe(panel, { childList: true });
   }
-
   function bindButton() {
-    if (!panel?.isConnected) {
-      window.setTimeout(init, 250);
-      return;
-    }
-
-    const button = panel.querySelector(`[data-action="${ACTION}"]`);
+    const button = panel?.querySelector('[data-action="followups"]');
     if (!button || button.dataset.onoffFollowupsBound === 'true') return;
-
     button.dataset.onoffFollowupsBound = 'true';
-    button.addEventListener('click', handleButtonClick, true);
+    button.addEventListener('click', event => {
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!win) build();
+      win.hidden = !win.hidden;
+      button.classList.toggle('is-active', !win.hidden);
+      if (!win.hidden) {
+        win.classList.remove('is-minimized');
+        setMinButton();
+        applyPosition().catch(() => keepInside());
+        input.focus({ preventScroll: true });
+        loadSac();
+      }
+    }, true);
   }
-
-  async function handleButtonClick(event) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    const subview = panel.querySelector('[data-subview]');
-    if (subview) subview.innerHTML = '';
-
-    if (!followWindow) buildWindow();
-
-    const opening = followWindow.hidden;
-    followWindow.hidden = !opening;
-    panel.querySelector(`[data-action="${ACTION}"]`)?.classList.toggle('is-active', opening);
-
-    if (opening) {
-      await applyPosition();
-      window.setTimeout(() => input?.focus({ preventScroll: true }), 0);
-    }
-  }
-
-  function buildWindow() {
-    followWindow = document.createElement('section');
-    followWindow.className = 'onoff-followups-window';
-    followWindow.hidden = true;
-    followWindow.innerHTML = `
+  function build() {
+    win = document.createElement('section');
+    win.className = 'onoff-followups-window';
+    win.hidden = true;
+    win.setAttribute('role', 'dialog');
+    win.setAttribute('aria-label', 'Seguimientos');
+    win.innerHTML = `
       <header class="onoff-followups-header">
-        <div>
-          <strong>Seguimientos</strong>
-          <small>Tareas abiertas por propietario</small>
-        </div>
+        <div><strong>Seguimientos</strong><small>Tareas abiertas por propietario</small></div>
         <div class="onoff-followups-window-actions">
-          <button type="button" data-min title="Minimizar" aria-label="Minimizar">−</button>
-          <button type="button" data-close title="Cerrar" aria-label="Cerrar">×</button>
+          <button type="button" data-min aria-label="Minimizar" title="Minimizar">\u2212</button>
+          <button type="button" data-close aria-label="Cerrar" title="Cerrar">\u00d7</button>
         </div>
       </header>
-
       <div class="onoff-followups-content">
         <form class="onoff-followups-form">
-          <label for="onoff-followups-owner">Propietario de la tarea</label>
-          <div>
-            <input
-              id="onoff-followups-owner"
-              type="text"
-              autocomplete="off"
-              placeholder="Escriba el nombre del asesor"
-            />
+          <div class="onoff-followups-searchgrid">
+            <label>Propietario de la tarea<input data-name type="text" maxlength="80" autocomplete="off" placeholder="Escriba un nombre" /></label>
+            <label>Equipo SAC<select data-sac aria-label="Seleccionar asesor de SAC"><option value="">Cargando equipo...</option></select></label>
             <button type="submit">Buscar</button>
           </div>
+          <small class="onoff-followups-sac-note" data-sac-note>Seleccione un asesor o busque por nombre.</small>
         </form>
-
-        <div class="onoff-followups-status" aria-live="polite"></div>
+        <div class="onoff-followups-status" role="status" aria-live="polite"></div>
+        <nav class="onoff-followups-toolbar" aria-label="Navegaci\u00f3n de seguimientos">
+          <button type="button" data-back hidden>\u2190 Coincidencias</button>
+          <button type="button" data-reset>Nueva b\u00fasqueda</button>
+          <button type="button" data-refresh disabled>Actualizar</button>
+          <button type="button" data-cancel hidden>Cancelar</button>
+        </nav>
         <div class="onoff-followups-results"></div>
-      </div>
-    `;
-
-    document.body.appendChild(followWindow);
-
-    input = followWindow.querySelector('#onoff-followups-owner');
-    statusBox = followWindow.querySelector('.onoff-followups-status');
-    resultBox = followWindow.querySelector('.onoff-followups-results');
-    submitButton = followWindow.querySelector('button[type="submit"]');
-
-    followWindow.querySelector('[data-close]').addEventListener('click', closeWindow);
-
-    followWindow.querySelector('[data-min]').addEventListener('click', (event) => {
-      followWindow.classList.toggle('is-minimized');
-      event.currentTarget.textContent = followWindow.classList.contains('is-minimized') ? '□' : '−';
-      keepInside();
+      </div>`;
+    document.body.appendChild(win);
+    input = win.querySelector('[data-name]'); sacSelect = win.querySelector('[data-sac]');
+    results = win.querySelector('.onoff-followups-results'); status = win.querySelector('.onoff-followups-status');
+    content = win.querySelector('.onoff-followups-content'); submit = win.querySelector('[type="submit"]');
+    cancel = win.querySelector('[data-cancel]'); refresh = win.querySelector('[data-refresh]'); back = win.querySelector('[data-back]');
+    win.querySelector('form').addEventListener('submit', event => { event.preventDefault(); search(); });
+    sacSelect.addEventListener('change', () => {
+      const owner = state.sac.find(o => ownerKey(o) === sacSelect.value);
+      if (!owner) return;
+      input.value = owner.fullName;
+      state.queryToken += 1;
+      state.matches = [];
+      loadOwner(owner);
     });
-
-    followWindow.querySelector('form').addEventListener('submit', (event) => {
-      event.preventDefault();
-      runSearch({ name: input.value, source: 'name' });
-    });
-
-    input.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') resetSearch(true);
-    });
-
-    followWindow.querySelector('.onoff-followups-header').addEventListener('pointerdown', startDrag);
+    input.addEventListener('input', () => { sacSelect.value = ''; });
+    win.querySelector('[data-reset]').addEventListener('click', reset);
+    refresh.addEventListener('click', () => state.view === 'tasks' && state.owner ? loadOwner(state.owner, true) : search(true));
+    cancel.addEventListener('click', () => { state.jobToken += 1; setBusy(false); setStatus('Consulta cancelada en esta ventana.', 'info'); });
+    back.addEventListener('click', () => { state.jobToken += 1; setBusy(false); renderMatches(); content.scrollTop = 0; });
+    win.querySelector('[data-close]').addEventListener('click', () => { win.hidden = true; panel?.querySelector('[data-action="followups"]')?.classList.remove('is-active'); });
+    win.querySelector('[data-min]').addEventListener('click', () => { win.classList.toggle('is-minimized'); setMinButton(); keepInside(); });
+    win.querySelector('.onoff-followups-header').addEventListener('pointerdown', startDrag);
+    win.addEventListener('keydown', event => { if (event.key === 'Escape') { event.stopPropagation(); if (state.busy) cancel.click(); else win.querySelector('[data-close]').click(); } });
     window.addEventListener('resize', keepInside);
+    chrome.storage.local.get('onoffFollowupsSort').then(saved => { if (['created-desc', 'created-asc', 'priority'].includes(saved.onoffFollowupsSort)) state.sort = saved.onoffFollowupsSort; }).catch(() => {});
+    renderStart();
   }
-
-  function closeWindow() {
-    if (!followWindow) return;
-    followWindow.hidden = true;
-    panel.querySelector(`[data-action="${ACTION}"]`)?.classList.remove('is-active');
+  function setMinButton() {
+    const minimized = win.classList.contains('is-minimized'), button = win.querySelector('[data-min]');
+    button.textContent = minimized ? '\u25a1' : '\u2212';
+    button.title = minimized ? 'Restaurar' : 'Minimizar';
+    button.setAttribute('aria-label', button.title);
   }
-
-  async function runSearch(payload = {}) {
-    const hasOwnerIds = Array.isArray(payload.ownerIds) && payload.ownerIds.length > 0;
-    const hasOwnerId = Boolean(payload.ownerId);
-    const searchingByName = !hasOwnerIds && !hasOwnerId;
-    const name = String(payload.name || '').replace(/\s+/g, ' ').trim();
-
-    if (searchingByName && name.length < 2) {
-      setStatus('Escriba al menos dos caracteres para buscar.', 'error');
-      input?.focus();
-      return;
-    }
-
-    if (searchingByName) {
-      lastQuery = name;
-      lastMatches = [];
-      lastTasks = [];
-      lastOwner = null;
-      currentPage = 1;
-    }
-
-    setBusy(true);
-    resultBox.innerHTML = '';
-    setStatus(
-      searchingByName
-        ? 'Buscando propietarios y tareas abiertas…'
-        : 'Consultando tareas abiertas…',
-      'loading'
-    );
-
+  function rpc(payload) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage({ type: 'ONOFF_FOLLOWUPS_REQUEST', payload }, data => {
+          if (chrome.runtime.lastError) return reject(new Error('Recargue Asistente ONOFF y esta p\u00e1gina para activar la conexi\u00f3n actualizada.'));
+          if (!data?.ok) return reject(new Error(data?.error || 'No se pudo completar la consulta.'));
+          resolve(data);
+        });
+      } catch { reject(new Error('La extensi\u00f3n fue actualizada. Recargue esta p\u00e1gina.')); }
+    });
+  }
+  async function loadSac(force = false) {
+    if (sacLoading) return;
+    sacLoading = true;
+    const note = win.querySelector('[data-sac-note]');
     try {
-      const backend = String(
-        (await chrome.storage.sync.get('backendUrl')).backendUrl ||
-        'https://asistente-onoff.vercel.app'
-      ).replace(/\/$/, '');
-
-      const body = searchingByName
-        ? { mode: 'owner', name }
-        : hasOwnerIds
-          ? {
-              mode: 'owner',
-              ownerIds: payload.ownerIds,
-              ownerLabel: payload.ownerLabel || ''
-            }
-          : {
-              mode: 'owner',
-              ownerId: payload.ownerId,
-              ownerLabel: payload.ownerLabel || ''
-            };
-
-      const response = await fetch(`${backend}/api/bitrix/search-client-tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.ok) {
-        throw new Error(data?.error || `El servidor respondió ${response.status}.`);
-      }
-
-      if (data.requiresSelection) {
-        lastMatches = Array.isArray(data.users) ? data.users : [];
-        renderUserChoices(lastMatches);
-        return;
-      }
-
-      lastOwner = data.owner || null;
-      lastTasks = Array.isArray(data.tasks) ? data.tasks : [];
-      currentPage = 1;
-      renderTasks();
+      const data = await rpc({ action: 'sac', force });
+      state.sac = data.users || [];
+      const previous = sacSelect.value;
+      sacSelect.replaceChildren(option('', state.sac.length ? 'Seleccionar asesor' : 'Equipo no configurado'));
+      state.sac.forEach(owner => sacSelect.append(option(ownerKey(owner), owner.fullName)));
+      sacSelect.value = previous;
+      note.textContent = data.warning || 'Seleccione SAC para consultar directamente, sin buscar otros nombres.';
+      note.title = data.source || '';
     } catch (error) {
-      const rawMessage = String(error?.message || '');
-      const friendlyMessage = /Failed to fetch|NetworkError|Load failed/i.test(rawMessage)
-        ? 'No fue posible conectar con el backend de Asistente ONOFF.'
-        : (/higher privileges|insufficient_scope/i.test(rawMessage)
-          ? 'El webhook de Bitrix no tiene permisos suficientes para esta consulta.'
-          : (rawMessage || 'No fue posible consultar las tareas.'));
-
-      setStatus(friendlyMessage, 'error');
-      resultBox.innerHTML = '';
-
-      const empty = document.createElement('div');
-      empty.className = 'onoff-followups-empty-state';
-      empty.innerHTML = `
-        <strong>No se pudo completar la consulta</strong>
-        <span>Puede intentar nuevamente o iniciar una búsqueda diferente.</span>
-      `;
-
-      const retry = document.createElement('button');
-      retry.type = 'button';
-      retry.className = 'onoff-followups-secondary-button';
-      retry.textContent = 'Nueva búsqueda';
-      retry.addEventListener('click', () => resetSearch(true));
-
-      empty.appendChild(retry);
-      resultBox.appendChild(empty);
-    } finally {
-      setBusy(false);
-    }
+      if (!state.sac.length) sacSelect.replaceChildren(option('', 'Equipo no disponible'));
+      note.textContent = 'No se pudo cargar SAC. La b\u00fasqueda por nombre sigue disponible.';
+      note.title = error.message;
+    } finally { sacLoading = false; }
   }
-
-  function renderUserChoices(users) {
-    const visibleUsers = dedupeChoiceUsers(users);
-
-    setStatus(
-      visibleUsers.length === 1
-        ? 'Se encontró un propietario.'
-        : `Se encontraron ${visibleUsers.length} propietarios. Seleccione la persona que desea consultar.`,
-      'success'
-    );
-
-    resultBox.innerHTML = '';
-
-    const toolbar = createToolbar({
-      primaryLabel: 'Nueva búsqueda',
-      primaryAction: () => resetSearch(true)
-    });
-    resultBox.appendChild(toolbar);
-
-    const section = document.createElement('section');
-    section.className = 'onoff-followups-users';
-
-    const header = document.createElement('div');
-    header.className = 'onoff-followups-section-header';
-
-    const heading = document.createElement('div');
-    const title = document.createElement('strong');
-    title.textContent = 'Coincidencias';
-
-    const subtitle = document.createElement('small');
-    subtitle.textContent = lastQuery ? `Resultados para “${lastQuery}”` : 'Propietarios encontrados';
-
-    heading.append(title, subtitle);
-
-    const total = document.createElement('span');
-    total.className = 'onoff-followups-section-count';
-    total.textContent = String(visibleUsers.length);
-
-    header.append(heading, total);
-    section.appendChild(header);
-
-    if (!visibleUsers.length) {
-      const empty = document.createElement('p');
-      empty.className = 'onoff-followups-empty';
-      empty.textContent = 'No hay coincidencias disponibles.';
-      section.appendChild(empty);
-      resultBox.appendChild(section);
-      return;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'onoff-followups-user-list';
-
-    visibleUsers.forEach((user) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'onoff-followups-user';
-
-      const copy = document.createElement('span');
-      copy.className = 'onoff-followups-user-copy';
-
-      const name = document.createElement('strong');
-      name.textContent = user.fullName;
-
-      const meta = document.createElement('small');
-      const count = Number(user.openTaskCount || 0);
-      meta.textContent = `${count} tarea${count === 1 ? '' : 's'} abierta${count === 1 ? '' : 's'}`;
-
-      copy.append(name, meta);
-
-      const badge = document.createElement('span');
-      badge.className = 'onoff-followups-user-count';
-      badge.textContent = String(count);
-      badge.title = 'Tareas abiertas';
-
-      const arrow = document.createElement('span');
-      arrow.className = 'onoff-followups-user-arrow';
-      arrow.textContent = '›';
-      arrow.setAttribute('aria-hidden', 'true');
-
-      button.append(copy, badge, arrow);
-
-      button.addEventListener('click', () => {
-        runSearch({
-          ownerIds: Array.isArray(user.ownerIds) && user.ownerIds.length
-            ? user.ownerIds
-            : [user.id],
-          ownerLabel: user.fullName,
-          source: 'choice'
-        });
-      });
-
-      list.appendChild(button);
-    });
-
-    section.appendChild(list);
-    resultBox.appendChild(section);
-  }
-
-  function renderTasks() {
-    const tasks = sortTasks(lastTasks, currentSort);
-    const ownerName = lastOwner?.fullName || 'Propietario seleccionado';
-
-    setStatus(
-      `${tasks.length} tarea${tasks.length === 1 ? '' : 's'} abierta${tasks.length === 1 ? '' : 's'} de ${ownerName}.`,
-      'success'
-    );
-
-    resultBox.innerHTML = '';
-
-    const toolbar = createToolbar({
-      backLabel: lastMatches.length > 1 ? 'Volver a coincidencias' : '',
-      backAction: lastMatches.length > 1 ? () => renderUserChoices(lastMatches) : null,
-      primaryLabel: 'Nueva búsqueda',
-      primaryAction: () => resetSearch(true)
-    });
-    resultBox.appendChild(toolbar);
-
-    const summary = document.createElement('section');
-    summary.className = 'onoff-followups-summary';
-
-    const copy = document.createElement('div');
-
-    const label = document.createElement('small');
-    label.textContent = 'Propietario de la tarea';
-
-    const name = document.createElement('strong');
-    name.textContent = ownerName;
-
-    const description = document.createElement('span');
-    description.textContent = 'Tareas actualmente abiertas';
-
-    copy.append(label, name, description);
-
-    const count = document.createElement('span');
-    count.className = 'onoff-followups-count';
-    count.textContent = String(tasks.length);
-    count.title = 'Total de tareas abiertas';
-
-    summary.append(copy, count);
-    resultBox.appendChild(summary);
-
-    const sortBar = document.createElement('div');
-    sortBar.className = 'onoff-followups-sortbar';
-
-    const sortLabel = document.createElement('label');
-    sortLabel.textContent = 'Ordenar tareas';
-
-    const sortSelect = document.createElement('select');
-    sortSelect.className = 'onoff-followups-sort-select';
-    sortSelect.setAttribute('aria-label', 'Ordenar tareas');
-
-    const sortOptions = [
-      ['created-desc', 'Fecha de creación: más reciente'],
-      ['created-asc', 'Fecha de creación: más antigua'],
-      ['priority', 'Prioridad: alta primero']
-    ];
-
-    sortOptions.forEach(([value, label]) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      option.selected = currentSort === value;
-      sortSelect.appendChild(option);
-    });
-
-    sortSelect.addEventListener('change', () => {
-      currentSort = sortSelect.value;
-      currentPage = 1;
-      renderTasks();
-      scrollResultsTop();
-    });
-
-    sortBar.append(sortLabel, sortSelect);
-    resultBox.appendChild(sortBar);
-
-    if (!tasks.length) {
-      const empty = document.createElement('div');
-      empty.className = 'onoff-followups-empty-state';
-
-      const title = document.createElement('strong');
-      title.textContent = 'Sin tareas abiertas';
-
-      const text = document.createElement('span');
-      text.textContent = 'No se encontraron tareas abiertas para este propietario.';
-
-      empty.append(title, text);
-      resultBox.appendChild(empty);
-      return;
-    }
-
-    const totalPages = Math.max(1, Math.ceil(tasks.length / PAGE_SIZE));
-    if (currentPage > totalPages) currentPage = totalPages;
-
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    const endIndex = Math.min(startIndex + PAGE_SIZE, tasks.length);
-    const visibleTasks = tasks.slice(startIndex, endIndex);
-
-    const range = document.createElement('div');
-    range.className = 'onoff-followups-range';
-
-    const rangeText = document.createElement('span');
-    rangeText.textContent = `Mostrando ${startIndex + 1}–${endIndex} de ${tasks.length}`;
-
-    const pageText = document.createElement('strong');
-    pageText.textContent = `Página ${currentPage} de ${totalPages}`;
-
-    range.append(rangeText, pageText);
-    resultBox.appendChild(range);
-
-    const list = document.createElement('div');
-    list.className = 'onoff-followups-list';
-    visibleTasks.forEach((task) => list.appendChild(taskCard(task)));
-    resultBox.appendChild(list);
-
-    if (totalPages > 1) {
-      resultBox.appendChild(createPagination(totalPages));
-    }
-  }
-
-  function createPagination(totalPages) {
-    const nav = document.createElement('nav');
-    nav.className = 'onoff-followups-pagination';
-    nav.setAttribute('aria-label', 'Paginación de tareas');
-
-    const previous = document.createElement('button');
-    previous.type = 'button';
-    previous.className = 'onoff-followups-page-button';
-    previous.textContent = '← Anterior';
-    previous.disabled = currentPage <= 1;
-    previous.addEventListener('click', () => {
-      if (currentPage <= 1) return;
-      currentPage -= 1;
-      renderTasks();
-      scrollResultsTop();
-    });
-
-    const current = document.createElement('span');
-    current.className = 'onoff-followups-page-current';
-    current.textContent = `${currentPage} / ${totalPages}`;
-
-    const next = document.createElement('button');
-    next.type = 'button';
-    next.className = 'onoff-followups-page-button';
-    next.textContent = 'Siguiente →';
-    next.disabled = currentPage >= totalPages;
-    next.addEventListener('click', () => {
-      if (currentPage >= totalPages) return;
-      currentPage += 1;
-      renderTasks();
-      scrollResultsTop();
-    });
-
-    nav.append(previous, current, next);
-    return nav;
-  }
-
-  function createToolbar({
-    backLabel = '',
-    backAction = null,
-    primaryLabel = '',
-    primaryAction = null
-  } = {}) {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'onoff-followups-toolbar';
-
-    const left = document.createElement('div');
-    const right = document.createElement('div');
-
-    if (backLabel && backAction) {
-      const back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'onoff-followups-secondary-button';
-      back.textContent = `← ${backLabel}`;
-      back.addEventListener('click', backAction);
-      left.appendChild(back);
-    }
-
-    if (primaryLabel && primaryAction) {
-      const primary = document.createElement('button');
-      primary.type = 'button';
-      primary.className = 'onoff-followups-secondary-button';
-      primary.textContent = primaryLabel;
-      primary.addEventListener('click', primaryAction);
-      right.appendChild(primary);
-    }
-
-    toolbar.append(left, right);
-    return toolbar;
-  }
-
-  function taskCard(task) {
-    const article = document.createElement('article');
-    article.className = 'onoff-followups-task';
-
-    const top = document.createElement('div');
-    top.className = 'onoff-followups-task-top';
-
-    const heading = document.createElement('div');
-
-    const id = document.createElement('small');
-    id.textContent = `Tarea #${task.id}`;
-
-    const title = document.createElement('strong');
-    title.textContent = task.title || `Tarea #${task.id}`;
-
-    heading.append(id, title);
-
-    const badge = document.createElement('span');
-    badge.className = 'onoff-followups-task-status';
-    badge.textContent = task.status || 'Sin estado';
-
-    top.append(heading, badge);
-    article.appendChild(top);
-
-    const meta = document.createElement('dl');
-    meta.className = 'onoff-followups-task-meta';
-
-    addMeta(meta, 'Responsable', task.responsible || 'No especificado');
-    addMeta(meta, 'Fecha límite', formatDate(task.deadline));
-    addMeta(meta, 'Creado', formatDate(task.createdAt));
-
-    if (task.priority === 'Alta') {
-      addMeta(meta, 'Prioridad', 'Alta');
-      article.classList.add('is-high-priority');
-    }
-
-    article.appendChild(meta);
-
-    const actions = document.createElement('div');
-    actions.className = 'onoff-followups-task-actions';
-
-    const open = document.createElement('button');
-    open.type = 'button';
-    open.textContent = 'Abrir tarea ↗';
-    open.addEventListener('click', () => {
-      window.open(task.url, '_blank', 'noopener');
-    });
-
-    actions.appendChild(open);
-    article.appendChild(actions);
-
-    return article;
-  }
-
-  function addMeta(container, label, value) {
-    const wrapper = document.createElement('div');
-    const dt = document.createElement('dt');
-    const dd = document.createElement('dd');
-
-    dt.textContent = label;
-    dd.textContent = value;
-
-    wrapper.append(dt, dd);
-    container.appendChild(wrapper);
-  }
-
-  function dedupeChoiceUsers(users) {
-    const grouped = new Map();
-
-    for (const user of users || []) {
-      const key = normalizeName(user?.fullName);
-      if (!key) continue;
-
-      const ids = Array.isArray(user.ownerIds) && user.ownerIds.length
-        ? user.ownerIds.map(String)
-        : user?.id
-          ? [String(user.id)]
-          : [];
-
-      if (!grouped.has(key)) {
-        grouped.set(key, {
-          id: user?.id || ids[0] || '',
-          ownerIds: [...new Set(ids)],
-          fullName: String(user?.fullName || '').trim(),
-          openTaskCount: Number(user?.openTaskCount || 0)
-        });
-        continue;
+  async function search(force = false) {
+    const name = input.value.replace(/\s+/g, ' ').trim();
+    if (name.length < 2) { setStatus('Escriba al menos dos caracteres.', 'error'); input.focus(); return; }
+    const token = ++state.jobToken;
+    const queryToken = ++state.queryToken;
+    state.query = name; state.matches = []; state.owner = null; state.tasks = [];
+    state.view = 'start'; state.page = 1;
+    results.replaceChildren(); setBusy(true); setStatus('Buscando propietarios...', 'loading');
+    try {
+      const data = await rpc({ action: 'search', name, force });
+      if (token !== state.jobToken) return;
+      state.matches = data.users || [];
+      if (!state.matches.length) {
+        state.view = 'start'; renderStart('Sin coincidencias', 'Revise el nombre e intente nuevamente.');
+        setStatus('No se encontraron propietarios.', 'info');
+      } else if (state.matches.length === 1) {
+        setBusy(false);
+        await loadOwner(state.matches[0], force);
+      } else {
+        renderMatches();
+        if (data.moreMatches) setStatus('Se muestran las primeras coincidencias. Escriba un nombre m\u00e1s completo para reducir la lista.', 'info');
+        loadCounts(queryToken, force);
       }
-
-      const current = grouped.get(key);
-      current.ownerIds = [...new Set([...current.ownerIds, ...ids])];
-      current.openTaskCount = Math.max(
-        Number(current.openTaskCount || 0),
-        Number(user?.openTaskCount || 0)
-      );
+    } catch (error) { if (token === state.jobToken) setStatus(error.message, 'error'); }
+    finally { if (token === state.jobToken) setBusy(false); }
+  }
+  async function loadCounts(queryToken, force) {
+    // Counts do not block the list or selection. Small blocks avoid API bursts.
+    const owners = state.matches.slice();
+    for (let start = 0; start < owners.length; start += 4) {
+      if (queryToken !== state.queryToken) return;
+      const group = owners.slice(start, start + 4);
+      try {
+        const data = await rpc({ action: 'counts', groups: group.map(o => ({ id: o.id, ownerIds: o.ownerIds })), force });
+        if (queryToken !== state.queryToken) return;
+        for (const count of data.users || []) {
+          const target = state.matches.find(o => ownerKey(o) === ownerKey(count));
+          if (target) Object.assign(target, count);
+        }
+      } catch (error) {
+        if (queryToken !== state.queryToken) return;
+        group.forEach(o => { o.error = error.message; o.openTaskCount = null; });
+      }
+      if (state.view === 'matches') updateCounts();
     }
-
-    return [...grouped.values()].sort(
-      (a, b) =>
-        Number(b.openTaskCount || 0) - Number(a.openTaskCount || 0) ||
-        a.fullName.localeCompare(b.fullName, 'es')
-    );
   }
-
-  function sortTasks(tasks, mode) {
-    const copy = [...(tasks || [])];
-
-    if (mode === 'created-asc') {
-      return copy.sort((a, b) => compareCreated(a, b, true));
+  async function loadOwner(owner, force = false) {
+    const token = ++state.jobToken;
+    setBusy(true); setStatus(force ? 'Actualizando tareas desde Bitrix...' : 'Consultando tareas abiertas...', 'loading');
+    try {
+      const data = await rpc({ action: 'tasks', ownerIds: owner.ownerIds || [owner.id], force });
+      if (token !== state.jobToken) return;
+      state.owner = data.owner;
+      state.tasks = data.tasks || [];
+      state.updatedAt = data.updatedAt;
+      state.clientCache = Boolean(data.clientCache);
+      state.page = 1; sortedFor = null;
+      const match = state.matches.find(o => ownerKey(o) === ownerKey(data.owner));
+      if (match) match.openTaskCount = state.tasks.length;
+      renderTasks(); content.scrollTop = 0;
+    } catch (error) { if (token === state.jobToken) setStatus(error.message, 'error'); }
+    finally { if (token === state.jobToken) setBusy(false); }
+  }
+  function renderStart(title = 'Consulte sus seguimientos', description = 'Busque un propietario o seleccione un asesor de SAC. Solo se muestran tareas abiertas; se omiten las tareas de proceso.') {
+    results.replaceChildren(empty(title, description)); toolbar();
+  }
+  function renderMatches() {
+    state.view = 'matches'; results.replaceChildren(); toolbar();
+    setStatus('Seleccione un propietario. Los conteos se actualizan sin bloquear la b\u00fasqueda.', 'success');
+    const section = node('section', 'onoff-followups-users');
+    section.append(node('strong', '', `Coincidencias (${state.matches.length})`));
+    for (const owner of state.matches) {
+      const button = node('button', 'onoff-followups-user'); button.type = 'button'; button.dataset.ownerKey = ownerKey(owner);
+      const copy = node('span', 'onoff-followups-user-copy');
+      copy.append(node('strong', '', owner.fullName), node('small', 'onoff-followups-count-copy', 'Contando tareas...'));
+      const badge = node('span', 'onoff-followups-user-count', '...');
+      button.append(copy, badge, node('span', 'onoff-followups-user-arrow', '\u203a'));
+      button.addEventListener('click', () => loadOwner(owner)); section.append(button);
     }
-
-    if (mode === 'priority') {
-      return copy.sort((a, b) => {
-        const aHigh = a?.priority === 'Alta' ? 1 : 0;
-        const bHigh = b?.priority === 'Alta' ? 1 : 0;
-        if (aHigh !== bHigh) return bHigh - aHigh;
-        return compareCreated(a, b, false);
-      });
+    results.append(section); updateCounts();
+  }
+  function updateCounts() {
+    for (const button of results.querySelectorAll('[data-owner-key]')) {
+      const owner = state.matches.find(o => ownerKey(o) === button.dataset.ownerKey);
+      if (!owner) continue;
+      const count = owner.openTaskCount;
+      button.querySelector('.onoff-followups-user-count').textContent = Number.isFinite(count) ? String(count) : owner.error ? '\u2014' : '...';
+      button.querySelector('.onoff-followups-count-copy').textContent = Number.isFinite(count) ? `${count} tarea${count === 1 ? '' : 's'} abierta${count === 1 ? '' : 's'}` : owner.error ? 'Conteo no disponible; puede abrir el propietario.' : 'Contando tareas...';
+      button.title = owner.error || (owner.ownerIds?.length > 1 ? `${owner.ownerIds.length} registros de Bitrix agrupados por nombre.` : 'Ver tareas abiertas');
     }
-
-    return copy.sort((a, b) => compareCreated(a, b, false));
   }
-
-  function compareCreated(a, b, ascending) {
-    const aTime = taskTime(a?.createdAt);
-    const bTime = taskTime(b?.createdAt);
-
-    if (!aTime && !bTime) return 0;
-    if (!aTime) return 1;
-    if (!bTime) return -1;
-
-    return ascending ? aTime - bTime : bTime - aTime;
-  }
-
-  function taskTime(value) {
-    if (!value) return 0;
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-  }
-
-  function normalizeName(value) {
-    return String(value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLocaleLowerCase('es')
-      .replace(/[^a-z0-9\s'-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function resetSearch(clearInput = false) {
-    lastMatches = [];
-    lastQuery = '';
-    lastTasks = [];
-    lastOwner = null;
-    currentPage = 1;
-    currentSort = 'created-desc';
-
-    resultBox.innerHTML = '';
-    setStatus('', '');
-
-    if (clearInput && input) input.value = '';
-    input?.focus({ preventScroll: true });
-  }
-
-  function scrollResultsTop() {
-    const content = followWindow?.querySelector('.onoff-followups-content');
-    if (!content) return;
-
-    const resultsTop = resultBox?.offsetTop || 0;
-    content.scrollTo({
-      top: Math.max(0, resultsTop - 12),
-      behavior: 'smooth'
+  function renderTasks() {
+    state.view = 'tasks'; results.replaceChildren(); toolbar();
+    const tasks = getSorted();
+    const ownerName = state.owner?.fullName || 'Propietario seleccionado';
+    setStatus('', 'success');
+    const summary = node('section', 'onoff-followups-summary');
+    const copy = node('div'); copy.append(node('small', '', 'Propietario de la tarea'), node('strong', '', ownerName));
+    copy.append(node('small', '', state.updatedAt ? `Consulta: ${formatDate(state.updatedAt, '')}${state.clientCache ? ' \u00b7 Resultado reciente' : ''}` : 'Tareas abiertas'));
+    if (state.owner?.ownerIds?.length > 1) copy.append(node('small', '', `${state.owner.ownerIds.length} registros de Bitrix agrupados; las tareas no se duplican.`));
+    summary.append(copy, node('span', 'onoff-followups-count', String(tasks.length))); results.append(summary);
+    const sortbar = node('label', 'onoff-followups-sortbar', 'Ordenar tareas');
+    const sort = node('select', 'onoff-followups-sort-select');
+    [['created-desc', 'Creaci\u00f3n: m\u00e1s recientes'], ['created-asc', 'Creaci\u00f3n: m\u00e1s antiguas'], ['priority', 'Prioridad: alta primero']].forEach(([value, title]) => sort.append(option(value, title)));
+    sort.value = state.sort;
+    sort.addEventListener('change', () => {
+      state.sort = sort.value; state.page = 1; renderTasks();
+      chrome.storage.local.set({ onoffFollowupsSort: state.sort }).catch(() => {});
     });
+    sortbar.append(sort); results.append(sortbar);
+    if (!tasks.length) { results.append(empty('Sin tareas abiertas', 'No hay tareas abiertas visibles para este propietario.')); return; }
+    const pages = Math.ceil(tasks.length / PAGE_SIZE);
+    state.page = Math.max(1, Math.min(state.page, pages));
+    const start = (state.page - 1) * PAGE_SIZE;
+    const range = node('div', 'onoff-followups-range', `Mostrando ${start + 1}\u2013${Math.min(start + PAGE_SIZE, tasks.length)} de ${tasks.length}`);
+    range.append(node('strong', '', `P\u00e1gina ${state.page} de ${pages}`)); results.append(range);
+    const list = node('div', 'onoff-followups-list'); tasks.slice(start, start + PAGE_SIZE).forEach(task => list.append(taskCard(task))); results.append(list);
+    if (pages > 1) results.append(pagination(pages));
   }
-
-  function setBusy(busy) {
-    if (submitButton) submitButton.disabled = busy;
-    if (input) input.disabled = busy;
-    followWindow?.classList.toggle('is-busy', busy);
+  function taskCard(task) {
+    const card = node('article', 'onoff-followups-task' + (task.priority === 'Alta' ? ' is-high-priority' : ''));
+    const top = node('div', 'onoff-followups-task-top');
+    const title = node('div'); title.append(node('small', '', `Tarea #${task.id}`), node('strong', '', task.title));
+    top.append(title, node('span', 'onoff-followups-task-status', task.status || 'Abierta')); card.append(top);
+    const meta = node('dl', 'onoff-followups-task-meta');
+    [['Responsable', task.responsible || 'No especificado'], ['Fecha l\u00edmite', formatDate(task.deadline, 'Sin fecha l\u00edmite')], ['Creado', formatDate(task.createdAt, 'No disponible')], ['Prioridad', task.priority || 'Normal']].forEach(([label, value]) => {
+      const row = node('div'); row.append(node('dt', '', label), node('dd', '', value)); meta.append(row);
+    });
+    card.append(meta);
+    const actions = node('div', 'onoff-followups-task-actions');
+    const link = node('a', '', 'Abrir tarea \u2197');
+    try {
+      const url = new URL(task.url);
+      if (url.protocol !== 'https:' || !/\/tasks\/task\/view\/\d+\/?$/.test(url.pathname)) throw new Error();
+      link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; actions.append(link);
+    } catch { actions.append(node('small', '', 'Enlace no disponible')); }
+    card.append(actions); return card;
   }
-
-  function setStatus(message, type) {
-    if (!statusBox) return;
-    statusBox.textContent = message || '';
-    statusBox.dataset.type = type || '';
+  function pagination(pages) {
+    const nav = node('nav', 'onoff-followups-pagination'); nav.setAttribute('aria-label', 'P\u00e1ginas de tareas');
+    const previous = node('button', '', '\u2190 Anterior'); previous.type = 'button'; previous.disabled = state.page === 1;
+    const next = node('button', '', 'Siguiente \u2192'); next.type = 'button'; next.disabled = state.page === pages;
+    const page = node('select'); page.setAttribute('aria-label', 'Ir a la p\u00e1gina');
+    for (let i = 1; i <= pages; i++) page.append(option(String(i), `${i} / ${pages}`)); page.value = String(state.page);
+    const go = number => { state.page = number; renderTasks(); content.scrollTop = 0; };
+    previous.addEventListener('click', () => go(state.page - 1)); next.addEventListener('click', () => go(state.page + 1)); page.addEventListener('change', () => go(Number(page.value)));
+    nav.append(previous, page, next); return nav;
   }
-
-  function formatDate(value) {
-    if (!value) return 'Sin fecha límite';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Sin fecha límite';
-
-    return new Intl.DateTimeFormat('es-CO', {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }).format(date);
+  function getSorted() {
+    if (sortedFor === state.tasks && sortedMode === state.sort) return sortedTasks;
+    sortedFor = state.tasks; sortedMode = state.sort;
+    sortedTasks = [...state.tasks].sort((a, b) => {
+      if (state.sort === 'priority' && a.priority !== b.priority) return a.priority === 'Alta' ? -1 : 1;
+      const x = Date.parse(a.createdAt), y = Date.parse(b.createdAt);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return Number.isFinite(x) ? -1 : Number.isFinite(y) ? 1 : Number(b.id) - Number(a.id);
+      return (state.sort === 'created-asc' ? x - y : y - x) || Number(b.id) - Number(a.id);
+    });
+    return sortedTasks;
   }
-
+  function reset() {
+    state.jobToken += 1; state.queryToken += 1; state.view = 'start'; state.query = ''; state.matches = []; state.owner = null; state.tasks = []; state.page = 1;
+    input.value = ''; sacSelect.value = ''; setBusy(false); setStatus('', 'info'); renderStart(); content.scrollTop = 0; input.focus();
+  }
+  function toolbar() { back.hidden = state.view !== 'tasks' || state.matches.length < 2; refresh.disabled = state.busy || state.view === 'start'; }
+  function setBusy(busy) { state.busy = busy; submit.disabled = busy; submit.textContent = busy ? 'Buscando...' : 'Buscar'; cancel.hidden = !busy; win.setAttribute('aria-busy', String(busy)); toolbar(); }
+  function setStatus(message, type) { status.textContent = message; status.dataset.type = type; }
+  function formatDate(value, fallback) { const date = value ? new Date(value) : null; return date && Number.isFinite(date.getTime()) ? dates.format(date) : fallback; }
+  function ownerKey(owner) { return [...(owner.ownerIds || [owner.id])].map(String).sort().join('-'); }
+  function node(tag, className = '', text) { const element = document.createElement(tag); if (className) element.className = className; if (text != null) element.textContent = text; return element; }
+  function option(value, text) { const result = node('option', '', text); result.value = value; return result; }
+  function empty(title, description) { const box = node('div', 'onoff-followups-empty-state'); box.append(node('strong', '', title), node('span', '', description)); return box; }
   function startDrag(event) {
     if (event.button !== 0 || event.target.closest('button')) return;
-
-    const rect = followWindow.getBoundingClientRect();
-    dragState = {
-      pointerId: event.pointerId,
-      offsetX: event.clientX - rect.left,
-      offsetY: event.clientY - rect.top
-    };
-
-    window.addEventListener('pointermove', moveDrag, true);
-    window.addEventListener('pointerup', endDrag, true);
-    window.addEventListener('pointercancel', endDrag, true);
+    const rect = win.getBoundingClientRect();
+    drag = { pointer: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
+    window.addEventListener('pointermove', moveDrag, true); window.addEventListener('pointerup', stopDrag, true); window.addEventListener('pointercancel', stopDrag, true);
   }
-
-  function moveDrag(event) {
-    if (!dragState || event.pointerId !== dragState.pointerId) return;
-
-    const left = clamp(
-      event.clientX - dragState.offsetX,
-      8,
-      window.innerWidth - followWindow.offsetWidth - 8
-    );
-
-    const top = clamp(
-      event.clientY - dragState.offsetY,
-      8,
-      window.innerHeight - followWindow.offsetHeight - 8
-    );
-
-    setPosition(left, top);
+  function moveDrag(event) { if (drag?.pointer === event.pointerId) { setPosition(event.clientX - drag.x, event.clientY - drag.y); keepInside(); } }
+  function stopDrag(event) {
+    if (drag?.pointer !== event.pointerId) return; drag = null;
+    window.removeEventListener('pointermove', moveDrag, true); window.removeEventListener('pointerup', stopDrag, true); window.removeEventListener('pointercancel', stopDrag, true);
+    const rect = win.getBoundingClientRect();
+    chrome.storage.local.set({ [POSITION_KEY]: { left: Math.round(rect.left), top: Math.round(rect.top) }, onoffFollowupsUserPlaced: true }).catch(() => {});
   }
-
-  async function endDrag(event) {
-    if (!dragState || event.pointerId !== dragState.pointerId) return;
-
-    dragState = null;
-
-    window.removeEventListener('pointermove', moveDrag, true);
-    window.removeEventListener('pointerup', endDrag, true);
-    window.removeEventListener('pointercancel', endDrag, true);
-
-    const rect = followWindow.getBoundingClientRect();
-
-    await chrome.storage.local.set({
-      [POSITION_KEY]: {
-        left: Math.round(rect.left),
-        top: Math.round(rect.top)
-      }
-    });
-  }
-
   async function applyPosition() {
-    const stored = await chrome.storage.local.get(POSITION_KEY);
-    const position = stored[POSITION_KEY];
-
-    if (
-      position &&
-      Number.isFinite(position.left) &&
-      Number.isFinite(position.top)
-    ) {
-      setPosition(position.left, position.top);
-      keepInside();
-      return;
-    }
-
-    positionBesidePanel();
+    const stored = await chrome.storage.local.get(POSITION_KEY), position = stored[POSITION_KEY];
+    if (position && Number.isFinite(position.left) && Number.isFinite(position.top)) setPosition(position.left, position.top);
+    else { const p = panel.getBoundingClientRect(); setPosition(p.left - (win.offsetWidth || 560) - 10, p.top); }
+    keepInside();
   }
-
-  function positionBesidePanel() {
-    const panelRect = panel.getBoundingClientRect();
-    const width = followWindow.offsetWidth || 550;
-    const height = followWindow.offsetHeight || 660;
-    const gap = 10;
-    const roomRight = window.innerWidth - panelRect.right - gap - 8;
-
-    const left = roomRight >= width
-      ? panelRect.right + gap
-      : panelRect.left - width - gap;
-
-    const top = panelRect.top;
-
-    setPosition(
-      clamp(left, 8, window.innerWidth - width - 8),
-      clamp(top, 8, window.innerHeight - height - 8)
-    );
-  }
-
-  function keepInside() {
-    if (!followWindow || followWindow.hidden) return;
-
-    const rect = followWindow.getBoundingClientRect();
-
-    setPosition(
-      clamp(rect.left, 8, window.innerWidth - rect.width - 8),
-      clamp(rect.top, 8, window.innerHeight - rect.height - 8)
-    );
-  }
-
-  function setPosition(left, top) {
-    followWindow.style.left = `${Math.round(left)}px`;
-    followWindow.style.top = `${Math.round(top)}px`;
-    followWindow.style.right = 'auto';
-    followWindow.style.bottom = 'auto';
-  }
-
-  function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), Math.max(min, max));
-  }
+  function keepInside() { if (!win || win.hidden) return; const r = win.getBoundingClientRect(); setPosition(Math.max(8, Math.min(r.left, innerWidth - r.width - 8)), Math.max(8, Math.min(r.top, innerHeight - r.height - 8))); }
+  function setPosition(left, top) { win.style.left = Math.round(left) + 'px'; win.style.top = Math.round(top) + 'px'; win.style.right = 'auto'; win.style.bottom = 'auto'; }
 })();
