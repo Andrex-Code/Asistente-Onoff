@@ -192,7 +192,7 @@
     } catch (error) { if (token === state.jobToken) setStatus(error.message, 'error'); }
     finally { if (token === state.jobToken) setBusy(false); }
   }
-  function renderStart(title = 'Consulte sus seguimientos', description = 'Busque un propietario o seleccione un asesor de SAC. Solo se muestran tareas abiertas; se omiten las tareas de proceso.') {
+  function renderStart(title = 'Consulte sus seguimientos', description = 'Busque un propietario o seleccione un asesor de SAC. Solo se muestran tareas principales abiertas; se omiten subtareas y tareas de proceso.') {
     results.replaceChildren(empty(title, description)); toolbar();
   }
   function renderMatches() {
