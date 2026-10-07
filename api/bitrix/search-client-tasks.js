@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
     });
   } catch (error) {
     const message = String(error?.message || error || 'Error consultando tareas en Bitrix.');
-    const status = /credencial|autoriz|access denied|insufficient_scope/i.test(message) ? 502 : 500;
+    const status = /credencial|autoriz|access denied|insufficient_scope|higher privileges/i.test(message) ? 502 : 500;
     return res.status(status).json({ ok: false, error: cleanError(message) });
   }
 };
@@ -80,23 +80,21 @@ async function handleOwnerTasks(webhookUrl, body, res) {
     });
   }
 
-  const discovery = await listTasks(webhookUrl, {});
-  const openTasks = discovery.filter((task) => {
-    const statusId = String(task.status || task.STATUS || '');
-    return !CLOSED_STATUSES.has(statusId);
-  });
-
-  if (!openTasks.length) {
-    return res.status(200).json({
-      ok: true,
-      requiresSelection: false,
-      owner: null,
-      tasks: [],
-      count: 0
-    });
+  let owners;
+  try {
+    owners = await searchOwnerUsers(webhookUrl, query);
+  } catch (error) {
+    const message = String(error?.message || error || '');
+    if (/higher privileges|insufficient_scope|access denied/i.test(message)) {
+      return res.status(502).json({
+        ok: false,
+        code: 'BITRIX_USER_SCOPE_REQUIRED',
+        error: 'El webhook de Bitrix necesita permiso de Usuarios para buscar asesores por nombre.'
+      });
+    }
+    throw error;
   }
 
-  const owners = await discoverOwnersFromTasks(webhookUrl, openTasks);
   const matches = matchOwners(owners, query);
 
   if (!matches.length) {
@@ -130,7 +128,8 @@ async function handleOwnerTasks(webhookUrl, body, res) {
 
 async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
   const rawTasks = await listTasks(webhookUrl, {
-    'filter[CREATED_BY]': ownerId
+    'filter[CREATED_BY]': ownerId,
+    'filter[!REAL_STATUS]': '5'
   });
 
   const openTasks = rawTasks.filter((task) => {
@@ -139,17 +138,27 @@ async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
   });
 
   let ownerName = knownName;
-  const sample = openTasks[0] || rawTasks[0];
-
-  if (!ownerName && sample) {
-    ownerName = await getCreatorNameFromTask(webhookUrl, sample);
+  if (!ownerName) {
+    try {
+      const owner = await getBriefUserById(webhookUrl, ownerId);
+      ownerName = owner?.fullName || '';
+    } catch {
+      ownerName = '';
+    }
   }
 
   ownerName = ownerName || `Usuario ${ownerId}`;
   const portalOrigin = new URL(webhookUrl).origin;
 
+  const responsibleIds = unique(
+    openTasks
+      .map((task) => task.responsibleId || task.RESPONSIBLE_ID)
+      .filter(Boolean)
+  );
+  const responsibleUsers = await resolveUsers(webhookUrl, responsibleIds);
+
   const tasks = openTasks
-    .map((task) => normalizeOwnerTask(task, ownerName, portalOrigin))
+    .map((task) => normalizeOwnerTask(task, ownerName, portalOrigin, responsibleUsers))
     .sort(compareOwnerTasks);
 
   return res.status(200).json({
@@ -162,6 +171,53 @@ async function respondWithOwnerTasks(webhookUrl, ownerId, res, knownName = '') {
     tasks,
     count: tasks.length
   });
+}
+
+async function searchOwnerUsers(webhookUrl, query) {
+  const result = await callBitrix(webhookUrl, 'user.get', {
+    'FILTER[NAME_SEARCH]': query,
+    'FILTER[ACTIVE]': 'true',
+    'FILTER[USER_TYPE]': 'employee'
+  });
+
+  const users = Array.isArray(result) ? result : [];
+
+  return users
+    .map((user) => ({
+      id: String(user?.ID || user?.id || '').trim(),
+      fullName: [
+        user?.NAME || user?.name,
+        user?.SECOND_NAME || user?.secondName,
+        user?.LAST_NAME || user?.lastName
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    }))
+    .filter((user) => user.id && user.fullName);
+}
+
+async function getBriefUserById(webhookUrl, userId) {
+  const result = await callBitrix(webhookUrl, 'user.get', {
+    'FILTER[ID]': userId
+  });
+
+  const user = Array.isArray(result) ? result[0] : null;
+  if (!user) return null;
+
+  return {
+    id: String(user?.ID || user?.id || '').trim(),
+    fullName: [
+      user?.NAME || user?.name,
+      user?.SECOND_NAME || user?.secondName,
+      user?.LAST_NAME || user?.lastName
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  };
 }
 
 async function discoverOwnersFromTasks(webhookUrl, tasks) {
@@ -252,7 +308,7 @@ function matchOwners(owners, query) {
     .map(({ score, ...owner }) => owner);
 }
 
-function normalizeOwnerTask(task, ownerName, portalOrigin) {
+function normalizeOwnerTask(task, ownerName, portalOrigin, responsibleUsers = new Map()) {
   const id = String(task.id || task.ID || '').trim();
   const groupId = String(task.groupId || task.GROUP_ID || '');
   const statusId = String(task.status || task.STATUS || '');
@@ -274,7 +330,7 @@ function normalizeOwnerTask(task, ownerName, portalOrigin) {
     statusId,
     status: taskStatus(statusId),
     owner: ownerName,
-    responsible: responsibleName || (responsibleId ? `Usuario ${responsibleId}` : 'No especificado'),
+    responsible: responsibleName || (responsibleId ? responsibleUsers.get(responsibleId) || `Usuario ${responsibleId}` : 'No especificado'),
     priority: String(task.priority || task.PRIORITY || '1') === '2' ? 'Alta' : 'Normal',
     deadline: toIso(task.deadline || task.DEADLINE),
     createdAt: toIso(task.createdDate || task.CREATED_DATE),
@@ -550,7 +606,8 @@ function normalizeWebhookUrl(value) {
 
 function cleanError(message) {
   if (/invalid credentials|expired|unauthor/i.test(message)) return 'La credencial de Bitrix no es válida o fue regenerada.';
-  if (/access denied|insufficient_scope/i.test(message)) return 'El webhook no tiene permisos suficientes para consultar tareas.';
+  if (/higher privileges|insufficient_scope/i.test(message)) return 'El webhook de Bitrix necesita permiso de Usuarios para buscar asesores por nombre.';
+  if (/access denied/i.test(message)) return 'El webhook no tiene permisos suficientes para consultar estas tareas.';
   return message;
 }
 
