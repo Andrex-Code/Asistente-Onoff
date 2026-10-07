@@ -3,6 +3,14 @@
   const MOBILE_QUERY = '(max-width: 620px)';
   const MARGIN = 8;
   const GAP = 10;
+  const WINDOW_BASE_Z = 2147483000;
+  const WINDOW_FRONT_Z = 2147483600;
+  const FOCUS_CONFIG = [
+    { action: 'templates', selector: '.onoff-templates-window' },
+    { action: 'bitrix-search', selector: '.onoff-bitrix-search' },
+    { action: 'assistant-chat', selector: '.onoff-assistant-window' },
+    { action: 'followups', selector: '.onoff-followups-window' }
+  ];
 
   const WINDOW_CONFIG = [
     {
@@ -86,6 +94,8 @@
       bindMenuButton(config);
       bindDragHeader(config);
     });
+    bindWindowFocus();
+    bindFocusMenuButtons();
   }
 
   function bindMenuButton(config) {
@@ -93,6 +103,41 @@
     if (!button || button.dataset.onoffStableLayoutBound === 'true') return;
     button.dataset.onoffStableLayoutBound = 'true';
     button.addEventListener('click', () => handleToolButtonClick(config), true);
+  }
+
+  function bindFocusMenuButtons() {
+    FOCUS_CONFIG.forEach((config) => {
+      const button = panel.querySelector(`[data-action="${config.action}"]`);
+      if (!button || button.dataset.onoffBringFrontMenuBound === 'true') return;
+      button.dataset.onoffBringFrontMenuBound = 'true';
+      button.addEventListener('click', () => {
+        [0, 30, 90, 180].forEach((delay) => {
+          window.setTimeout(() => {
+            const windowEl = document.querySelector(config.selector);
+            if (isVisible(windowEl)) bringToFront(windowEl);
+          }, delay);
+        });
+      }, true);
+    });
+  }
+
+  function bindWindowFocus() {
+    FOCUS_CONFIG.forEach((config) => {
+      const windowEl = document.querySelector(config.selector);
+      if (!windowEl || windowEl.dataset.onoffBringFrontBound === 'true') return;
+      windowEl.dataset.onoffBringFrontBound = 'true';
+      windowEl.addEventListener('pointerdown', () => bringToFront(windowEl), true);
+      windowEl.addEventListener('focusin', () => bringToFront(windowEl), true);
+    });
+  }
+
+  function bringToFront(target) {
+    if (!target) return;
+    FOCUS_CONFIG.forEach((config) => {
+      const windowEl = document.querySelector(config.selector);
+      if (!windowEl) return;
+      windowEl.style.zIndex = String(windowEl === target ? WINDOW_FRONT_Z : WINDOW_BASE_Z);
+    });
   }
 
   function handleToolButtonClick(config) {
