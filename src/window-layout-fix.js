@@ -24,13 +24,13 @@
       fallbackHeight: 620
     },
     {
-      action: 'notebook',
-      selector: '.onoff-notebook-host',
-      shadowHeaderSelector: 'header',
-      positionKey: 'onoffNotebookPosition',
-      manualKey: 'onoffNotebookUserPlaced',
-      fallbackWidth: 560,
-      fallbackHeight: 520
+      action: 'followups',
+      selector: '.onoff-followups-window',
+      headerSelector: '.onoff-followups-header',
+      positionKey: 'onoffFollowupsPosition',
+      manualKey: 'onoffFollowupsUserPlaced',
+      fallbackWidth: 520,
+      fallbackHeight: 620
     }
   ];
 
