@@ -176,6 +176,7 @@
   }
 
   async function askAssistant(question, mode) {
+    notifyMascot('processing');
     const userEntry = { role: 'user', content: question };
     history.push(userEntry);
     appendMessage(userEntry);
@@ -202,9 +203,11 @@
       appendMessage(entry);
       history = history.slice(-12);
       await chrome.storage.local.set({ [HISTORY_KEY]: history });
+      notifyMascot('success', 1800);
     } catch (error) {
       loading.remove();
       appendMessage({ role: 'assistant', content: `No fue posible consultar el asistente: ${error.message}`, error: true });
+      notifyMascot('error', 2400);
     }
   }
 
@@ -312,5 +315,9 @@
 
   function clamp(value, min, max) {
     return max < min ? min : Math.min(max, Math.max(min, value));
+  }
+
+  function notifyMascot(state, duration = 0) {
+    window.dispatchEvent(new CustomEvent('onoff:mascot-state', { detail: { state, duration } }));
   }
 })();

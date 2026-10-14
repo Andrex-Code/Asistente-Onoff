@@ -33,7 +33,7 @@
     const open = searchWindow.hidden;
     searchWindow.hidden = !open;
     event.currentTarget.classList.toggle('is-active', open);
-    if (open) { await applyPosition(); input.focus(); }
+    if (open) { notifyMascot('notify', 1300); await applyPosition(); input.focus(); }
   }
 
   function buildWindow() {
@@ -72,7 +72,8 @@
 
   async function runSearch() {
     const parsed = parseValue(input.value);
-    if (!parsed) return setStatus('Ingrese un valor válido para la búsqueda seleccionada.', 'error');
+    if (!parsed) { setStatus('Ingrese un valor válido para la búsqueda seleccionada.', 'error'); notifyMascot('error', 1800); return; }
+    notifyMascot('search');
     submitButton.disabled = true; input.disabled = true; resultBox.innerHTML = ''; setStatus('Consultando Bitrix…', 'loading');
     try {
       const backend = String((await chrome.storage.sync.get('backendUrl')).backendUrl || 'https://asistente-onoff.vercel.app').replace(/\/$/, '');
@@ -87,7 +88,8 @@
       }
       else if (mode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
-    } catch (error) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); }
+      notifyMascot('success', 1800);
+    } catch (error) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); notifyMascot('error', 2400); }
     finally { submitButton.disabled = false; input.disabled = false; }
   }
 
@@ -269,5 +271,6 @@
   async function applyPosition(){const p=(await chrome.storage.local.get(POSITION_KEY))[POSITION_KEY];if(p){searchWindow.style.left=`${p.left}px`;searchWindow.style.top=`${p.top}px`;searchWindow.style.right='auto';searchWindow.style.bottom='auto';keepInside();}}
   function keepInside(){if(!searchWindow||searchWindow.hidden)return;const r=searchWindow.getBoundingClientRect();searchWindow.style.left=`${clamp(r.left,8,window.innerWidth-r.width-8)}px`;searchWindow.style.top=`${clamp(r.top,8,window.innerHeight-r.height-8)}px`;}
   function clamp(v,min,max){return Math.min(Math.max(v,min),Math.max(min,max));}
+  function notifyMascot(state, duration = 0) { window.dispatchEvent(new CustomEvent('onoff:mascot-state', { detail: { state, duration } })); }
   function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 })();
