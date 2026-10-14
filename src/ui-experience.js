@@ -18,7 +18,7 @@
     }
     if(root.matches('.ikono-translator-panel')){
       menuObserver?.disconnect();decorateMenu(root);
-      if(!root.dataset.onoffMobileNavigation){root.dataset.onoffMobileNavigation='true';root.addEventListener('click',event=>{const action=event.target.closest('button[data-action]')?.dataset.action;if(matchMedia('(max-width:620px)').matches&&['assistant-chat','bitrix-search','followups','templates','scripts'].includes(action))setTimeout(()=>{root.hidden=true;document.querySelector('.ikono-translator-launcher')?.setAttribute('aria-expanded','false');},0);},true);}
+      if(!root.dataset.onoffMobileNavigation){root.dataset.onoffMobileNavigation='true';root.addEventListener('click',event=>{const action=event.target.closest('button[data-action]')?.dataset.action;if(['assistant-chat','bitrix-search','followups','templates','scripts'].includes(action))setTimeout(()=>{root.hidden=true;document.querySelector('.ikono-translator-launcher')?.setAttribute('aria-expanded','false');},180);},true);}
       menuObserver=new MutationObserver(()=>decorateMenu(root));menuObserver.observe(root,{childList:true,subtree:true});
     }
   }

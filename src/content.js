@@ -100,7 +100,6 @@ function createEdgeFallbackLauncher() {
   edgeLauncher = document.createElement('button');
   edgeLauncher.className = 'ikono-translator-launcher onoff-mascot';
   edgeLauncher.type = 'button';
-  edgeLauncher.title = 'Asistente ONOFF. Clic para abrir. Mantenga presionado para mover.';
   edgeLauncher.setAttribute('aria-label', 'Abrir Asistente ONOFF');
   edgeLauncher.setAttribute('aria-expanded','false');
   edgeLauncher.setAttribute('aria-controls','onoff-launcher-menu');

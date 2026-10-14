@@ -143,3 +143,9 @@ Para actualizar una instalación descomprimida, descargue la rama correspondient
 - Favoritos, recientes, nombre y posición se guardan localmente. Los mensajes no requieren backend ni conexión. El catálogo está en src/scripts-data.js, con originalText separado de la plantilla personalizada.
 
 QA de scripts: nombre obligatorio, variables distintas, conservación del borrador, no envío, cambio de cliente, editor enriquecido, fallback sin editor, canal separado y preferencias persistentes. El navegador usa una página de prueba local que replica los selectores de iKono; la comprobación final en la sesión real de cada instalación se realiza cargando la extensión y pegando en un borrador.
+
+## Tamaños compactos 1.10.1
+
+Menú de 260 px y máximo 450 px de alto, con una fila por herramienta. El menú se cierra al abrir una subventana también en escritorio. Los nombres y las descripciones accesibles se conservan. La mascota ocupa menos espacio y no usa el tooltip negro nativo del navegador.
+
+Límites iniciales: conversación 350 × 460, Bitrix 390 × 460, seguimientos 410 × 490, plantillas 320 × 410 y scripts 500 × 490 px. Se ajustan al espacio de la pantalla y mantienen el desplazamiento interno. El popup de la barra mide 320 px de ancho, sin el bloque de bienvenida repetido.

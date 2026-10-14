@@ -125,6 +125,8 @@
     const label = button.querySelector('.onoff-menu-label')?.textContent;
     if (hasIcon && label === config.label) return;
     button.classList.add('onoff-menu-button');
+    button.setAttribute('aria-label', config.label);
+    button.setAttribute('aria-description', config.description);
     button.innerHTML = `
       <span class="onoff-menu-leading">
         <span class="onoff-menu-icon">${config.icon}</span>

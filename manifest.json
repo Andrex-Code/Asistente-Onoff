@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "Asistente ONOFF para traducción, mejora de textos, scripts de YaDinero, plantillas, seguimientos, audios, búsqueda en Bitrix y asistencia conversacional.",
   "permissions": [
     "contextMenus",
@@ -53,7 +53,8 @@
         "src/templates-window.css",
         "src/ui-refresh.css",
         "src/robot.css",
-        "src/scripts-window.css"
+        "src/scripts-window.css",
+        "src/compact.css"
       ],
       "run_at": "document_idle"
     }
