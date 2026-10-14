@@ -1,54 +1,19 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Opciones - Asistente ONOFF</title>
-  <link rel="stylesheet" href="options.css" />
-</head>
-<body>
-  <main>
-    <h1>Asistente ONOFF</h1>
-    <p>Configure el motor de traducción y las herramientas visuales. El modo recomendado es Backend seguro, porque la clave permanece en Vercel y no en el navegador.</p>
-
-    <label>
-      Motor de traducción
-      <select id="provider">
-        <option value="backend-openai">Backend seguro</option>
-        <option value="mymemory-free">MyMemory gratis sin clave</option>
-        <option value="offline-basic">Básico offline incluido</option>
-        <option value="libretranslate-local">LibreTranslate local</option>
-      </select>
-    </label>
-
-    <label class="toggle-row">
-      <input id="showCornerButton" type="checkbox" />
-      <span>Mostrar botón fijo ONOFF en la esquina inferior derecha</span>
-    </label>
-
-    <label class="toggle-row">
-      <input id="showSelectionButtons" type="checkbox" />
-      <span>Mostrar botones flotantes Traducir / Falar / Mejorar al seleccionar texto</span>
-    </label>
-
-    <section class="provider-box" data-provider-box="backend-openai">
-      <label>
-        URL del backend
-        <input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app" />
-      </label>
-      <p class="warning">Los asesores no deben configurar ninguna clave en el navegador. La API se administra desde Vercel.</p>
-    </section>
-
-    <section class="provider-box" data-provider-box="libretranslate-local">
-      <label>
-        URL de LibreTranslate local
-        <input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate" />
-      </label>
-    </section>
-
-    <button id="save">Guardar</button>
-    <p id="status" role="status"></p>
-  </main>
-  <script src="options.js"></script>
-</body>
-</html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ajustes · Asistente ONOFF</title><link rel="stylesheet" href="ui-refresh.css"><link rel="stylesheet" href="pages.css"></head>
+<body class="onoff-page onoff-options"><main>
+<header class="onoff-page-brand"><span class="onoff-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v8M7 6.7a8 8 0 1 0 10 0"/></svg></span><div><span class="onoff-kicker">ASISTENTE ONOFF</span><h1>Un espacio a tu medida.</h1></div></header><p class="onoff-page-intro">Personaliza cómo te acompaña ONOFF y cómo funcionan tus herramientas.</p>
+<div class="onoff-settings-grid">
+<section class="onoff-page-card"><div class="onoff-section-title"><h2>Apariencia y movimiento</h2><span class="onoff-section-number">01</span></div><p class="onoff-muted">El diseño se adapta a ti y respeta el movimiento reducido de tu sistema.</p>
+<label class="onoff-field">Tema de la interfaz<select id="onoffTheme" class="onoff-theme-control"><option value="system">Automático · sigue tu sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
+<label class="toggle-row"><span><strong>Mostrar la mascota</strong><small>Acceso flotante a todas las herramientas</small></span><input id="showCornerButton" type="checkbox"></label>
+<label class="toggle-row"><span><strong>Animaciones suaves</strong><small>Flotación, parpadeo y mirada del cursor</small></span><input id="onoffMascotMotionEnabled" type="checkbox"></label>
+<label class="toggle-row"><span><strong>Acciones al seleccionar texto</strong><small>Traducir, Falar y Mejorar</small></span><input id="showSelectionButtons" type="checkbox"></label>
+<button type="button" id="resetLayout" class="onoff-secondary">Restablecer posiciones de las ventanas</button>
+</section>
+<section class="onoff-page-card"><div class="onoff-section-title"><h2>Herramientas de traducción</h2><span class="onoff-section-number">02</span></div><p class="onoff-muted">Elige el servicio que procesará tus traducciones.</p>
+<label class="onoff-field">Motor de traducción<select id="provider"><option value="backend-openai">Backend seguro · recomendado</option><option value="mymemory-free">MyMemory gratis</option><option value="offline-basic">Básico offline</option><option value="libretranslate-local">LibreTranslate local</option></select></label>
+<section class="provider-box" data-provider-box="backend-openai"><label class="onoff-field">URL del backend<input id="backendUrl" type="url" placeholder="https://asistente-onoff.vercel.app"></label><p class="warning">La clave se administra en el servidor. Los asesores no necesitan guardarla en el navegador.</p></section>
+<section class="provider-box" data-provider-box="libretranslate-local"><label class="onoff-field">URL de LibreTranslate<input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate"></label></section>
+<div class="onoff-help-note"><strong>Tu contenido sigue bajo tu control.</strong><p>Las respuestas se copian manualmente. El asistente no envía mensajes por ti.</p></div>
+</section></div><footer class="onoff-settings-save"><p id="status" role="status" aria-live="polite">Guarda para aplicar tus preferencias.</p><button id="save" type="button" class="onoff-primary">Guardar preferencias</button></footer>
+</main><script src="theme.js"></script><script src="options.js"></script></body></html>

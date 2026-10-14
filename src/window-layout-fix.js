@@ -6,6 +6,7 @@
   const WINDOW_BASE_Z = 2147483000;
   const WINDOW_FRONT_Z = 2147483600;
   const FOCUS_CONFIG = [
+    { action: 'scripts', selector: '.onoff-scripts-window' },
     { action: 'templates', selector: '.onoff-templates-window' },
     { action: 'bitrix-search', selector: '.onoff-bitrix-search' },
     { action: 'assistant-chat', selector: '.onoff-assistant-window' },

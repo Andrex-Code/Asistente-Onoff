@@ -11,8 +11,10 @@
   let conversation = [];
   let history = [];
   let dragState = null;
+  let requestBusy = false;
 
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     const panel = document.querySelector(PANEL_SELECTOR);
@@ -89,7 +91,7 @@
         </div>
         <div class="onoff-assistant-messages"></div>
         <form class="onoff-assistant-form">
-          <textarea rows="2" placeholder="Pregunte sobre la conversación actual..." required></textarea>
+          <textarea rows="2" placeholder="Escribe sobre la conversación actual…" required></textarea>
           <button type="submit">Enviar</button>
         </form>
         <button type="button" class="onoff-assistant-refresh" title="Volver a leer los mensajes visibles">
@@ -136,6 +138,7 @@
 
   function submitQuestion(event) {
     event.preventDefault();
+    if (requestBusy) return;
     const question = input.value.trim();
     if (!question) return;
     input.value = '';
@@ -176,6 +179,10 @@
   }
 
   async function askAssistant(question, mode) {
+    if (requestBusy) return;
+    requestBusy = true;
+    assistantWindow.setAttribute('aria-busy','true');
+    assistantWindow.querySelectorAll('[data-mode],button[type=submit]').forEach(button=>button.disabled=true);
     notifyMascot('processing');
     const userEntry = { role: 'user', content: question };
     history.push(userEntry);
@@ -208,6 +215,10 @@
       loading.remove();
       appendMessage({ role: 'assistant', content: `No fue posible consultar el asistente: ${error.message}`, error: true });
       notifyMascot('error', 2400);
+    } finally {
+      requestBusy = false;
+      assistantWindow.setAttribute('aria-busy','false');
+      assistantWindow.querySelectorAll('[data-mode],button[type=submit]').forEach(button=>button.disabled=false);
     }
   }
 
@@ -224,6 +235,7 @@
   }
 
   function appendMessage(entry) {
+    messagesBox.querySelector('.onoff-assistant-empty')?.remove();
     const article = document.createElement('article');
     article.className = `onoff-assistant-message ${entry.role === 'assistant' ? 'is-assistant' : 'is-user'}${entry.error ? ' is-error' : ''}`;
     const text = document.createElement('div');

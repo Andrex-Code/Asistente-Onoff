@@ -1,48 +1,58 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const LAUNCHER_SELECTOR = '.ikono-translator-launcher';
-  const VERSION = '1';
+  const VERSION = '2';
 
   const BUTTONS = {
+    scripts: {label:'Scripts de YaDinero',description:'Busca, personaliza y pega en iKono',chevron:true,icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H9l-5 4zM8 8h8M8 12h6"/></svg>'},
     translate: {
       label: 'Traducir selección',
+      description: 'TryController · Portugués → español',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.4 2.5 3.6 5.5 3.6 9S14.4 18.5 12 21M12 3C9.6 5.5 8.4 8.5 8.4 12S9.6 18.5 12 21"/><path d="m16.5 7.5 2-2 2 2M7.5 16.5l-2 2-2-2"/></svg>'
     },
     falar: {
       label: 'Falar selección',
+      description: 'TryController · Español → portugués',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/><path d="M8 9h8M8 12.5h5"/></svg>'
     },
     improve: {
       label: 'Mejorar texto seleccionado',
+      description: 'Respuestas más claras y profesionales',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.25 3.75L17 8l-3.75 1.25L12 13l-1.25-3.75L7 8l3.75-1.25L12 3Z"/><path d="m18.5 13 .75 2.25L21.5 16l-2.25.75L18.5 19l-.75-2.25L15.5 16l2.25-.75.75-2.25ZM5.5 13l.75 2.25L8.5 16l-2.25.75L5.5 19l-.75-2.25L2.5 16l2.25-.75L5.5 13Z"/></svg>'
     },
     audio: {
       label: 'Cargar audio',
+      description: 'Transcribe y traduce un audio',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13v-2a8 8 0 0 1 16 0v2"/><path d="M4 13h3v6H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 1-2ZM20 13h-3v6h2a2 2 0 0 0 2-2v-2a2 2 0 0 0-1-2Z"/><path d="M17 19c0 1.1-.9 2-2 2h-2"/></svg>'
     },
     'bitrix-search': {
       label: 'Buscar en Bitrix',
+      description: 'Tiendas ON · Clientes y radicados',
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M8 8h5M8 11h3"/></svg>'
     },
     templates: {
       label: 'Plantillas',
+      description: 'Accede a tus plantillas de tareas',
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M4 7v14h11M10 12h6M10 16h6"/></svg>'
     },
     'assistant-chat': {
       label: 'Asistente de conversación',
+      description: 'Interpreta, resume y redacta',
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="12" rx="4"/><path d="M9 11h.01M15 11h.01M9 15h6M12 7V4M9.5 4h5"/></svg>'
     },
     followups: {
       label: 'Seguimientos',
+      description: 'Consulta tareas abiertas de tu equipo',
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2Z"/><path d="M9 9h6M9 13h6M9 17h4"/><path d="m7 4 1.5-2h7L17 4"/></svg>'
     }
   };
 
   const TOOL_WINDOWS = {
+    scripts: '.onoff-scripts-window',
     'bitrix-search': '.onoff-bitrix-search',
     templates: '.onoff-templates-window',
     'assistant-chat': '.onoff-assistant-window',
@@ -53,9 +63,9 @@
   let panelObserver;
   let decorateFrame;
   let stateTimer;
-  let launcherBound = false;
 
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     panel = document.querySelector(PANEL_SELECTOR);
@@ -69,7 +79,8 @@
     panelObserver = new MutationObserver(scheduleDecorate);
     panelObserver.observe(panel, { childList: true, subtree: true });
 
-    stateTimer = window.setInterval(syncState, 500);
+    clearInterval(stateTimer);
+    stateTimer = window.setInterval(syncState, 1200);
     window.addEventListener('resize', syncState);
     document.addEventListener('visibilitychange', syncState);
   }
@@ -117,7 +128,7 @@
     button.innerHTML = `
       <span class="onoff-menu-leading">
         <span class="onoff-menu-icon">${config.icon}</span>
-        <span class="onoff-menu-label">${config.label}</span>
+        <span class="onoff-menu-copy"><span class="onoff-menu-label">${config.label}</span><small class="onoff-menu-subtitle">${config.description}</small></span>
       </span>
       ${config.chevron ? '<span class="onoff-chevron" aria-hidden="true">›</span>' : ''}
     `;
@@ -133,19 +144,25 @@
 
     const find = (selector) => panel.querySelector(`:scope > ${selector}`);
     const desired = [
-      find('.ikono-translator-panel-check'),
+      find('.onoff-menu-head'),
+      find('.onoff-menu-search'),
+      find('.onoff-menu-caption[data-group=quick]'),
+      find('button[data-action=assistant-chat]'),
+      find('button[data-action=scripts]'),
       find('button[data-action="translate"]'),
       find('button[data-action="falar"]'),
       find('button[data-action="improve"]'),
       find('button[data-action="audio"]'),
       divider,
+      find('.onoff-menu-caption[data-group=workspace]'),
       find('button[data-action="bitrix-search"]'),
       find('button[data-action="templates"]'),
-      find('button[data-action="assistant-chat"]'),
       find('button[data-action="followups"]'),
       find('.ikono-translator-audio-input'),
-      find('[data-subview]')
-    ].filter(Boolean);
+      find('[data-subview]'),
+      find('.onoff-menu-empty'),
+      find('.onoff-menu-preferences')
+    ].filter((node, index, array) => node && array.indexOf(node) === index);
 
     const remaining = [...panel.children].filter((node) => !desired.includes(node));
     const finalOrder = [...desired, ...remaining];
@@ -157,8 +174,8 @@
 
   function bindLauncher() {
     const launcher = document.querySelector(LAUNCHER_SELECTOR);
-    if (!launcher || launcherBound) return;
-    launcherBound = true;
+    if (!launcher || launcher.dataset.onoffPolishBound) return;
+    launcher.dataset.onoffPolishBound = 'true';
     launcher.dataset.onoffTooltip = 'Asistente ONOFF';
     launcher.addEventListener('pointerup', () => {
       launcher.classList.remove('is-clicked');
@@ -169,7 +186,7 @@
   }
 
   function syncState() {
-    if (!panel?.isConnected) return;
+    if (!panel?.isConnected || document.hidden) return;
     const launcher = document.querySelector(LAUNCHER_SELECTOR);
     launcher?.classList.toggle('is-panel-open', !panel.hidden && getComputedStyle(panel).display !== 'none');
 

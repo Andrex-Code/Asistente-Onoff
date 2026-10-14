@@ -1,15 +1,19 @@
 (() => {
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const POSITION_KEY = 'onoffBitrixSearchPosition';
+  let buttonObserver;
   let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState;
 
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     panel = document.querySelector(PANEL_SELECTOR);
     if (!panel) return setTimeout(init, 250);
     ensureButton();
-    new MutationObserver(ensureButton).observe(panel, { childList: true });
+    buttonObserver?.disconnect();
+    buttonObserver = new MutationObserver(ensureButton);
+    buttonObserver.observe(panel, { childList: true });
   }
 
   function ensureButton() {

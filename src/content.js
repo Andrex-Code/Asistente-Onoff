@@ -50,7 +50,7 @@ document.addEventListener('selectionchange', () => {
 document.addEventListener('scroll', removeToolbar, true);
 window.addEventListener('resize', () => {
   removeToolbar();
-  positionEdgePanelNearLauncher();
+  applyLauncherPosition();
   keepBubbleInsideViewport();
 });
 document.addEventListener('mousedown', (event) => {
@@ -101,11 +101,15 @@ function createEdgeFallbackLauncher() {
   edgeLauncher.className = 'ikono-translator-launcher onoff-mascot';
   edgeLauncher.type = 'button';
   edgeLauncher.title = 'Asistente ONOFF. Clic para abrir. Mantenga presionado para mover.';
-  edgeLauncher.setAttribute('aria-label', edgeLauncher.title);
-  edgeLauncher.innerHTML = `<span class="onoff-mascot-fallback">ONOFF</span><span class="onoff-mascot-scene" aria-hidden="true"><span class="onoff-mascot-aura"></span><span class="onoff-mascot-robot"><span class="onoff-mascot-head"><span class="onoff-mascot-side onoff-mascot-side-left"></span><span class="onoff-mascot-side onoff-mascot-side-right"></span><span class="onoff-mascot-visor"><span class="onoff-mascot-eye onoff-mascot-eye-left"></span><span class="onoff-mascot-eye onoff-mascot-eye-right"></span><span class="onoff-mascot-lids"></span></span><span class="onoff-mascot-dome"></span></span><span class="onoff-mascot-neck"></span><span class="onoff-mascot-body"><span class="onoff-mascot-chest-light"></span></span><span class="onoff-mascot-arm onoff-mascot-arm-left"></span><span class="onoff-mascot-arm onoff-mascot-arm-right"></span><span class="onoff-mascot-hover-ring"></span></span><span class="onoff-mascot-status" aria-live="polite"></span></span>`;
+  edgeLauncher.setAttribute('aria-label', 'Abrir Asistente ONOFF');
+  edgeLauncher.setAttribute('aria-expanded','false');
+  edgeLauncher.setAttribute('aria-controls','onoff-launcher-menu');
+  globalThis.ONOFFMascot.mount(edgeLauncher, mascotMotionEnabled);
 
   edgePanel = document.createElement('div');
   edgePanel.className = 'ikono-translator-panel';
+  edgePanel.id = 'onoff-launcher-menu';
+  edgePanel.setAttribute('aria-label','Herramientas de Asistente ONOFF');
   edgePanel.hidden = true;
   renderMainPanel();
 
@@ -113,20 +117,12 @@ function createEdgeFallbackLauncher() {
   document.body.appendChild(edgePanel);
   applyLauncherPosition();
   edgeLauncher.addEventListener('pointerdown', startLauncherPointerInteraction);
-  edgeLauncher.addEventListener('pointermove', (event) => {
-    if (!mascotMotionEnabled) return;
-    const bounds = edgeLauncher.getBoundingClientRect();
-    edgeLauncher.style.setProperty('--gaze-x', `${clamp((event.clientX - bounds.left) / bounds.width * 8 - 4, -4, 4)}px`);
-    edgeLauncher.style.setProperty('--gaze-y', `${clamp((event.clientY - bounds.top) / bounds.height * 4 - 2, -2, 2)}px`);
-  });
-  edgeLauncher.addEventListener('pointerenter', () => { if (!launcherDragState) setMascotState('hover'); });
-  edgeLauncher.addEventListener('pointerleave', () => {
-    edgeLauncher.style.setProperty('--gaze-x', '0px');
-    edgeLauncher.style.setProperty('--gaze-y', '0px');
-    if (!launcherDragState) setMascotState('idle');
+  edgeLauncher.addEventListener('click', (event) => {
+    if (event.detail === 0) { setMascotState('greet', 1500); toggleEdgePanel(); }
   });
   applyMascotMotionPreference();
   edgePanel.addEventListener('mousedown', preventFocusLoss);
+  window.dispatchEvent(new CustomEvent('onoff:launcher-mounted'));
   edgePanel.addEventListener('click', (event) => {
     const action = event.target.closest('[data-action]')?.dataset.action;
     if (action === 'bitrix-search') setMascotState('search');
@@ -193,19 +189,13 @@ function renderMainPanel() {
   });
 }
 
-let mascotStateTimer;
 function setMascotState(state, duration = 0) {
-  if (!edgeLauncher) return;
-  window.clearTimeout(mascotStateTimer);
-  edgeLauncher.dataset.state = state;
-  const status = edgeLauncher.querySelector('.onoff-mascot-status');
-  if (status) status.textContent = ({ idle: '', hover: 'Hola', greet: '¡Hola!', processing: 'Procesando', search: 'Buscando', success: 'Listo', error: 'Ups', notify: 'Te acompaño', dragging: 'Moviendo' })[state] || '';
-  if (duration) mascotStateTimer = window.setTimeout(() => setMascotState('idle'), duration);
+  globalThis.ONOFFMascot.setState(state, duration);
 }
 
 function applyMascotMotionPreference() {
   if (!edgeLauncher) return;
-  edgeLauncher.classList.toggle('is-motion-disabled', !mascotMotionEnabled);
+  globalThis.ONOFFMascot.setMotion(mascotMotionEnabled);
   const checkbox = edgePanel?.querySelector('[data-action="toggle-mascot-motion"]');
   if (checkbox) checkbox.checked = mascotMotionEnabled;
 }
@@ -235,6 +225,7 @@ function syncSelectionButtonsCheckboxes() {
 }
 
 function startLauncherPointerInteraction(event) {
+  if (event.button !== 0 || launcherDragState) return;
   event.preventDefault();
   rememberCurrentSelection();
   const rect = edgeLauncher.getBoundingClientRect();
@@ -260,7 +251,16 @@ function startLauncherPointerInteraction(event) {
 }
 
 function moveLauncherPointerInteraction(event) {
-  if (!launcherDragState?.dragging) return;
+  if (!launcherDragState || event.pointerId !== launcherDragState.pointerId) return;
+  if (!launcherDragState.dragging && Math.hypot(event.clientX - launcherDragState.startX, event.clientY - launcherDragState.startY) > 6) {
+    clearTimeout(launcherDragState.holdTimer);
+    launcherDragState.dragging = true;
+    edgeLauncher.classList.add('is-dragging');
+    setMascotState('dragging');
+    edgeLauncher.setPointerCapture?.(event.pointerId);
+    hideEdgePanel();
+  }
+  if (!launcherDragState.dragging) return;
   const left = clamp(launcherDragState.left + event.clientX - launcherDragState.startX, 8, window.innerWidth - edgeLauncher.offsetWidth - 8);
   const top = clamp(launcherDragState.top + event.clientY - launcherDragState.startY, 8, window.innerHeight - edgeLauncher.offsetHeight - 8);
   launcherPosition = { left: Math.round(left), top: Math.round(top) };
@@ -268,7 +268,7 @@ function moveLauncherPointerInteraction(event) {
 }
 
 function endLauncherPointerInteraction(event) {
-  if (!launcherDragState) return;
+  if (!launcherDragState || event.pointerId !== launcherDragState.pointerId) return;
   window.clearTimeout(launcherDragState.holdTimer);
   window.removeEventListener('pointermove', moveLauncherPointerInteraction, true);
   window.removeEventListener('pointerup', endLauncherPointerInteraction, true);
@@ -276,8 +276,8 @@ function endLauncherPointerInteraction(event) {
   const wasDragging = launcherDragState.dragging;
   launcherDragState = null;
   edgeLauncher.classList.remove('is-dragging');
-  edgeLauncher.releasePointerCapture?.(event.pointerId);
-  if (wasDragging) { chrome.storage.sync.set({ launcherPosition }); setMascotState('idle'); } else { setMascotState('greet', 1250); toggleEdgePanel(); }
+  if (edgeLauncher.hasPointerCapture?.(event.pointerId)) edgeLauncher.releasePointerCapture(event.pointerId);
+  if (wasDragging) { chrome.storage.sync.set({ launcherPosition }); setMascotState('idle'); } else if (event.type !== 'pointercancel') { setMascotState('greet', 1500); toggleEdgePanel(); }
 }
 
 function applyLauncherPosition() {
@@ -299,6 +299,7 @@ function applyLauncherPosition() {
 function toggleEdgePanel() {
   rememberCurrentSelection();
   edgePanel.hidden = !edgePanel.hidden;
+  edgeLauncher.setAttribute('aria-expanded', String(!edgePanel.hidden));
   if (!edgePanel.hidden) renderMainPanel();
   positionEdgePanelNearLauncher();
 }
@@ -317,6 +318,7 @@ function positionEdgePanelNearLauncher() {
 }
 
 function removeEdgeFallbackLauncher() {
+  globalThis.ONOFFMascot.destroy();
   edgeLauncher?.remove();
   edgePanel?.remove();
   edgeLauncher = null;
@@ -543,7 +545,7 @@ function restoreSelectionIfPossible() {
 }
 
 function removeToolbar() { currentToolbar?.remove(); currentToolbar = null; }
-function hideEdgePanel() { if (edgePanel) edgePanel.hidden = true; }
+function hideEdgePanel() { if (edgePanel) edgePanel.hidden = true; edgeLauncher?.setAttribute('aria-expanded','false'); }
 function preventFocusLoss(event) { event.preventDefault(); }
 function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || '').split(',').pop()); reader.onerror = () => reject(new Error('No se pudo leer el archivo.')); reader.readAsDataURL(file); }); }
 function clamp(value, min, max) { return max < min ? min : Math.min(max, Math.max(min, value)); }

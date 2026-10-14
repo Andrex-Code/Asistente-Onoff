@@ -116,3 +116,30 @@ lib/config-store.js
 - Los prompts y la base de conocimiento no se incluyen dentro de la extensión.
 - La búsqueda de Bitrix se realiza mediante el backend; la extensión nunca recibe la URL secreta del webhook.
 - No se recomienda guardar conversaciones completas ni datos personales de clientes en la base de conocimiento.
+
+## Experiencia visual 1.10.0
+
+La mascota conserva el concepto blanco perla con visor negro y luz verde suave. El modelo vectorial local añade reflejos, articulaciones, mirada del cursor y expresiones para las operaciones reales. Las animaciones se detienen al ocultar la pestaña o activar movimiento reducido.
+
+El menú, conversación, traducción, Bitrix, seguimientos, plantillas, popup, ajustes y administración comparten una interfaz clara y oscura. El menú permite buscar herramientas; las plantillas se filtran sin distinguir acentos. En pantallas pequeñas, abrir una herramienta cierra el menú para dejarla visible.
+
+Desde Personaliza tu espacio o Ajustes se elige el tema y el movimiento. Ajustes también permite restablecer posiciones. El popup acepta audios arrastrados y permite copiar resultados. El chat evita consultas duplicadas mientras procesa y permite reintentar después de un error.
+
+### Build y comprobaciones locales
+
+- `npm test`: pruebas de seguimientos y transporte.
+- `npm run build`: valida los recursos del manifest y prepara `dist/extension` para Cargar descomprimida. No incluye el backend ni datos privados.
+- `npm install`, `npx playwright install chromium`, `npm run test:ui`: abre Chromium con un perfil separado y prueba la extensión con datos ficticios de un servidor local. La prueba bloquea conexiones externas y guarda capturas e informe en `output/playwright`.
+
+Para actualizar una instalación descomprimida, descargue la rama correspondiente, pulse Recargar en la tarjeta de ONOFF dentro de `chrome://extensions` y recargue las páginas donde usa la extensión.
+
+## Scripts de atención para YaDinero
+
+- Biblioteca local con 153 mensajes de YaDinero en nueve temas y 9 de Domicilios ON, en el canal Tiendas ON. Se conserva el texto del Excel, con hoja y celda de origen en cada mensaje.
+- Busca por tema o contenido, guarda favoritos y vuelve a los últimos 12 mensajes usados. Seleccionar un mensaje abre una vista previa editable.
+- Completa tu nombre una sola vez. Los campos del cliente (crédito, ticket, fechas, montos) se completan por mensaje y se borran al cambiar de chat. No se guardan esos valores ni mensajes personalizados en el almacenamiento.
+- **Pegar en iKono** inserta en el borrador, conserva su contenido y nunca envía. Reconoce el editor de iKono basado en Matrix/Element, tanto texto simple como enriquecido. Al cambiar de cliente o reemplazarse el editor, selecciona el campo actual antes de pegar. Si el editor no se reconoce, usa **Copiar**.
+- **Alt + Mayús + Y** abre o enfoca la biblioteca. Puede ajustarse desde chrome://extensions/shortcuts. **Ctrl + Enter**, solo dentro de la ventana de scripts, pega el mensaje listo.
+- Favoritos, recientes, nombre y posición se guardan localmente. Los mensajes no requieren backend ni conexión. El catálogo está en src/scripts-data.js, con originalText separado de la plantilla personalizada.
+
+QA de scripts: nombre obligatorio, variables distintas, conservación del borrador, no envío, cambio de cliente, editor enriquecido, fallback sin editor, canal separado y preferencias persistentes. El navegador usa una página de prueba local que replica los selectores de iKono; la comprobación final en la sesión real de cada instalación se realiza cargando la extensión y pegando en un borrador.

@@ -8,11 +8,13 @@
   let drag, observer, attempt = 0, sortedTasks = [], sortedFor = null, sortedMode = '';
   let sacLoading = false;
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     panel = document.querySelector('.ikono-translator-panel');
     if (!panel) { if (++attempt < 100) setTimeout(init, 250); return; }
     bindButton();
+    observer?.disconnect();
     observer = new MutationObserver(bindButton);
     observer.observe(panel, { childList: true });
   }
@@ -84,7 +86,7 @@
     input.addEventListener('input', () => { sacSelect.value = ''; });
     win.querySelector('[data-reset]').addEventListener('click', reset);
     refresh.addEventListener('click', () => state.view === 'tasks' && state.owner ? loadOwner(state.owner, true) : search(true));
-    cancel.addEventListener('click', () => { state.jobToken += 1; setBusy(false); setStatus('Consulta cancelada en esta ventana.', 'info'); });
+    cancel.addEventListener('click', () => { state.jobToken += 1; setBusy(false); setStatus('Consulta cancelada en esta ventana.', 'info'); notifyMascot('idle'); });
     back.addEventListener('click', () => { state.jobToken += 1; setBusy(false); renderMatches(); content.scrollTop = 0; });
     win.querySelector('[data-close]').addEventListener('click', () => { win.hidden = true; panel?.querySelector('[data-action="followups"]')?.classList.remove('is-active'); });
     win.querySelector('[data-min]').addEventListener('click', () => { win.classList.toggle('is-minimized'); setMinButton(); keepInside(); });
@@ -148,7 +150,7 @@
         setStatus('No se encontraron propietarios.', 'info');
       } else if (state.matches.length === 1) {
         setBusy(false);
-        await loadOwner(state.matches[0], force);
+        return await loadOwner(state.matches[0], force);
       } else {
         renderMatches();
         if (data.moreMatches) setStatus('Se muestran las primeras coincidencias. Escriba un nombre m\u00e1s completo para reducir la lista.', 'info');
@@ -294,6 +296,7 @@
     return sortedTasks;
   }
   function reset() {
+    notifyMascot('idle');
     state.jobToken += 1; state.queryToken += 1; state.view = 'start'; state.query = ''; state.matches = []; state.owner = null; state.tasks = []; state.page = 1;
     input.value = ''; sacSelect.value = ''; setBusy(false); setStatus('', 'info'); renderStart(); content.scrollTop = 0; input.focus();
   }
