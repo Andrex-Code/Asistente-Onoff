@@ -9,3 +9,6 @@ data/*.xlsx
 
 # Local browser QA screenshots and isolated profiles
 output/
+
+# Static output prepared at build time for Vercel
+public/
