@@ -187,3 +187,22 @@
 .onoff-ui :is(.onoff-bitrix-task,.onoff-bitrix-card,.onoff-followups-task) :is(strong,span,small,dt,dd) {
   text-shadow: none;
 }
+
+/* Compact menu header: no redundant tool search, more vertical space. */
+.onoff-ui.ikono-translator-panel .onoff-menu-head {
+  align-items:center;
+  padding:2px 4px 7px;
+  gap:8px;
+}
+.onoff-ui.ikono-translator-panel .onoff-menu-head > div:first-child {
+  display:grid;
+  gap:2px;
+  min-width:0;
+}
+.onoff-ui.ikono-translator-panel .onoff-menu-greeting {
+  display:block;
+  color:var(--on-muted);
+  font-size:11px;
+  line-height:1.3;
+  font-weight:450;
+}
