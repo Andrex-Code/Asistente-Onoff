@@ -127,3 +127,63 @@
 .onoff-ui .onoff-bitrix-task-empty{background:var(--on-raised);color:var(--on-muted);border-color:var(--on-line);}.onoff-ui .onoff-bitrix-task-group{border-color:var(--on-line);}.onoff-ui .onoff-bitrix-task-group-title{color:var(--on-muted);}.onoff-ui .onoff-followups-status[data-type=info]{background:var(--on-raised);color:var(--on-muted);border-color:var(--on-line);}
 
 .onoff-ui.onoff-followups-window :is(input,select){border-color:var(--on-line);}.onoff-ui .onoff-followups-sortbar{color:var(--on-muted);}
+
+
+/* Contrast audit: Bitrix cards inherited fixed light-theme text colors while
+   dark theme replaced their backgrounds. Scope all overrides to ONOFF widgets. */
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task {
+  background: var(--on-surface);
+  color: var(--on-text);
+  border-color: var(--on-line);
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task.is-closed {
+  background: var(--on-raised);
+  border-left-color: var(--on-muted);
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-top strong,
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-meta strong {
+  color: var(--on-text);
+  opacity: 1;
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-top small,
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-meta span,
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-group-title {
+  color: var(--on-muted);
+  opacity: 1;
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-open,
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-toggle {
+  background: var(--on-raised);
+  color: var(--on-text);
+  border-color: var(--on-line);
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task-status {
+  background: var(--on-tint);
+  color: var(--on-ink);
+}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-task.is-closed .onoff-bitrix-task-status {
+  background: var(--on-line);
+  color: var(--on-text);
+}
+/* Related cards, follow-ups and scripts: avoid fixed dark text on dark surfaces. */
+.onoff-ui .onoff-bitrix-card-title span,
+.onoff-ui .onoff-bitrix-related > strong,
+.onoff-ui .onoff-bitrix-related button,
+.onoff-ui .onoff-followups-task-top strong,
+.onoff-ui .onoff-followups-summary strong,
+.onoff-ui .onoff-followups-user-copy strong,
+.onoff-ui .onoff-followups-range strong {
+  color: var(--on-text);
+}
+.onoff-ui .onoff-bitrix-related button {
+  background: var(--on-raised);
+  border-color: var(--on-line);
+}
+.onoff-ui .onoff-followups-task-top small,
+.onoff-ui .onoff-followups-user-copy small,
+.onoff-ui .onoff-followups-task-meta dt {
+  color: var(--on-muted);
+}
+.onoff-ui :is(.onoff-bitrix-task,.onoff-bitrix-card,.onoff-followups-task) :is(strong,span,small,dt,dd) {
+  text-shadow: none;
+}
