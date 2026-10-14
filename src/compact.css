@@ -1,0 +1,118 @@
+/* Compact defaults keep the customer's conversation visible. */
+.onoff-ui.ikono-translator-panel {
+  width: 260px;
+  max-height: min(450px, calc(100dvh - 16px));
+  padding: 8px;
+  gap: 1px;
+  border-radius: 16px;
+}
+.onoff-menu-head { gap: 8px; padding: 0 3px 6px; }
+.onoff-menu-head .onoff-brand { font-size: 10px; letter-spacing: .8px; }
+.onoff-menu-head h2 { margin-top: 4px; font-size: 15px; }
+.onoff-ui .onoff-menu-search { margin: 0 1px 4px; }
+.onoff-ui .onoff-menu-search input { min-height: 32px; padding: 7px 10px 7px 30px !important; }
+.onoff-menu-search svg { top: 9px; left: 9px; width: 14px; height: 14px; }
+.onoff-menu-caption { margin: 3px 4px 1px; font-size: 9px; letter-spacing: .8px; }
+.onoff-ui.ikono-translator-panel > button.onoff-menu-button {
+  min-height: 30px;
+  padding: 3px 8px;
+  gap: 8px;
+  border-radius: 9px;
+}
+.onoff-menu-leading { gap: 8px; }
+.onoff-ui .onoff-menu-icon { width: 20px; height: 20px; flex-basis: 20px; border-radius: 7px; }
+.onoff-ui .onoff-menu-icon svg { width: 15px; height: 15px; }
+.onoff-menu-label { font-size: 12px; line-height: 1.35; }
+.onoff-ui .onoff-menu-subtitle { display: none; }
+.onoff-ui .onoff-menu-divider { margin: 3px 4px; }
+.onoff-menu-preferences { margin: 5px 2px 0; padding-top: 7px; }
+.onoff-menu-preferences summary { padding-bottom: 2px; }
+.onoff-ui .ikono-translator-panel-check { min-height: 29px; padding: 4px 0; margin: 2px 0; }
+
+.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window) {
+  width: min(var(--on-window-width), calc(100vw - 16px)) !important;
+  max-width: calc(100vw - 16px);
+  height: min(var(--on-window-height), calc(100dvh - 16px)) !important;
+  max-height: min(var(--on-window-height), calc(100dvh - 16px));
+  border-radius: 16px;
+}
+.onoff-ui.onoff-assistant-window { --on-window-width: 350px; --on-window-height: 460px; }
+.onoff-ui.onoff-bitrix-search { --on-window-width: 390px; --on-window-height: 460px; }
+.onoff-ui.onoff-followups-window { --on-window-width: 410px; --on-window-height: 490px; }
+.onoff-ui.onoff-templates-window { --on-window-width: 320px; --on-window-height: 410px; }
+.onoff-ui.onoff-scripts-window { --on-window-width: 500px; --on-window-height: 490px; }
+.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window).is-minimized { height: auto !important; }
+.onoff-ui:is(.onoff-bitrix-search, .onoff-followups-window, .onoff-scripts-window) { height: auto !important; }
+.onoff-ui .onoff-window-header, .onoff-ui .ikono-translator-header { padding: 10px 12px; gap: 9px; }
+.onoff-ui .onoff-window-heading { grid-template-columns: 28px minmax(0, 1fr); column-gap: 8px; }
+.onoff-ui .onoff-window-heading > strong { font-size: 13px; letter-spacing: 0; }
+.onoff-ui .onoff-window-heading > small { font-size: 10px; line-height: 1.3; }
+.onoff-ui .onoff-tool-mark { width: 28px; height: 28px; border-radius: 8px; }
+.onoff-ui .onoff-tool-mark svg { width: 17px; height: 17px; }
+.onoff-ui .onoff-window-header :is([data-min], [data-close], [data-window-action]) { width: 28px; height: 28px; min-height: 28px; }
+.onoff-ui input:not([type=checkbox]):not([type=file]), .onoff-ui select, .onoff-ui textarea { padding: 8px 10px; border-radius: 9px; font-size: 12px; }
+.onoff-ui :is(.onoff-followups-content, .onoff-templates-content) { padding: 10px; }
+.onoff-ui :is(.onoff-followups-form, .onoff-followups-summary, .onoff-followups-users, .onoff-followups-task, .onoff-bitrix-card, .onoff-bitrix-tasks) { padding: 10px; gap: 7px; border-radius: 11px; }
+.onoff-ui :is(.onoff-followups-status, .onoff-bitrix-status) { font-size: 11px; padding: 8px 10px; }
+.onoff-ui :is(.onoff-followups-empty-state, .onoff-bitrix-empty) { padding: 18px 12px; }
+.onoff-ui.onoff-followups-window .onoff-followups-form :is(input, select, button[type=submit]) { height: 34px; padding: 7px 9px; }
+.onoff-ui .onoff-followups-task { gap: 7px; }
+.onoff-ui .onoff-followups-task-top strong { font-size: 12px; }
+.onoff-ui .onoff-followups-user { padding: 8px; }
+.onoff-ui .onoff-bitrix-tabs { padding: 8px 10px; }
+.onoff-ui .onoff-bitrix-search-form { padding: 10px; gap: 7px; }
+.onoff-ui .onoff-bitrix-search-form button { min-height: 34px; padding: 7px 10px; }
+.onoff-ui .onoff-bitrix-results { padding: 10px; gap: 8px; }
+.onoff-ui .onoff-bitrix-card dl { grid-template-columns: 100px minmax(0, 1fr); }
+.onoff-ui .onoff-bitrix-actions button { min-height: 32px; padding: 6px 8px; }
+.onoff-ui .onoff-assistant-actions { padding: 8px 10px; gap: 5px; }
+.onoff-ui .onoff-assistant-actions button { padding: 6px 8px; }
+.onoff-ui .onoff-assistant-refresh { min-height: 30px; margin: 6px 10px 0; padding: 5px 8px !important; }
+.onoff-ui .onoff-assistant-messages { padding: 10px !important; gap: 10px; }
+.onoff-ui .onoff-assistant-message { padding: 10px 12px; font-size: 12px; line-height: 1.55; border-radius: 12px; }
+.onoff-ui .onoff-assistant-empty { padding: 18px 16px; font-size: 12px; }
+.onoff-ui .onoff-assistant-empty::before { margin-bottom: 10px; }
+.onoff-ui .onoff-assistant-form { padding: 9px 10px; gap: 7px; }
+.onoff-ui .onoff-assistant-form textarea { min-height: 40px; padding: 8px 10px; }
+.onoff-ui .onoff-assistant-form button { min-height: 40px; padding: 8px 10px; border-radius: 9px; }
+.onoff-ui .onoff-templates-content { gap: 8px; }
+.onoff-ui .onoff-templates-list { gap: 5px; }
+.onoff-ui .onoff-template-item { min-height: 42px; padding: 8px; gap: 7px; grid-template-columns: 23px 1fr 12px; border-radius: 9px; }
+.onoff-template-index { width: 22px; height: 22px; border-radius: 6px; }
+
+.onoff-ui.onoff-scripts-window .onoff-window-header { padding: 10px 12px; }
+.onoff-ui .onoff-scripts-content { padding: 10px; }
+.onoff-ui .onoff-scripts-toolbar { gap: 8px; }
+.onoff-ui .onoff-scripts-toolbar label { gap: 3px; }
+.onoff-ui .onoff-script-tabs { padding: 7px 0 6px; gap: 5px; }
+.onoff-ui .onoff-script-tabs button { padding: 5px 8px; font-size: 11px; }
+.onoff-ui .onoff-script-categories { margin-bottom: 7px; }
+.onoff-ui .onoff-script-categories button { padding: 4px 7px; }
+.onoff-ui .onoff-script-workspace { min-height: 0; gap: 8px; }
+.onoff-ui .onoff-script-list { max-height: 205px; }
+.onoff-ui .onoff-script-preview { max-height: 255px; padding: 8px; border-radius: 11px; }
+.onoff-ui .onoff-script-item { margin-bottom: 6px; border-radius: 9px; }
+.onoff-ui .onoff-script-select { padding: 8px; gap: 3px; }
+.onoff-ui .onoff-script-select strong { font-size: 12px; }
+.onoff-ui .onoff-script-fields { gap: 6px; margin-bottom: 7px; }
+.onoff-ui .onoff-script-preview-head h3 { margin-bottom: 8px; font-size: 12px; }
+.onoff-ui.onoff-scripts-window textarea { min-height: 100px; max-height: 150px; font-size: 12px; }
+.onoff-ui .onoff-script-send-actions { gap: 6px; margin-top: 7px; bottom: -8px; padding-top: 6px; }
+.onoff-ui .onoff-script-send-actions button { padding: 8px; font-size: 11px; }
+.onoff-ui .onoff-script-footer { padding-top: 8px; margin-top: 7px; }
+.onoff-ui .onoff-script-footer p { margin-bottom: 6px; }
+
+.onoff-ui.ikono-translator-bubble { width: min(350px, calc(100vw - 16px)); max-height: min(420px, calc(100dvh - 16px)); }
+.onoff-ui .ikono-translator-section { padding: 10px 12px; }
+.onoff-ui .ikono-translator-section p { font-size: 12px; line-height: 1.55; }
+.onoff-ui .ikono-translator-actions { padding: 8px 12px; }
+.ikono-translator-launcher.onoff-mascot { width: 80px; height: 100px; }
+
+@media (max-width: 620px) {
+  .onoff-ui.ikono-translator-panel { max-height: min(450px, calc(100dvh - 16px)); padding: 10px; }
+  .onoff-menu-head h2 { font-size: 15px; }
+  .onoff-ui .onoff-script-list { max-height: 140px; }
+  .onoff-ui .onoff-script-preview { max-height: 215px; }
+  .onoff-ui .onoff-bitrix-card dl { grid-template-columns: 1fr; }
+  .ikono-translator-launcher.onoff-mascot { width: 68px; height: 88px; }
+}

@@ -34,6 +34,7 @@
   let userPlaced = false;
 
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   async function init() {
     panel = document.querySelector(PANEL_SELECTOR);
@@ -80,6 +81,7 @@
 
   async function openWindow() {
     isOpen = true;
+    window.dispatchEvent(new CustomEvent('onoff:mascot-state',{detail:{state:'notify',duration:1500}}));
     templatesWindow.hidden = false;
     templatesWindow.classList.remove('is-minimized');
     templatesWindow.querySelector('[data-min]').textContent = '−';
@@ -90,7 +92,7 @@
 
     window.requestAnimationFrame(() => {
       keepInside();
-      list?.focus({ preventScroll: true });
+      templatesWindow.querySelector('[data-template-search]')?.focus({ preventScroll: true });
     });
   }
 
@@ -116,23 +118,35 @@
         </div>
       </header>
       <div class="onoff-templates-content">
-        <div class="onoff-templates-hint">Use la rueda del mouse para recorrer la lista.</div>
+        <input class="onoff-template-search" data-template-search type="search" autocomplete="off" placeholder="Busca una plantilla…" aria-label="Buscar plantillas" />
         <div class="onoff-templates-list" tabindex="0" aria-label="Lista de plantillas"></div>
+        <p class="onoff-template-count" role="status" aria-live="polite">${TEMPLATES.length} plantillas listas para abrir en Bitrix</p>
       </div>
     `;
 
     document.body.appendChild(templatesWindow);
     list = templatesWindow.querySelector('.onoff-templates-list');
 
-    TEMPLATES.forEach(([name, url]) => {
+    TEMPLATES.forEach(([name, url], index) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'onoff-template-item';
-      button.textContent = name;
+      button.title = name;
+      button.setAttribute('aria-label', name + '. Abrir en Bitrix');
+      button.dataset.search = normalize(name);
+      const number = document.createElement('span');number.className='onoff-template-index';number.textContent=String(index+1).padStart(2,'0');
+      const label = document.createElement('span');const clean=name.replace(/^TCXXXX\s*-\s*(?:S\s+|I\s+)?/,'').toLocaleLowerCase('es');label.textContent=clean.charAt(0).toUpperCase()+clean.slice(1);
+      const arrow=document.createElement('span');arrow.className='onoff-template-arrow';arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');
+      button.append(number,label,arrow);
       button.addEventListener('click', () => window.open(url, '_blank', 'noopener'));
       list.appendChild(button);
     });
 
+    templatesWindow.querySelector('[data-template-search]').addEventListener('input', event => {
+      const query=normalize(event.target.value);let count=0;
+      list.querySelectorAll('button').forEach(button=>{button.hidden=!button.dataset.search.includes(query);if(!button.hidden)count++;});
+      templatesWindow.querySelector('.onoff-template-count').textContent=count ? count+' plantilla'+(count===1?'':'s')+' disponible'+(count===1?'':'s') : 'No hay coincidencias. Prueba con otra palabra.';
+    });
     templatesWindow.querySelector('[data-close]').addEventListener('click', closeWindow);
     templatesWindow.querySelector('[data-min]').addEventListener('click', toggleMinimized);
     templatesWindow.querySelector('.onoff-templates-header').addEventListener('pointerdown', startDrag);
@@ -245,6 +259,8 @@
     templatesWindow.style.right = 'auto';
     templatesWindow.style.bottom = 'auto';
   }
+
+  function normalize(value) { return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es'); }
 
   function clamp(value, min, max) {
     return max < min ? min : Math.min(max, Math.max(min, value));

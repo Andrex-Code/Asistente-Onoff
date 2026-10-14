@@ -4,9 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Administración | Asistente ONOFF</title>
+  <link rel="stylesheet" href="/src/ui-refresh.css">
+  <link rel="stylesheet" href="/src/pages.css">
   <link rel="stylesheet" href="/admin/styles.css">
 </head>
-<body>
+<body class="onoff-page onoff-admin">
   <main class="shell">
     <section id="loginView" class="card login-card">
       <div class="brand">ONOFF</div>
@@ -23,7 +25,7 @@
     <section id="adminView" class="hidden">
       <header class="topbar">
         <div><span class="brand">ONOFF</span><h1>Configuración del asistente</h1></div>
-        <button id="logoutButton" class="secondary">Cerrar sesión</button>
+        <div class="admin-tools"><select class="onoff-theme-control" aria-label="Tema de administración"><option value="system">Tema automático</option><option value="light">Claro</option><option value="dark">Oscuro</option></select><button id="logoutButton" class="secondary">Cerrar sesión</button></div>
       </header>
       <div class="notice" id="storageNotice"></div>
       <article class="card afacturar-card">
@@ -59,6 +61,7 @@
       </form>
     </section>
   </main>
+  <script src="/src/theme.js"></script>
   <script src="/admin/app.js"></script>
 </body>
 </html>

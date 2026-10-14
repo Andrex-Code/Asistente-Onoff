@@ -1,0 +1,35 @@
+name: Validar Asistente ONOFF
+
+on:
+  push:
+    branches:
+      - feature/mascota-robot-onoff
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  extension-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit tests
+        run: npm test
+      - name: Build extension and web
+        run: npm run build
+      - name: Verify web output
+        run: test -f public/index.html && test -f public/admin/index.html && test -f dist/extension/manifest.json
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser QA with local fixtures
+        run: npm run test:ui

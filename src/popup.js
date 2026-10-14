@@ -30,6 +30,7 @@ transcribeButton.addEventListener('click', async () => {
 
   try {
     transcribeButton.disabled = true;
+    transcribeButton.textContent = 'Procesando audio…';
     transcriptBox.hidden = true;
     spanishBox.hidden = true;
     setStatus('Procesando audio...');
@@ -56,6 +57,7 @@ transcribeButton.addEventListener('click', async () => {
     setStatus(error.message, true);
   } finally {
     transcribeButton.disabled = false;
+    transcribeButton.textContent = 'Transcribir al español ↗';
   }
 });
 
@@ -106,3 +108,16 @@ function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.className = isError ? 'status error' : 'status';
 }
+
+for (const [id,key] of [['showCornerButtonPopup','showCornerButton'],['mascotMotionPopup','onoffMascotMotionEnabled']]) {
+  const control=document.getElementById(id);
+  chrome.storage.sync.get(key,saved=>control.checked=saved[key]??true);
+  control.addEventListener('change',()=>chrome.storage.sync.set({[key]:control.checked}));
+}
+document.querySelectorAll('[data-copy-result]').forEach(button=>button.addEventListener('click',async()=>{
+  try {await navigator.clipboard.writeText(document.getElementById(button.dataset.copyResult).textContent);button.textContent='Copiado';setTimeout(()=>button.textContent='Copiar',1400);}catch{setStatus('No se pudo copiar. Selecciona el texto y cópialo manualmente.',true);}
+}));
+const upload=document.querySelector('.onoff-upload');
+upload.addEventListener('dragover',event=>{event.preventDefault();upload.classList.add('is-over');});
+upload.addEventListener('dragleave',()=>upload.classList.remove('is-over'));
+upload.addEventListener('drop',event=>{event.preventDefault();upload.classList.remove('is-over');const file=event.dataTransfer?.files?.[0];if(!file)return;if(!/^audio\//.test(file.type)&&! /\.(opus|ogg|webm|mp3|m4a|wav)$/i.test(file.name)){setStatus('Selecciona un archivo de audio compatible.',true);return;}const transfer=new DataTransfer();transfer.items.add(file);audioFile.files=transfer.files;setStatus('Audio listo para transcribir.');});

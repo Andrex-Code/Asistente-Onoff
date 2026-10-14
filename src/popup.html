@@ -1,44 +1,19 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>Asistente ONOFF</title>
-  <style>
-    body { width: 360px; margin: 0; padding: 16px; font-family: system-ui, sans-serif; color: #0f172a; }
-    h1 { font-size: 17px; margin: 0 0 8px; }
-    h2 { font-size: 14px; margin: 18px 0 8px; }
-    p { margin: 0 0 12px; line-height: 1.4; }
-    a { color: #16a34a; font-weight: 700; }
-    input[type="file"] { width: 100%; margin: 8px 0 10px; }
-    button { width: 100%; min-height: 38px; border: 0; border-radius: 10px; background: #16a34a; color: white; font-weight: 800; cursor: pointer; }
-    button:disabled { opacity: 0.55; cursor: not-allowed; }
-    .toggle-row { display: flex; align-items: center; gap: 8px; margin: 12px 0; padding: 10px; border: 1px solid #dbeafe; border-radius: 12px; background: #f8fafc; font-size: 13px; font-weight: 700; }
-    .toggle-row input { width: 16px; height: 16px; accent-color: #16a34a; }
-    .box { margin-top: 12px; padding: 12px; border: 1px solid #dbeafe; border-radius: 12px; background: #f8fafc; }
-    .result-title { display: block; margin-bottom: 6px; color: #15803d; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
-    .result-text { margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.45; }
-    .status { color: #475569; font-size: 13px; }
-    .error { color: #b91c1c; }
-  </style>
-</head>
-<body>
-  <h1>Asistente ONOFF</h1>
-  <p>Traduzca textos, mejore respuestas, abra plantillas, gestione seguimientos o cargue un audio.</p>
-  <a href="options.html" target="_blank">Abrir opciones</a>
-
-  <label class="toggle-row">
-    <input id="showSelectionButtons" type="checkbox" />
-    <span>Mostrar botones flotantes Traducir / Falar / Mejorar</span>
-  </label>
-
-  <h2>Transcribir audio descargado</h2>
-  <p class="status">Cargue audios de iKono en formato opus/ogg/webm/mp3/m4a/wav.</p>
-  <input id="audioFile" type="file" accept="audio/*,.opus,.ogg,.webm,.mp3,.m4a,.wav" />
-  <button id="transcribeButton" type="button">Transcribir al español</button>
-
-  <div id="status" class="status"></div>
-  <div id="transcriptBox" class="box" hidden><span class="result-title">Transcripción original</span><p id="transcript" class="result-text"></p></div>
-  <div id="spanishBox" class="box" hidden><span class="result-title">Español</span><p id="spanish" class="result-text"></p></div>
-  <script src="popup.js"></script>
-</body>
-</html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Asistente ONOFF</title><link rel="stylesheet" href="ui-refresh.css"><link rel="stylesheet" href="pages.css"></head>
+<body class="onoff-page onoff-popup">
+  <header class="onoff-page-brand"><span class="onoff-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v8M7 6.7a8 8 0 1 0 10 0"/></svg></span><div><span class="onoff-kicker">TU COMPAÑERO DE TRABAJO</span><h1>Asistente ONOFF</h1></div><a class="onoff-settings-link" href="options.html" target="_blank" aria-label="Abrir ajustes" title="Ajustes">⚙</a></header>
+  <section class="onoff-welcome"><span class="onoff-kicker">MENOS PASOS, MÁS ENFOQUE</span><h2>Una mano con tu día.</h2><p>Traduce, redacta y consulta desde la mascota en tus páginas.</p></section>
+  <details class="onoff-page-card onoff-popup-preferences"><summary class="onoff-section-title"><span>Tu espacio</span><span class="onoff-tiny-label">Personalizar ⌄</span></summary>
+    <label class="toggle-row"><span><strong>Mascota ONOFF</strong><small>Acceso a todas tus herramientas</small></span><input id="showCornerButtonPopup" type="checkbox"></label>
+    <label class="toggle-row"><span><strong>Acciones al seleccionar</strong><small>Traducir, Falar y Mejorar texto</small></span><input id="showSelectionButtons" type="checkbox"></label>
+    <label class="toggle-row"><span><strong>Movimiento suave</strong><small>Animaciones y mirada del robot</small></span><input id="mascotMotionPopup" type="checkbox"></label>
+  </details>
+  <section class="onoff-page-card"><div class="onoff-section-title"><h2>Del audio al texto</h2><span class="onoff-tiny-label">Hasta 25 MB</span></div><p class="onoff-muted">Carga un audio y recibe su transcripción y versión en español.</p>
+    <label class="onoff-upload"><span>Selecciona o arrastra un audio</span><small>OPUS · OGG · WEBM · MP3 · M4A · WAV</small><input id="audioFile" type="file" aria-label="Seleccionar archivo de audio" accept="audio/*,.opus,.ogg,.webm,.mp3,.m4a,.wav"></label>
+    <button id="transcribeButton" class="onoff-primary" type="button">Transcribir al español <span aria-hidden="true">↗</span></button>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <div id="transcriptBox" class="box" hidden><div class="onoff-result-heading"><span class="result-title">Transcripción original</span><button type="button" class="onoff-copy-result" data-copy-result="transcript">Copiar</button></div><p id="transcript" class="result-text"></p></div>
+    <div id="spanishBox" class="box" hidden><div class="onoff-result-heading"><span class="result-title">En español</span><button type="button" class="onoff-copy-result" data-copy-result="spanish">Copiar</button></div><p id="spanish" class="result-text"></p></div>
+  </section><footer class="onoff-page-footer"><span class="onoff-brand-dot"></span> Tu asistente, siempre a un clic.</footer>
+  <script src="theme.js"></script><script src="popup.js"></script>
+</body></html>

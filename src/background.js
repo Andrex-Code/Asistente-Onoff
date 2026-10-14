@@ -249,3 +249,9 @@ const ES_PT = {
   'mi préstamo': 'meu empréstimo', 'mi prestamo': 'meu empréstimo', 'asesor': 'atendente', 'dinero': 'dinheiro', 'pago': 'pagamento',
   'recibo': 'boleto', 'cuota': 'parcela', 'vencimiento': 'vencimento', 'hoy': 'hoje', 'mañana': 'amanhã', 'manana': 'amanhã', 'sí': 'sim', 'si': 'sim', 'no': 'não'
 };
+
+chrome.commands.onCommand.addListener(async command => {
+  if (command !== 'open-scripts') return;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (tab?.id) chrome.tabs.sendMessage(tab.id, { type: 'ONOFF_OPEN_SCRIPTS' }).catch(() => {});
+});

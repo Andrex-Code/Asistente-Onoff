@@ -6,6 +6,7 @@
 
   installSafeReplacement();
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     const panel = document.querySelector(PANEL_SELECTOR);

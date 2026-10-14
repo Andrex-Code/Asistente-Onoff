@@ -1,0 +1,36 @@
+/* The ONOFF character stays pearl white in both themes, like the approved concept. */
+.ikono-translator-launcher.onoff-mascot { width:98px;height:124px;border:0;padding:0;background:transparent!important;box-shadow:none!important;overflow:visible!important;border-radius:20px;isolation:isolate;transform:none!important;transition:none!important;will-change:auto; }
+.onoff-mascot .onoff-robot {display:block;width:100%;height:100%;overflow:visible;pointer-events:none;}
+.onoff-mascot::before,.onoff-mascot::after {content:none!important;}
+.onoff-mascot .onoff-robot-fallback {display:none;}
+.onoff-mascot:focus-visible {outline:2px solid #21a765;outline-offset:5px;}
+.onoff-robot-float {animation:onoff-levitate 4.8s ease-in-out infinite;transform-origin:90px 110px;}
+.onoff-robot-head {transform-origin:90px 100px;transition:transform .22s ease;}
+.onoff-robot-gaze {transform:translate(var(--on-gaze-x,0px),var(--on-gaze-y,0px));transition:transform .16s ease;}
+.onoff-robot-blink {transform-origin:90px 76px;animation:onoff-blink 6.3s ease-in-out infinite;}
+.onoff-robot-open-eyes,.onoff-robot-error-eyes,.onoff-robot-sparks {display:none;}
+.onoff-robot-left-arm {transform-origin:48px 140px;}.onoff-robot-right-arm {transform-origin:132px 140px;}
+.onoff-robot-status {position:absolute;bottom:-19px;left:50%;transform:translateX(-50%);padding:6px 10px;border:1px solid #d7e8df;border-radius:9px;background:#fcfefd;color:#345347;font:600 11px/1.25 system-ui,sans-serif;box-shadow:0 4px 16px #102a2014;white-space:nowrap;pointer-events:none;}
+.onoff-robot-status:empty {display:none;}
+.onoff-mascot[data-state=hover] .onoff-robot-head {transform:rotate(-5deg);}
+.onoff-mascot[data-state=greet] .onoff-robot-left-arm,.onoff-mascot[data-state=success] .onoff-robot-left-arm {animation:onoff-wave .55s ease-in-out 3;}
+.onoff-mascot[data-state=success] .onoff-robot-sparks {display:block;animation:onoff-spark 1.1s ease-out;}
+.onoff-mascot:is([data-state=search],[data-state=processing]) .onoff-robot-happy-eyes,.onoff-mascot:is([data-state=search],[data-state=processing]) .onoff-robot-blink {animation:none;}
+.onoff-mascot:is([data-state=search],[data-state=processing]) .onoff-robot-happy-eyes {display:none;}
+.onoff-mascot:is([data-state=search],[data-state=processing]) .onoff-robot-open-eyes {display:block;animation:onoff-thinking 1.9s ease-in-out infinite;}
+.onoff-mascot[data-state=error] .onoff-robot-happy-eyes {display:none;}.onoff-mascot[data-state=error] .onoff-robot-error-eyes {display:block;}
+.onoff-mascot[data-state=error] .onoff-robot-status {color:#b64940;border-color:#f4d6d2;}
+.onoff-mascot[data-state=dragging] .onoff-robot-float {animation:none;transform:translateY(-6px) rotate(6deg);}
+.onoff-mascot[data-state=dragging] .onoff-robot-ring {opacity:.5;}
+.onoff-mascot[data-paused=true] * {animation-play-state:paused!important;}
+.onoff-mascot.is-motion-disabled * {animation:none!important;transition:none!important;}
+.onoff-mascot.is-motion-disabled .onoff-robot-gaze {transform:none!important;}
+@keyframes onoff-levitate {0%,100% {transform:translateY(0) rotate(-1deg);}50% {transform:translateY(-5px) rotate(1deg);}}
+@keyframes onoff-blink {0%,41%,45%,100% {transform:scaleY(1);}43% {transform:scaleY(.06);}}
+@keyframes onoff-wave {0%,100% {transform:rotate(0);}35% {transform:rotate(120deg);}65% {transform:rotate(105deg);}}
+@keyframes onoff-thinking {0%,100% {opacity:.75;}50% {opacity:1;}}
+@keyframes onoff-spark {from {opacity:0;transform:translateY(5px);}50% {opacity:1;}to {opacity:0;transform:translateY(-5px);}}
+@media(prefers-reduced-motion:reduce){.onoff-mascot *{animation:none!important;transition:none!important;}.onoff-mascot .onoff-robot-gaze{transform:none!important;}}
+@media(max-width:520px){.ikono-translator-launcher.onoff-mascot{width:82px;height:104px;}}
+
+.onoff-robot-status{max-width:min(210px,calc(100vw - 16px));overflow:hidden;text-overflow:ellipsis;}.onoff-mascot[data-tip-align=right] .onoff-robot-status{right:0;left:auto;transform:none;}.onoff-mascot[data-tip-align=left] .onoff-robot-status{left:0;transform:none;}

@@ -29,6 +29,7 @@ let lastTextInputSelection = null;
 let toolbarTimer;
 let showCornerButton = true;
 let showSelectionButtons = true;
+let mascotMotionEnabled = true;
 let launcherPosition = null;
 let launcherDragState = null;
 let bubblePosition = null;
@@ -49,7 +50,7 @@ document.addEventListener('selectionchange', () => {
 document.addEventListener('scroll', removeToolbar, true);
 window.addEventListener('resize', () => {
   removeToolbar();
-  positionEdgePanelNearLauncher();
+  applyLauncherPosition();
   keepBubbleInsideViewport();
 });
 document.addEventListener('mousedown', (event) => {
@@ -59,9 +60,10 @@ document.addEventListener('mousedown', (event) => {
 }, true);
 
 function initSettings() {
-  chrome.storage.sync.get(['showCornerButton', 'showSelectionButtons', 'launcherPosition'], (settings) => {
+  chrome.storage.sync.get(['showCornerButton', 'showSelectionButtons', 'launcherPosition', 'onoffMascotMotionEnabled'], (settings) => {
     showCornerButton = settings.showCornerButton ?? true;
     showSelectionButtons = settings.showSelectionButtons ?? true;
+    mascotMotionEnabled = settings.onoffMascotMotionEnabled ?? true;
     launcherPosition = settings.launcherPosition || null;
     if (showCornerButton) initEdgeFallbackLauncher();
   });
@@ -80,6 +82,10 @@ function initSettings() {
       showCornerButton = changes.showCornerButton.newValue ?? true;
       if (showCornerButton) initEdgeFallbackLauncher(); else removeEdgeFallbackLauncher();
     }
+    if (changes.onoffMascotMotionEnabled) {
+      mascotMotionEnabled = changes.onoffMascotMotionEnabled.newValue ?? true;
+      applyMascotMotionPreference();
+    }
   });
 }
 
@@ -92,13 +98,17 @@ function initEdgeFallbackLauncher() {
 function createEdgeFallbackLauncher() {
   if (!showCornerButton || edgeLauncher || !document.body) return;
   edgeLauncher = document.createElement('button');
-  edgeLauncher.className = 'ikono-translator-launcher';
+  edgeLauncher.className = 'ikono-translator-launcher onoff-mascot';
   edgeLauncher.type = 'button';
-  edgeLauncher.title = 'Asistente ONOFF. Clic para abrir. Mantenga presionado para mover.';
-  edgeLauncher.innerHTML = `<img alt="ONOFF" src="${chrome.runtime.getURL('icons/icon48.png')}" />`;
+  edgeLauncher.setAttribute('aria-label', 'Abrir Asistente ONOFF');
+  edgeLauncher.setAttribute('aria-expanded','false');
+  edgeLauncher.setAttribute('aria-controls','onoff-launcher-menu');
+  globalThis.ONOFFMascot.mount(edgeLauncher, mascotMotionEnabled);
 
   edgePanel = document.createElement('div');
   edgePanel.className = 'ikono-translator-panel';
+  edgePanel.id = 'onoff-launcher-menu';
+  edgePanel.setAttribute('aria-label','Herramientas de Asistente ONOFF');
   edgePanel.hidden = true;
   renderMainPanel();
 
@@ -106,7 +116,17 @@ function createEdgeFallbackLauncher() {
   document.body.appendChild(edgePanel);
   applyLauncherPosition();
   edgeLauncher.addEventListener('pointerdown', startLauncherPointerInteraction);
+  edgeLauncher.addEventListener('click', (event) => {
+    if (event.detail === 0) { setMascotState('greet', 1500); toggleEdgePanel(); }
+  });
+  applyMascotMotionPreference();
   edgePanel.addEventListener('mousedown', preventFocusLoss);
+  window.dispatchEvent(new CustomEvent('onoff:launcher-mounted'));
+  edgePanel.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    if (action === 'bitrix-search') setMascotState('search');
+    else if (action === 'followups' || action === 'assistant-chat' || action === 'templates') setMascotState('notify', 1400);
+  });
 }
 
 function renderMainPanel() {
@@ -114,6 +134,10 @@ function renderMainPanel() {
     <label class="ikono-translator-panel-check">
       <input type="checkbox" data-action="toggle-selection-buttons" />
       <span>Botones flotantes</span>
+    </label>
+    <label class="ikono-translator-panel-check">
+      <input type="checkbox" data-action="toggle-mascot-motion" ${mascotMotionEnabled ? 'checked' : ''} />
+      <span>Animaciones de la mascota</span>
     </label>
     <button type="button" data-action="translate">Traducir selección</button>
     <button type="button" data-action="falar">Falar selección</button>
@@ -128,6 +152,11 @@ function renderMainPanel() {
   syncSelectionButtonsCheckboxes();
 
   edgePanel.querySelector('[data-action="toggle-selection-buttons"]').addEventListener('change', (event) => setSelectionButtonsEnabled(event.target.checked));
+  edgePanel.querySelector('[data-action="toggle-mascot-motion"]').addEventListener('change', (event) => {
+    mascotMotionEnabled = event.target.checked;
+    chrome.storage.sync.set({ onoffMascotMotionEnabled: mascotMotionEnabled });
+    applyMascotMotionPreference();
+  });
   edgePanel.querySelector('[data-action="translate"]').addEventListener('click', async () => {
     const text = rememberCurrentSelection();
     if (!text) return showNoSelectionBubble();
@@ -159,6 +188,22 @@ function renderMainPanel() {
   });
 }
 
+function setMascotState(state, duration = 0) {
+  globalThis.ONOFFMascot.setState(state, duration);
+}
+
+function applyMascotMotionPreference() {
+  if (!edgeLauncher) return;
+  globalThis.ONOFFMascot.setMotion(mascotMotionEnabled);
+  const checkbox = edgePanel?.querySelector('[data-action="toggle-mascot-motion"]');
+  if (checkbox) checkbox.checked = mascotMotionEnabled;
+}
+
+window.addEventListener('onoff:mascot-state', (event) => {
+  const { state = 'idle', duration = 0 } = event.detail || {};
+  setMascotState(state, duration);
+});
+
 function renderTemplates() {
   const view = edgePanel.querySelector('[data-subview]');
   view.innerHTML = `<div class="onoff-subtitle"><strong>Plantillas Bitrix</strong><button type="button" data-close-sub>×</button></div>${TEMPLATES.map(([name, url]) => `<button type="button" class="onoff-link-button" data-url="${url}">${escapeHtml(name)}</button>`).join('')}`;
@@ -179,6 +224,7 @@ function syncSelectionButtonsCheckboxes() {
 }
 
 function startLauncherPointerInteraction(event) {
+  if (event.button !== 0 || launcherDragState) return;
   event.preventDefault();
   rememberCurrentSelection();
   const rect = edgeLauncher.getBoundingClientRect();
@@ -193,6 +239,7 @@ function startLauncherPointerInteraction(event) {
       if (!launcherDragState) return;
       launcherDragState.dragging = true;
       edgeLauncher.classList.add('is-dragging');
+      setMascotState('dragging');
       edgeLauncher.setPointerCapture?.(event.pointerId);
       hideEdgePanel();
     }, 260)
@@ -203,7 +250,16 @@ function startLauncherPointerInteraction(event) {
 }
 
 function moveLauncherPointerInteraction(event) {
-  if (!launcherDragState?.dragging) return;
+  if (!launcherDragState || event.pointerId !== launcherDragState.pointerId) return;
+  if (!launcherDragState.dragging && Math.hypot(event.clientX - launcherDragState.startX, event.clientY - launcherDragState.startY) > 6) {
+    clearTimeout(launcherDragState.holdTimer);
+    launcherDragState.dragging = true;
+    edgeLauncher.classList.add('is-dragging');
+    setMascotState('dragging');
+    edgeLauncher.setPointerCapture?.(event.pointerId);
+    hideEdgePanel();
+  }
+  if (!launcherDragState.dragging) return;
   const left = clamp(launcherDragState.left + event.clientX - launcherDragState.startX, 8, window.innerWidth - edgeLauncher.offsetWidth - 8);
   const top = clamp(launcherDragState.top + event.clientY - launcherDragState.startY, 8, window.innerHeight - edgeLauncher.offsetHeight - 8);
   launcherPosition = { left: Math.round(left), top: Math.round(top) };
@@ -211,7 +267,7 @@ function moveLauncherPointerInteraction(event) {
 }
 
 function endLauncherPointerInteraction(event) {
-  if (!launcherDragState) return;
+  if (!launcherDragState || event.pointerId !== launcherDragState.pointerId) return;
   window.clearTimeout(launcherDragState.holdTimer);
   window.removeEventListener('pointermove', moveLauncherPointerInteraction, true);
   window.removeEventListener('pointerup', endLauncherPointerInteraction, true);
@@ -219,8 +275,8 @@ function endLauncherPointerInteraction(event) {
   const wasDragging = launcherDragState.dragging;
   launcherDragState = null;
   edgeLauncher.classList.remove('is-dragging');
-  edgeLauncher.releasePointerCapture?.(event.pointerId);
-  if (wasDragging) chrome.storage.sync.set({ launcherPosition }); else toggleEdgePanel();
+  if (edgeLauncher.hasPointerCapture?.(event.pointerId)) edgeLauncher.releasePointerCapture(event.pointerId);
+  if (wasDragging) { chrome.storage.sync.set({ launcherPosition }); setMascotState('idle'); } else if (event.type !== 'pointercancel') { setMascotState('greet', 1500); toggleEdgePanel(); }
 }
 
 function applyLauncherPosition() {
@@ -242,6 +298,7 @@ function applyLauncherPosition() {
 function toggleEdgePanel() {
   rememberCurrentSelection();
   edgePanel.hidden = !edgePanel.hidden;
+  edgeLauncher.setAttribute('aria-expanded', String(!edgePanel.hidden));
   if (!edgePanel.hidden) renderMainPanel();
   positionEdgePanelNearLauncher();
 }
@@ -260,6 +317,7 @@ function positionEdgePanelNearLauncher() {
 }
 
 function removeEdgeFallbackLauncher() {
+  globalThis.ONOFFMascot.destroy();
   edgeLauncher?.remove();
   edgePanel?.remove();
   edgeLauncher = null;
@@ -290,38 +348,49 @@ function showSelectionToolbar() {
 }
 
 async function runTranslation(text, direction, label) {
+  setMascotState('processing');
   removeToolbar();
   restoreSelectionIfPossible();
   showBubble({ title: label, original: text, translated: 'Procesando...' });
-  const response = await chrome.runtime.sendMessage({ type: 'IKONO_TRANSLATE', text, direction });
-  if (!response?.ok) return showBubble({ title: 'Error', original: text, translated: response?.error || 'No se pudo procesar.' });
+  let response;
+  try { response = await chrome.runtime.sendMessage({ type: 'IKONO_TRANSLATE', text, direction }); }
+  catch (error) { setMascotState('error', 2400); return showBubble({ title: 'Error', original: text, translated: error.message || 'No se pudo procesar.' }); }
+  if (!response?.ok) { setMascotState('error', 2400); return showBubble({ title: 'Error', original: text, translated: response?.error || 'No se pudo procesar.' }); }
   if (direction === 'es-pt') {
     const replaced = replaceEditableSelection(response.translatedText);
     showBubble({ title: label, original: text, translated: replaced ? `${response.translatedText}\n\nTexto reemplazado en el campo de escritura.` : `${response.translatedText}\n\nNo fue posible reemplazar automáticamente. Use Copiar.` });
   } else {
     showBubble({ title: label, original: text, translated: response.translatedText });
   }
+  setMascotState('success', 1800);
 }
 
 async function runImprove(text) {
+  setMascotState('processing');
   removeToolbar();
   restoreSelectionIfPossible();
   showBubble({ title: 'Mejorar texto', original: text, translated: 'Mejorando texto...' });
-  const response = await chrome.runtime.sendMessage({ type: 'ONOFF_IMPROVE', text });
-  if (!response?.ok) return showBubble({ title: 'Error', original: text, translated: response?.error || 'No se pudo mejorar el texto.' });
+  let response;
+  try { response = await chrome.runtime.sendMessage({ type: 'ONOFF_IMPROVE', text }); }
+  catch (error) { setMascotState('error', 2400); return showBubble({ title: 'Error', original: text, translated: error.message || 'No se pudo mejorar el texto.' }); }
+  if (!response?.ok) { setMascotState('error', 2400); return showBubble({ title: 'Error', original: text, translated: response?.error || 'No se pudo mejorar el texto.' }); }
   const replaced = replaceEditableSelection(response.improvedText);
   showBubble({ title: 'Texto mejorado', original: text, translated: replaced ? `${response.improvedText}\n\nTexto reemplazado en el campo de escritura.` : `${response.improvedText}\n\nNo fue posible reemplazar automáticamente. Use Copiar.` });
+  setMascotState('success', 1800);
 }
 
 async function transcribeUploadedAudio(file) {
-  if (file.size > 25 * 1024 * 1024) return showBubble({ title: 'Audio demasiado grande', original: file.name, translated: 'El archivo supera 25 MB.' });
+  if (file.size > 25 * 1024 * 1024) { setMascotState('error', 2400); return showBubble({ title: 'Audio demasiado grande', original: file.name, translated: 'El archivo supera 25 MB.' }); }
+  setMascotState('processing');
   showBubble({ title: 'Transcripción de audio', original: file.name, translated: 'Procesando audio...' });
   try {
     const audioBase64 = await fileToBase64(file);
     const response = await chrome.runtime.sendMessage({ type: 'IKONO_TRANSCRIBE_AUDIO', audioBase64, fileName: file.name, mimeType: file.type });
     if (!response?.ok) throw new Error(response?.error || 'No se pudo transcribir el audio.');
     showBubble({ title: 'Audio traducido', original: response.transcript || file.name, translated: response.spanish || 'No se recibió traducción.' });
+    setMascotState('success', 1800);
   } catch (error) {
+    setMascotState('error', 2400);
     showBubble({ title: 'Error de audio', original: file.name, translated: error.message });
   }
 }
@@ -475,7 +544,7 @@ function restoreSelectionIfPossible() {
 }
 
 function removeToolbar() { currentToolbar?.remove(); currentToolbar = null; }
-function hideEdgePanel() { if (edgePanel) edgePanel.hidden = true; }
+function hideEdgePanel() { if (edgePanel) edgePanel.hidden = true; edgeLauncher?.setAttribute('aria-expanded','false'); }
 function preventFocusLoss(event) { event.preventDefault(); }
 function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result || '').split(',').pop()); reader.onerror = () => reject(new Error('No se pudo leer el archivo.')); reader.readAsDataURL(file); }); }
 function clamp(value, min, max) { return max < min ? min : Math.min(max, Math.max(min, value)); }

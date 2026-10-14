@@ -6,3 +6,9 @@ dist/
 # Base interna Afacturar: se inyecta solo en paquetes de distribución
 data/afacturar-index.json
 data/*.xlsx
+
+# Local browser QA screenshots and isolated profiles
+output/
+
+# Static output prepared at build time for Vercel
+public/

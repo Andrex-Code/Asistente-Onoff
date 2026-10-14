@@ -8,11 +8,13 @@
   let drag, observer, attempt = 0, sortedTasks = [], sortedFor = null, sortedMode = '';
   let sacLoading = false;
   init();
+  window.addEventListener('onoff:launcher-mounted', init);
 
   function init() {
     panel = document.querySelector('.ikono-translator-panel');
     if (!panel) { if (++attempt < 100) setTimeout(init, 250); return; }
     bindButton();
+    observer?.disconnect();
     observer = new MutationObserver(bindButton);
     observer.observe(panel, { childList: true });
   }
@@ -26,6 +28,7 @@
       win.hidden = !win.hidden;
       button.classList.toggle('is-active', !win.hidden);
       if (!win.hidden) {
+        notifyMascot('notify', 1400);
         win.classList.remove('is-minimized');
         setMinButton();
         applyPosition().catch(() => keepInside());
@@ -83,7 +86,7 @@
     input.addEventListener('input', () => { sacSelect.value = ''; });
     win.querySelector('[data-reset]').addEventListener('click', reset);
     refresh.addEventListener('click', () => state.view === 'tasks' && state.owner ? loadOwner(state.owner, true) : search(true));
-    cancel.addEventListener('click', () => { state.jobToken += 1; setBusy(false); setStatus('Consulta cancelada en esta ventana.', 'info'); });
+    cancel.addEventListener('click', () => { state.jobToken += 1; setBusy(false); setStatus('Consulta cancelada en esta ventana.', 'info'); notifyMascot('idle'); });
     back.addEventListener('click', () => { state.jobToken += 1; setBusy(false); renderMatches(); content.scrollTop = 0; });
     win.querySelector('[data-close]').addEventListener('click', () => { win.hidden = true; panel?.querySelector('[data-action="followups"]')?.classList.remove('is-active'); });
     win.querySelector('[data-min]').addEventListener('click', () => { win.classList.toggle('is-minimized'); setMinButton(); keepInside(); });
@@ -133,6 +136,7 @@
     const name = input.value.replace(/\s+/g, ' ').trim();
     if (name.length < 2) { setStatus('Escriba al menos dos caracteres.', 'error'); input.focus(); return; }
     const token = ++state.jobToken;
+    notifyMascot('search');
     const queryToken = ++state.queryToken;
     state.query = name; state.matches = []; state.owner = null; state.tasks = [];
     state.view = 'start'; state.page = 1;
@@ -146,13 +150,14 @@
         setStatus('No se encontraron propietarios.', 'info');
       } else if (state.matches.length === 1) {
         setBusy(false);
-        await loadOwner(state.matches[0], force);
+        return await loadOwner(state.matches[0], force);
       } else {
         renderMatches();
         if (data.moreMatches) setStatus('Se muestran las primeras coincidencias. Escriba un nombre m\u00e1s completo para reducir la lista.', 'info');
         loadCounts(queryToken, force);
       }
-    } catch (error) { if (token === state.jobToken) setStatus(error.message, 'error'); }
+      notifyMascot('success', 1600);
+    } catch (error) { if (token === state.jobToken) { setStatus(error.message, 'error'); notifyMascot('error', 2400); } }
     finally { if (token === state.jobToken) setBusy(false); }
   }
   async function loadCounts(queryToken, force) {
@@ -177,6 +182,7 @@
   }
   async function loadOwner(owner, force = false) {
     const token = ++state.jobToken;
+    notifyMascot('search');
     setBusy(true); setStatus(force ? 'Actualizando tareas desde Bitrix...' : 'Consultando tareas abiertas...', 'loading');
     try {
       const data = await rpc({ action: 'tasks', ownerIds: owner.ownerIds || [owner.id], force });
@@ -189,7 +195,8 @@
       const match = state.matches.find(o => ownerKey(o) === ownerKey(data.owner));
       if (match) match.openTaskCount = state.tasks.length;
       renderTasks(); content.scrollTop = 0;
-    } catch (error) { if (token === state.jobToken) setStatus(error.message, 'error'); }
+      notifyMascot('success', 1800);
+    } catch (error) { if (token === state.jobToken) { setStatus(error.message, 'error'); notifyMascot('error', 2400); } }
     finally { if (token === state.jobToken) setBusy(false); }
   }
   function renderStart(title = 'Consulte sus seguimientos', description = 'Busque un propietario o seleccione un asesor de SAC. Solo se muestran tareas principales abiertas; se omiten subtareas y tareas de proceso.') {
@@ -289,12 +296,14 @@
     return sortedTasks;
   }
   function reset() {
+    notifyMascot('idle');
     state.jobToken += 1; state.queryToken += 1; state.view = 'start'; state.query = ''; state.matches = []; state.owner = null; state.tasks = []; state.page = 1;
     input.value = ''; sacSelect.value = ''; setBusy(false); setStatus('', 'info'); renderStart(); content.scrollTop = 0; input.focus();
   }
   function toolbar() { back.hidden = state.view !== 'tasks' || state.matches.length < 2; refresh.disabled = state.busy || state.view === 'start'; }
   function setBusy(busy) { state.busy = busy; submit.disabled = busy; submit.textContent = busy ? 'Buscando...' : 'Buscar'; cancel.hidden = !busy; win.setAttribute('aria-busy', String(busy)); toolbar(); }
   function setStatus(message, type) { status.textContent = message; status.dataset.type = type; }
+  function notifyMascot(state, duration = 0) { window.dispatchEvent(new CustomEvent('onoff:mascot-state', { detail: { state, duration } })); }
   function formatDate(value, fallback) { const date = value ? new Date(value) : null; return date && Number.isFinite(date.getTime()) ? dates.format(date) : fallback; }
   function ownerKey(owner) { return [...(owner.ownerIds || [owner.id])].map(String).sort().join('-'); }
   function node(tag, className = '', text) { const element = document.createElement(tag); if (className) element.className = className; if (text != null) element.textContent = text; return element; }
