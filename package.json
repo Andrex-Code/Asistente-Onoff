@@ -7,7 +7,7 @@
     "start": "vercel dev",
     "hash-password": "node scripts/hash-password.js",
     "test": "node --test",
-    "build": "node scripts/build-extension.cjs",
+    "build": "node scripts/build-extension.cjs && node scripts/build-web.cjs",
     "test:ui": "node scripts/qa-extension.cjs"
   },
   "dependencies": {
