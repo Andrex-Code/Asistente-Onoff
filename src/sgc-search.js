@@ -204,6 +204,12 @@
     const summary = node('details', null, 'onoff-sgc-performance');
     const elapsed = ms => `${(ms / 1000).toFixed(2)} s`;
     const labels = { cliente: 'Buscar cliente', ficha: 'Abrir ficha', solicitud: 'Última solicitud' };
+    const stageText = stage => {
+      const parts = Number.isFinite(stage.responseMs) && Number.isFinite(stage.transferMs)
+        ? [`Espera de respuesta: ${elapsed(stage.responseMs)}`, `Transferencia: ${elapsed(stage.transferMs)}`]
+        : [`Descarga total: ${elapsed(stage.downloadMs)}`];
+      return [...parts, `Análisis: ${elapsed(stage.parseMs)}`, `HTML: ${Math.round(stage.htmlChars / 1024)} KB aprox.`].join(' · ');
+    };
     summary.appendChild(node('summary', `Diagnóstico de velocidad · ${elapsed(timing.totalMs)}`));
     const list = node('ul');
     timing.stages.forEach(stage => {
@@ -211,7 +217,7 @@
       const row = node('li');
       row.append(
         node('strong', labels[stage.stage]),
-        node('span', `Descarga: ${elapsed(stage.downloadMs)} · Análisis: ${elapsed(stage.parseMs)} · HTML: ${Math.round(stage.htmlChars / 1024)} KB aprox.`)
+        node('span', stageText(stage))
       );
       list.appendChild(row);
     });
@@ -222,7 +228,7 @@
       const lines = [
         'Rendimiento SGC (sin datos del cliente)',
         `Tiempo total: ${elapsed(timing.totalMs)}`,
-        ...timing.stages.map(stage => `${labels[stage.stage] || 'Etapa'}: descarga ${elapsed(stage.downloadMs)}, análisis ${elapsed(stage.parseMs)}, HTML ${Math.round(stage.htmlChars / 1024)} KB aprox.`)
+        ...timing.stages.map(stage => `${labels[stage.stage] || 'Etapa'}: ${stageText(stage)}`)
       ];
       try { await navigator.clipboard.writeText(lines.join('\n')); copy.textContent = 'Diagnóstico copiado'; }
       catch { setStatus('No fue posible copiar el diagnóstico.', 'error'); }
