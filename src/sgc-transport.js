@@ -224,7 +224,7 @@ async function performSearch(identification, senderTab, force, details) {
   if (!data || typeof data.ok !== 'boolean') {
     return { ok: false, code: 'SGC_TAB_CLOSED', error: 'La pestaña de SGC cambió o se cerró. Ábrela y vuelve a consultar.' };
   }
-  if (data.code === 'SGC_SESSION_REQUIRED' || data.code === 'SGC_CUSTOMER_MISMATCH') {
+  if ((hint && !data.ok) || data.code === 'SGC_SESSION_REQUIRED' || data.code === 'SGC_CUSTOMER_MISMATCH') {
     await forgetCustomer(identification, Boolean(senderTab.incognito));
     return data;
   }
