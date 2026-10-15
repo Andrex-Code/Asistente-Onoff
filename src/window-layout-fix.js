@@ -9,11 +9,21 @@
     { action: 'scripts', selector: '.onoff-scripts-window' },
     { action: 'templates', selector: '.onoff-templates-window' },
     { action: 'bitrix-search', selector: '.onoff-bitrix-search' },
+    { action: 'sgc-search', selector: '.onoff-sgc-search' },
     { action: 'assistant-chat', selector: '.onoff-assistant-window' },
     { action: 'followups', selector: '.onoff-followups-window' }
   ];
 
   const WINDOW_CONFIG = [
+    {
+      action: 'sgc-search',
+      selector: '.onoff-sgc-search',
+      headerSelector: '.onoff-sgc-header',
+      positionKey: 'onoffSgcSearchPosition',
+      manualKey: 'onoffSgcSearchUserPlaced',
+      fallbackWidth: 410,
+      fallbackHeight: 460
+    },
     {
       action: 'bitrix-search',
       selector: '.onoff-bitrix-search',

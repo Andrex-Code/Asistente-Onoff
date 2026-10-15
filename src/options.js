@@ -57,5 +57,5 @@ function normalizeUrl(value) {
 }
 
 document.querySelector('#resetLayout').addEventListener('click', async () => {
-  try {await Promise.all([chrome.storage.sync.remove('launcherPosition'),chrome.storage.local.remove(['onoffAssistantPosition','onoffAssistantUserPlaced','onoffBitrixSearchPosition','onoffBitrixSearchUserPlaced','onoffFollowupsPosition','onoffFollowupsUserPlaced','onoffTemplatesPosition','onoffTemplatesUserPlaced','onoffScriptsPosition'])]);status.textContent='Posiciones restablecidas. Vuelve a abrir las ventanas para ubicarlas junto al menú.';}catch{status.textContent='No se pudieron restablecer las posiciones. Vuelve a intentarlo.';}
+  try {await Promise.all([chrome.storage.sync.remove('launcherPosition'),chrome.storage.local.remove(['onoffAssistantPosition','onoffAssistantUserPlaced','onoffBitrixSearchPosition','onoffBitrixSearchUserPlaced','onoffSgcSearchPosition','onoffSgcSearchUserPlaced','onoffFollowupsPosition','onoffFollowupsUserPlaced','onoffTemplatesPosition','onoffTemplatesUserPlaced','onoffScriptsPosition'])]);status.textContent='Posiciones restablecidas. Vuelve a abrir las ventanas para ubicarlas junto al menú.';}catch{status.textContent='No se pudieron restablecer las posiciones. Vuelve a intentarlo.';}
 });

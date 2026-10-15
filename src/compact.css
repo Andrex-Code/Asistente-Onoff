@@ -29,7 +29,7 @@
 .onoff-menu-preferences summary { padding-bottom: 2px; }
 .onoff-ui .ikono-translator-panel-check { min-height: 29px; padding: 4px 0; margin: 2px 0; }
 
-.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window) {
+.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-sgc-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window) {
   width: min(var(--on-window-width), calc(100vw - 16px)) !important;
   max-width: calc(100vw - 16px);
   height: min(var(--on-window-height), calc(100dvh - 16px)) !important;
@@ -38,11 +38,12 @@
 }
 .onoff-ui.onoff-assistant-window { --on-window-width: 350px; --on-window-height: 460px; }
 .onoff-ui.onoff-bitrix-search { --on-window-width: 390px; --on-window-height: 460px; }
+.onoff-ui.onoff-sgc-search { --on-window-width: 410px; --on-window-height: 490px; }
 .onoff-ui.onoff-followups-window { --on-window-width: 410px; --on-window-height: 490px; }
 .onoff-ui.onoff-templates-window { --on-window-width: 320px; --on-window-height: 410px; }
 .onoff-ui.onoff-scripts-window { --on-window-width: 500px; --on-window-height: 490px; }
-.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window).is-minimized { height: auto !important; }
-.onoff-ui:is(.onoff-bitrix-search, .onoff-followups-window, .onoff-scripts-window) { height: auto !important; }
+.onoff-ui:is(.onoff-assistant-window, .onoff-bitrix-search, .onoff-sgc-search, .onoff-followups-window, .onoff-templates-window, .onoff-scripts-window).is-minimized { height: auto !important; }
+.onoff-ui:is(.onoff-bitrix-search, .onoff-sgc-search, .onoff-followups-window, .onoff-scripts-window) { height: auto !important; }
 .onoff-ui .onoff-window-header, .onoff-ui .ikono-translator-header { padding: 10px 12px; gap: 9px; }
 .onoff-ui .onoff-window-heading { grid-template-columns: 28px minmax(0, 1fr); column-gap: 8px; }
 .onoff-ui .onoff-window-heading > strong { font-size: 13px; letter-spacing: 0; }

@@ -31,6 +31,12 @@
       chevron: true,
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/><path d="M8 8h5M8 11h3"/></svg>'
     },
+    'sgc-search': {
+      label: 'Buscar en SGC',
+      description: 'YaDinero · Clientes y créditos por cédula',
+      chevron: true,
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 14h4M7 17h2"/></svg>'
+    },
     templates: {
       label: 'Plantillas',
       description: 'Accede a tus plantillas de tareas',
@@ -54,6 +60,7 @@
   const TOOL_WINDOWS = {
     scripts: '.onoff-scripts-window',
     'bitrix-search': '.onoff-bitrix-search',
+    'sgc-search': '.onoff-sgc-search',
     templates: '.onoff-templates-window',
     'assistant-chat': '.onoff-assistant-window',
     followups: '.onoff-followups-window'
@@ -158,6 +165,7 @@
       divider,
       find('.onoff-menu-caption[data-group=workspace]'),
       find('button[data-action="bitrix-search"]'),
+      find('button[data-action="sgc-search"]'),
       find('button[data-action="templates"]'),
       find('button[data-action="followups"]'),
       find('.ikono-translator-audio-input'),

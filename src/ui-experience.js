@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const ROOTS='.ikono-translator-panel,.onoff-assistant-window,.onoff-bitrix-search,.onoff-followups-window,.onoff-templates-window,.onoff-scripts-window,.ikono-translator-bubble,.ikono-translator-toolbar,.ikono-translator-launcher';
+  const ROOTS='.ikono-translator-panel,.onoff-assistant-window,.onoff-bitrix-search,.onoff-sgc-search,.onoff-followups-window,.onoff-templates-window,.onoff-scripts-window,.ikono-translator-bubble,.ikono-translator-toolbar,.ikono-translator-launcher';
   const icons={chat:'<rect x="3" y="5" width="18" height="14" rx="5"/><path d="M8 10h.1M16 10h.1M8 14h8"/>',search:'<circle cx="10" cy="10" r="6"/><path d="m15 15 5 5M7 10h6"/>',tasks:'<rect x="5" y="3" width="14" height="18" rx="3"/><path d="m8 9 2 2 5-5M8 16h8"/>',templates:'<path d="M6 3h9l4 4v14H6Z M15 3v5h4M9 12h7M9 16h7"/>'};
   const media=matchMedia('(prefers-color-scheme: dark)');
   let theme='system', motion=true, menuObserver;
@@ -12,13 +12,13 @@
     if(header&&!header.classList.contains('onoff-window-header')){
       header.classList.add('onoff-window-header');
       const heading=header.querySelector(':scope>div');
-      if(heading){heading.classList.add('onoff-window-heading');const mark=document.createElement('span');mark.className='onoff-tool-mark';mark.innerHTML=svg(root.matches('.onoff-assistant-window')?icons.chat:root.matches('.onoff-bitrix-search')?icons.search:root.matches('.onoff-followups-window')?icons.tasks:icons.templates);heading.prepend(mark);}
+      if(heading){heading.classList.add('onoff-window-heading');const mark=document.createElement('span');mark.className='onoff-tool-mark';mark.innerHTML=svg(root.matches('.onoff-assistant-window')?icons.chat:root.matches('.onoff-bitrix-search,.onoff-sgc-search')?icons.search:root.matches('.onoff-followups-window')?icons.tasks:icons.templates);heading.prepend(mark);}
       header.querySelectorAll('button').forEach(button=>{if(!button.hasAttribute('aria-label'))button.setAttribute('aria-label',button.title||'Cerrar');});
       root.setAttribute('role','dialog');root.setAttribute('aria-label',heading?.querySelector('strong')?.textContent||'Asistente ONOFF');
     }
     if(root.matches('.ikono-translator-panel')){
       menuObserver?.disconnect();decorateMenu(root);
-      if(!root.dataset.onoffMobileNavigation){root.dataset.onoffMobileNavigation='true';root.addEventListener('click',event=>{const action=event.target.closest('button[data-action]')?.dataset.action;if(['assistant-chat','bitrix-search','followups','templates','scripts'].includes(action))setTimeout(()=>{root.hidden=true;document.querySelector('.ikono-translator-launcher')?.setAttribute('aria-expanded','false');},180);},true);}
+      if(!root.dataset.onoffMobileNavigation){root.dataset.onoffMobileNavigation='true';root.addEventListener('click',event=>{const action=event.target.closest('button[data-action]')?.dataset.action;if(['assistant-chat','bitrix-search','sgc-search','followups','templates','scripts'].includes(action))setTimeout(()=>{root.hidden=true;document.querySelector('.ikono-translator-launcher')?.setAttribute('aria-expanded','false');},180);},true);}
       menuObserver=new MutationObserver(()=>decorateMenu(root));menuObserver.observe(root,{childList:true,subtree:true});
     }
   }
