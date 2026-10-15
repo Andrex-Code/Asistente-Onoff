@@ -162,18 +162,25 @@ test('SGC verifies the document again when using a known exact customer route', 
   const mismatch = await lookup({
     '/customers/show/101': fixture.detail().replace('CC-12345678', 'CC-87654321')
   }, '12345678', 'https://sgc.yadinero.co', hint);
-  assert.equal(mismatch.result.warningCode, 'SGC_CUSTOMER_MISMATCH');
-  assert.notEqual(mismatch.result.creditsAvailable, true);
-  assert.deepEqual(mismatch.result.requests, []);
+  assert.equal(mismatch.result.code, 'SGC_CUSTOMER_MISMATCH');
+  assert.equal(mismatch.result.ok, false);
+  assert.equal(mismatch.result.customer, undefined);
   const badRoute = await lookup({}, '12345678', 'https://sgc.yadinero.co',
     { hint: { path: '/customers/show/101?export=1' } });
   assert.equal(badRoute.calls.length, 2, 'Unsafe hints must not bypass the exact document search.');
 });
 
 function transportHarness(tabs = [{ id: 2, url: 'https://sgc.yadinero.co/dashboard', windowId: 1, incognito: false }]) {
-  let listener, account = 'asesor@onoff.com.co', readResult = {
+  let listener, account = 'asesor@onoff.com.co';
+  let readResult = {
     ok: true, customer: { id: '101', identification: '12345678', name: 'Cliente de prueba' },
-    latestRequest: { id: '200' }, warning: null, checkedAt: new Date().toISOString()
+    latestRequest: { id: '200', status: 'RECHAZADO', detailsAvailable: false },
+    creditsAvailable: true, detailsDeferred: true, warning: null, checkedAt: new Date().toISOString()
+  };
+  let detailResult = {
+    ok: true, request: { id: '200', status: 'RECHAZADO', totalToPay: 'COP 180,000',
+      history: [{ type: 'Estado', description: 'Actualización', date: '2026-10-15' }] },
+    checkedAt: new Date().toISOString(), timing: { totalMs: 10, stages: [] }
   };
   const calls = [], events = {}, saved = {};
   const readerStub = async () => {};
@@ -187,11 +194,12 @@ function transportHarness(tabs = [{ id: 2, url: 'https://sgc.yadinero.co/dashboa
     storage: { session: {
       get: async key => ({ [key]: saved[key] }),
       set: async obj => { Object.assign(saved, obj); },
-      remove: async key => { delete saved[key]; }
+      remove: async key => { for (const k of (Array.isArray(key) ? key : [key])) delete saved[k]; }
     } },
     scripting: { executeScript: async options => {
       calls.push({ options });
-      return [{ frameId: 0, result: options.args ? readResult : account }];
+      if (!options.args) return [{ frameId: 0, result: account }];
+      return [{ frameId: 0, result: options.args[1]?.mode === 'details' ? detailResult : readResult }];
     } }
   };
   const source = fs.readFileSync(path.join(__dirname, '../src/sgc-transport.js'), 'utf8').replace(/^import .*;\r?\n/, '');
@@ -199,7 +207,8 @@ function transportHarness(tabs = [{ id: 2, url: 'https://sgc.yadinero.co/dashboa
   const defaultSender = { id: 'extension-id', url: 'https://onoff.a.ikono.im/#/room/qa', frameId: 0, tab: { id: 1, windowId: 1, incognito: false } };
   const send = (identification = 'CC 12.345.678', sender = defaultSender, options = {}) =>
     new Promise(resolve => listener({ type: options.type || 'ONOFF_SEARCH_SGC', identification, force: options.force === true, url: 'https://evil.example' }, sender, resolve));
-  return { send, calls, chrome, events, saved, setAccount: value => { account = value; }, setReadResult: value => { readResult = value; } };
+  return { send, calls, chrome, events, saved, setAccount: value => { account = value; },
+    setReadResult: value => { readResult = value; }, setDetailResult: value => { detailResult = value; } };
 }
 
 test('SGC transport validates session identity and reads SGC in isolated world', async () => {
@@ -210,7 +219,8 @@ test('SGC transport validates session identity and reads SGC in isolated world',
   const lookup = h.calls[2].options;
   assert.equal(probe.target.tabId, 2); assert.equal(probe.world, 'ISOLATED');
   assert.equal(lookup.target.tabId, 2); assert.equal(lookup.world, 'ISOLATED');
-  assert.deepEqual(Array.from(lookup.args), ['12345678']);
+  assert.deepEqual(Array.from(lookup.args)[0], '12345678');
+  assert.deepEqual(Object.keys(lookup.args[1]), []);
   assert.deepEqual(Array.from(lookup.target.frameIds), [0]);
   assert.equal(h.calls.length, 3);
 });
@@ -247,7 +257,7 @@ test('SGC cache reuses complete results, supports force refresh and explicit for
   const afterForget = await h.send();
   assert.equal(afterForget.clientCache, false);
   assert.equal(h.calls.length, 11);
-  assert.equal(Object.keys(h.saved).every(k => /onoffSgcCustomerCache/.test(k)), true);
+  assert.equal(Object.keys(h.saved).every(k => /onoffSgc(CustomerCache|VerifiedRoutes)/.test(k)), true);
 });
 
 test('SGC cache is scoped to account and invalidated on SGC navigation', async () => {
@@ -270,16 +280,61 @@ test('SGC never caches partial, missing or unauthorized data', async () => {
   h.setReadResult({ ok: true, customer: null });
   await h.send(); await h.send();
   assert.equal(h.calls.filter(x => x.options?.args).length, 2);
-  h.setReadResult({ ok: true, customer: { id: '101' }, warning: 'Incomplete' });
+  h.setReadResult({ ok: true, customer: { id: '101' }, creditsAvailable: true, warning: 'Incomplete' });
   await h.send(); await h.send();
   assert.equal(h.calls.filter(x => x.options?.args).length, 4);
   h.setReadResult({ ok: false, code: 'SGC_FORBIDDEN' });
   await h.send(); await h.send();
   assert.equal(h.calls.filter(x => x.options?.args).length, 6);
   h.setAccount(null);
-  h.setReadResult({ ok: true, customer: { id: '101' } });
+  h.setReadResult({ ok: true, customer: { id: '101' }, creditsAvailable: true });
   await h.send(); await h.send();
   assert.equal(h.calls.filter(x => x.options?.args).length, 8);
+});
+
+test('SGC detail loading checks current cached identity and does not repeat the customer listing', async () => {
+  const h = transportHarness();
+  assert.equal((await h.send(undefined, undefined, { type: 'ONOFF_SGC_DETAILS' })).code, 'SGC_SEARCH_REQUIRED');
+  await h.send();
+  const detailed = await h.send(undefined, undefined, { type: 'ONOFF_SGC_DETAILS' });
+  assert.equal(detailed.ok, true);
+  assert.equal(detailed.latestRequest.detailsAvailable, true);
+  assert.equal(detailed.latestRequest.totalToPay, 'COP 180,000');
+  assert.equal(detailed.latestRequest.history.length, 1);
+  assert.equal(h.calls.filter(c => c.options?.args?.[1]?.mode === 'details').length, 1);
+  const second = await h.send(undefined, undefined, { type: 'ONOFF_SGC_DETAILS' });
+  assert.equal(second.clientCache, true);
+  assert.equal(h.calls.filter(c => c.options?.args?.[1]?.mode === 'details').length, 1);
+  h.setAccount('otro@onoff.com.co');
+  assert.equal((await h.send(undefined, undefined, { type: 'ONOFF_SGC_DETAILS' })).code, 'SGC_SEARCH_REQUIRED');
+});
+
+test('SGC uses validated known routes after short cache expiry, but force always searches full list', async () => {
+  const h = transportHarness();
+  await h.send();
+  const cacheKey = 'onoffSgcCustomerCacheV1';
+  const hints = h.saved.onoffSgcVerifiedRoutesV1;
+  assert.equal(hints.length, 1);
+  assert.equal(hints[0].path, '/customers/show/101');
+  h.saved[cacheKey][0].at -= 181000;
+  const quick = await h.send();
+  assert.equal(quick.ok, true);
+  const lastReader = h.calls.filter(x => x.options?.args).at(-1).options;
+  assert.equal(lastReader.args[1].hint.path, '/customers/show/101');
+  assert.equal((await h.send(undefined, undefined, { force: true })).clientCache, false);
+  const forcedReader = h.calls.filter(x => x.options?.args).at(-1).options;
+  assert.equal(forcedReader.args[1].hint, undefined);
+  await h.send(undefined, undefined, { type: 'ONOFF_SGC_FORGET' });
+  assert.equal(h.saved.onoffSgcVerifiedRoutesV1.length, 0);
+});
+
+test('SGC invalidates an old known route if its document no longer matches', async () => {
+  const h = transportHarness();
+  await h.send();
+  h.saved.onoffSgcCustomerCacheV1[0].at -= 181000;
+  h.setReadResult({ ok: false, code: 'SGC_CUSTOMER_MISMATCH', error: 'No coincide.' });
+  assert.equal((await h.send()).code, 'SGC_CUSTOMER_MISMATCH');
+  assert.equal(h.saved.onoffSgcVerifiedRoutesV1.length, 0);
 });
 
 test('SGC bounds concurrent lookups and releases lock after failure', async () => {
