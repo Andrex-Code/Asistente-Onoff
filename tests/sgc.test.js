@@ -222,7 +222,7 @@ test('SGC transport validates session identity and reads SGC in isolated world',
   assert.deepEqual(Array.from(lookup.args)[0], '12345678');
   assert.deepEqual(Object.keys(lookup.args[1]), []);
   assert.deepEqual(Array.from(lookup.target.frameIds), [0]);
-  assert.equal(h.calls.length, 3);
+  assert.equal(h.calls.length, 4);
 });
 
 test('SGC transport rejects other senders, frames, invalid IDs and missing sessions', async () => {
@@ -245,18 +245,18 @@ test('SGC cache reuses complete results, supports force refresh and explicit for
   const h = transportHarness();
   const first = await h.send();
   assert.equal(first.clientCache, false);
-  assert.equal(h.calls.length, 3);
+  assert.equal(h.calls.length, 4);
   const cached = await h.send();
   assert.equal(cached.clientCache, true);
   assert.equal(cached.checkedAt, first.checkedAt);
-  assert.equal(h.calls.length, 5, 'The cached hit checks the tab and account but skips the reader.');
+  assert.equal(h.calls.length, 6, 'The cached hit checks the tab and account but skips the reader.');
   const fresh = await h.send(undefined, undefined, { force: true });
   assert.equal(fresh.clientCache, false);
-  assert.equal(h.calls.length, 8);
+  assert.equal(h.calls.length, 10);
   assert.equal((await h.send(undefined, undefined, { type: 'ONOFF_SGC_FORGET' })).ok, true);
   const afterForget = await h.send();
   assert.equal(afterForget.clientCache, false);
-  assert.equal(h.calls.length, 11);
+  assert.equal(h.calls.length, 14);
   assert.equal(Object.keys(h.saved).every(k => /onoffSgc(CustomerCache|VerifiedRoutes)/.test(k)), true);
 });
 
