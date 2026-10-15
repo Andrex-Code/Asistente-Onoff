@@ -55,12 +55,15 @@ export async function readSgcCustomer(identification) {
     const response = await fetch(url.href, {
       method: 'GET', credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal
     });
+    // fetch resolves once the response headers arrive. This includes network + server wait.
+    const responseMs = Date.now() - fetchStartedAt;
     if (response.status === 401 || response.status === 419) throw fail('SGC_SESSION_REQUIRED', 'Abre SGC e inicia sesión para consultar.');
     if (response.status === 403) throw fail('SGC_FORBIDDEN', 'Tu usuario de SGC no tiene permiso para esta consulta.');
     if (!response.ok) throw fail('SGC_UNAVAILABLE', 'SGC no pudo completar la consulta. Intenta nuevamente.');
     if (response.url && new URL(response.url).origin !== origin) throw fail('SGC_SESSION_REQUIRED', 'Verifica tu sesión en SGC.');
     const html = await response.text();
     const downloadMs = Date.now() - fetchStartedAt;
+    const transferMs = downloadMs - responseMs;
     if (html.length > 5000000) throw fail('SGC_RESPONSE_SIZE', 'La respuesta de SGC es demasiado grande para esta consulta.');
     // A detached template stays inert: remote images, iframes and scripts never run.
     const parseStartedAt = Date.now();
@@ -73,6 +76,8 @@ export async function readSgcCustomer(identification) {
     stages.push({
       stage: url.pathname === '/customers' ? 'cliente' : url.pathname.startsWith('/customers/show/') ? 'ficha' : 'solicitud',
       downloadMs,
+      responseMs,
+      transferMs,
       parseMs: Date.now() - parseStartedAt,
       htmlChars: html.length
     });
