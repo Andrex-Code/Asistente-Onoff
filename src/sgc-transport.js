@@ -83,6 +83,8 @@ async function forgetAll() {
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'loading' && !changeInfo.url) return;
   const url = changeInfo.url || tab?.url || '';
+  // Unrelated tabs must not invalidate a SGC lookup in progress.
+  if (!url.startsWith('https://sgc.yadinero.co/')) return;
   if (/^https:\/\/sgc\.yadinero\.co\/(?:login|logout)(?:[/?#]|$)/.test(url)) {
     void forgetAll();
   } else {
