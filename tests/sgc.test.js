@@ -44,6 +44,14 @@ test('SGC exact lookup reads only three GET views and returns selected fields', 
   assert.equal(result.creditsAvailable, true);
   assert.equal(result.warning, null);
   assert.equal(calls.length, 3);
+  assert.deepEqual(result.timing.stages.map(step => step.stage), ['cliente', 'ficha', 'solicitud']);
+  assert.equal(result.timing.stages.length, calls.length);
+  assert.ok(result.timing.totalMs >= 0);
+  for (const step of result.timing.stages) {
+    assert.ok(step.downloadMs >= 0 && step.parseMs >= 0 && step.htmlChars > 0);
+    assert.equal(Object.hasOwn(step, 'identification'), false);
+    assert.equal(Object.hasOwn(step, 'url'), false);
+  }
   const search = new URL(calls[0].url);
   assert.equal(search.searchParams.get('filter'), '12345678');
   for (const { url, options } of calls) {
