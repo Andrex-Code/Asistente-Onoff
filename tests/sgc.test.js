@@ -49,6 +49,8 @@ test('SGC exact lookup reads only three GET views and returns selected fields', 
   assert.ok(result.timing.totalMs >= 0);
   for (const step of result.timing.stages) {
     assert.ok(step.downloadMs >= 0 && step.parseMs >= 0 && step.htmlChars > 0);
+    assert.ok(step.responseMs >= 0 && step.transferMs >= 0);
+    assert.ok(Math.abs(step.responseMs + step.transferMs - step.downloadMs) <= 1);
     assert.equal(Object.hasOwn(step, 'identification'), false);
     assert.equal(Object.hasOwn(step, 'url'), false);
   }
