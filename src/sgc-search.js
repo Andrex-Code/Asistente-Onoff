@@ -200,7 +200,7 @@
 
   function renderTimings(data) {
     const timing = data.timing;
-    if (!timing || !Array.isArray(timing.stages) || !timing.stages.length) return;
+    if (data.clientCache || !timing || !Array.isArray(timing.stages) || !timing.stages.length) return;
     const summary = node('details', null, 'onoff-sgc-performance');
     const elapsed = ms => `${(ms / 1000).toFixed(2)} s`;
     const labels = { cliente: 'Buscar cliente', ficha: 'Abrir ficha', solicitud: 'Última solicitud' };
@@ -228,7 +228,7 @@
       catch { setStatus('No fue posible copiar el diagnóstico.', 'error'); }
     });
     summary.appendChild(copy);
-    results.appendChild(summary);
+    results.prepend(summary);
   }
 
   function node(tag, value, className) {
