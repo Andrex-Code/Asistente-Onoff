@@ -1,6 +1,7 @@
 (() => {
   const POSITION_KEY = 'onoffSgcSearchPosition';
   let buttonObserver;
+  let displayedIdentification = '';
   let panel, searchWindow, input, results, status, submit, refreshButton, drag;
   let generation = 0;
   let busy = false;
@@ -96,6 +97,7 @@
 
   function clearSearch() {
     generation += 1;
+    displayedIdentification = '';
     if (!searchWindow) return;
     results.replaceChildren(); status.textContent = ''; status.dataset.type = '';
     input.value = ''; input.disabled = false; submit.disabled = false; refreshButton.disabled = true;
@@ -126,6 +128,7 @@
         mascot('notify', 1600);
         return;
       }
+      displayedIdentification = identification;
       renderResult(data);
       renderTimings(data);
       const checkedTime = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.checkedAt));
@@ -209,7 +212,7 @@
 
   async function loadDetails() {
     if (busy) return;
-    const identification = input.value.trim();
+    const identification = displayedIdentification;
     if (!identification) return;
     const current = ++generation;
     busy = true;
