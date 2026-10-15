@@ -120,8 +120,14 @@
       const data = await chrome.runtime.sendMessage({ type: 'ONOFF_SEARCH_SGC', identification, force });
       if (current !== generation) return;
       if (!data?.ok) throw new Error(data?.error || 'No fue posible consultar SGC. Verifica que la extensión esté actualizada.');
-      if (!data.customer) { setStatus('No se encontró un cliente con esa cédula exacta.', 'info'); mascot('notify', 1600); return; }
+      if (!data.customer) {
+        setStatus('No se encontró un cliente con esa cédula exacta.', 'info');
+        renderTimings(data);
+        mascot('notify', 1600);
+        return;
+      }
       renderResult(data);
+      renderTimings(data);
       const checkedTime = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.checkedAt));
       setStatus(data.clientCache ? `Resultado guardado temporalmente · consultado a las ${checkedTime}. Use Actualizar para obtener datos nuevos.` : `Consulta realizada ${checkedTime}`, data.clientCache ? 'info' : 'success');
       mascot('success', 1600);
@@ -190,6 +196,39 @@
       if (data.moreRequests) recent.appendChild(node('small', 'Se muestran las 5 solicitudes más recientes de la ficha.'));
       results.appendChild(recent);
     }
+  }
+
+  function renderTimings(data) {
+    const timing = data.timing;
+    if (!timing || !Array.isArray(timing.stages) || !timing.stages.length) return;
+    const summary = node('details', null, 'onoff-sgc-performance');
+    const elapsed = ms => `${(ms / 1000).toFixed(2)} s`;
+    const labels = { cliente: 'Buscar cliente', ficha: 'Abrir ficha', solicitud: 'Última solicitud' };
+    summary.appendChild(node('summary', `Diagnóstico de velocidad · ${elapsed(timing.totalMs)}`));
+    const list = node('ul');
+    timing.stages.forEach(stage => {
+      if (!Object.hasOwn(labels, stage.stage)) return;
+      const row = node('li');
+      row.append(
+        node('strong', labels[stage.stage]),
+        node('span', `Descarga: ${elapsed(stage.downloadMs)} · Análisis: ${elapsed(stage.parseMs)} · HTML: ${Math.round(stage.htmlChars / 1024)} KB aprox.`)
+      );
+      list.appendChild(row);
+    });
+    summary.appendChild(list);
+    const copy = node('button', 'Copiar diagnóstico');
+    copy.type = 'button';
+    copy.addEventListener('click', async () => {
+      const lines = [
+        'Rendimiento SGC (sin datos del cliente)',
+        `Tiempo total: ${elapsed(timing.totalMs)}`,
+        ...timing.stages.map(stage => `${labels[stage.stage] || 'Etapa'}: descarga ${elapsed(stage.downloadMs)}, análisis ${elapsed(stage.parseMs)}, HTML ${Math.round(stage.htmlChars / 1024)} KB aprox.`)
+      ];
+      try { await navigator.clipboard.writeText(lines.join('\n')); copy.textContent = 'Diagnóstico copiado'; }
+      catch { setStatus('No fue posible copiar el diagnóstico.', 'error'); }
+    });
+    summary.appendChild(copy);
+    results.appendChild(summary);
   }
 
   function node(tag, value, className) {
