@@ -1,6 +1,6 @@
 // Serialized by chrome.scripting.executeScript into an existing SGC tab.
 // Keep helpers inside this function: no page globals, cookies, scripts or HTML leave SGC.
-export async function readSgcCustomer(identification) {
+export async function readSgcCustomer(identification, options = {}) {
   const origin = 'https://sgc.yadinero.co';
   const fail = (code, error) => Object.assign(new Error(error), { code });
   if (location.origin !== origin || !/^\d{5,15}$/.test(identification)) {
@@ -100,7 +100,58 @@ export async function readSgcCustomer(identification) {
     });
   }
   try {
-    const search = new URL('/customers', origin);
+    // A separate authorized action fetches one request after customer lookup.
+    if (options?.mode === 'details') {
+      const customerPath = options.customerPath;
+      const requestPath = options.requestPath;
+      if (typeof customerPath !== 'string' || !/^\/customers\/show\/\d+$/.test(customerPath) ||
+          typeof requestPath !== 'string' || !/^\/requests\/edit\/\d+$/.test(requestPath)) {
+        throw fail('SGC_ROUTE', 'La solicitud no tiene rutas de consulta válidas.');
+      }
+      const request = await readPage(requestPath);
+      const ownerPath = linkIn(request, /^\/customers\/show\/\d+$/);
+      const docInput = request.querySelector('input[name="doc_num"]');
+      if (ownerPath !== customerPath || !docInput ||
+          String(docInput.value).replace(/\D/g, '') !== identification) {
+        throw fail('SGC_CUSTOMER_MISMATCH', 'No se pudo confirmar que la solicitud pertenezca al cliente consultado.');
+      }
+      const values = Object.fromEntries([...request.querySelectorAll('.counter-label')].map(label =>
+        [key(text(label)), text(label.parentElement?.querySelector('.counter-number-group'))]));
+      if (!values.estadodelasolicitud) throw fail('SGC_FORMAT_CHANGED', 'No se pudo reconocer el detalle de la solicitud.');
+      const history = [...request.querySelectorAll('#coments_div li.list-group-item')].slice(0, 6).map(item => ({
+        type: text(item.querySelector('small.badge')).slice(0, 80),
+        description: text(item.querySelector(':scope > p')).slice(0, 400),
+        date: text(item.querySelector('time')).slice(0, 60)
+      })).filter(event => event.description);
+      return withTimings({
+        ok: true, detailsAvailable: true,
+        request: {
+          id: requestPath.match(/\d+$/)[0], status: values.estadodelasolicitud,
+          typification: values.tipificacion || null, amount: values.valorcredito || null,
+          totalToPay: values.valorapagar || null, createdAt: values.creado || null,
+          deadline: values.fechalimite || null, days: values.diasdelcredito || null, history
+        },
+        checkedAt: new Date().toISOString()
+      });
+    }
+
+    let customerPath = null;
+    let customer = null;
+    const hint = options?.hint;
+    // A previous exact match provides the path, but the fresh SGC document
+    // must match before this read-only lookup returns any customer data.
+    const usingHint = Boolean(hint && typeof hint.path === 'string' &&
+      /^\/customers\/show\/\d+$/.test(hint.path));
+    if (usingHint) {
+      customerPath = hint.path;
+      customer = {
+        id: customerPath.match(/\d+$/)[0], identification,
+        name: typeof hint.name === 'string' && hint.name.trim() ? hint.name.slice(0, 150) : 'Cliente verificado',
+        state: null, latestStatus: null, category: null, profile: null, blocks: [],
+        url: origin + customerPath
+      };
+    } else {
+      const search = new URL('/customers', origin);
     search.search = new URLSearchParams({ filter: identification, request_status_id: '0', category_id: '0', profile_id: '0' }).toString();
     const list = await readPage(search.pathname + search.search);
     const table = tableWith(list, ['Identificacion', 'Nombre completo', 'Estado última solicitud', 'Categoría', 'Perfil']);
@@ -110,9 +161,9 @@ export async function readSgcCustomer(identification) {
     if (!matches.length) return withTimings({ ok: true, customer: null, checkedAt: new Date().toISOString() });
     if (matches.length !== 1) throw fail('SGC_AMBIGUOUS', 'SGC devolvió más de un cliente con esa identificación. Revisa los registros directamente en SGC.');
     const row = matches[0];
-    const customerPath = linkIn(row.acciones, /^\/customers\/show\/\d+$/);
+    customerPath = linkIn(row.acciones, /^\/customers\/show\/\d+$/);
     if (!customerPath) throw fail('SGC_FORBIDDEN', 'SGC no ofrece acceso a la ficha de este cliente con tu usuario.');
-    const customer = {
+    customer = {
       id: customerPath.match(/\d+$/)[0], identification,
       name: text(row.nombrecompleto?.querySelector('h5,h4,strong')) || text(row.nombrecompleto),
       state: row.estado?.querySelector('.wb-check') ? 'Habilitado' : row.estado?.querySelector('.wb-close') ? 'No habilitado' : 'No informado',
@@ -120,7 +171,13 @@ export async function readSgcCustomer(identification) {
       blocks: [...(row.identificacion?.querySelectorAll('.badge,.label') || [])].map(text).filter(Boolean),
       url: origin + customerPath
     };
-    const result = { ok: true, customer, latestRequest: null, requests: [], credits: [], checkedAt: new Date().toISOString(), warning: null };
+    }
+    const result = {
+      ok: true, customer, latestRequest: null, requests: [], credits: [],
+      checkedAt: new Date().toISOString(), warning: null, detailsDeferred: true,
+      fastPath: usingHint,
+      notice: usingHint ? 'Consulta rápida: ficha e identificación verificadas. Nombre de la última búsqueda; estado, categoría, perfil y bloqueos requieren pulsar Actualizar para comprobar cambios.' : null
+    };
     try {
       const detail = await readPage(customerPath);
       const detailIdentity = [...detail.childNodes].map(text).join(' ').match(/Identificaci[oó]n\s*:\s*(?:(?:CC|CE|TI)\s*[-:]?\s*)?(\d[\d.\s-]*\d)/i);
@@ -136,27 +193,7 @@ export async function readSgcCustomer(identification) {
       result.moreCredits = credits.length > 5;
       result.creditsAvailable = Boolean(tableWith(detail, ['ID', 'Valor Facturado', 'Saldo', 'Creado']));
       if (requests.length) {
-        const latest = requests[0];
         result.latestRequest = { ...result.requests[0], detailsAvailable: false, history: [] };
-        const request = await readPage(latest.path);
-        const ownerPath = linkIn(request, /^\/customers\/show\/\d+$/);
-        const documentInput = request.querySelector('input[name="doc_num"]');
-        if (ownerPath !== customerPath || (documentInput && String(documentInput.value).replace(/\D/g, '') !== identification)) {
-          throw fail('SGC_CUSTOMER_MISMATCH', 'No se pudo confirmar que la solicitud pertenezca al cliente consultado.');
-        }
-        const values = Object.fromEntries([...request.querySelectorAll('.counter-label')].map(label => [key(text(label)), text(label.parentElement.querySelector('.counter-number-group'))]));
-        if (!values.estadodelasolicitud) throw fail('SGC_FORMAT_CHANGED', 'No se pudo reconocer el detalle de la solicitud.');
-        const history = [...request.querySelectorAll('#coments_div li.list-group-item')].slice(0, 6).map(item => ({
-          type: text(item.querySelector('small.badge')).slice(0, 80),
-          description: text(item.querySelector(':scope > p')).slice(0, 400),
-          date: text(item.querySelector('time')).slice(0, 60)
-        })).filter(event => event.description);
-        result.latestRequest = {
-          ...result.latestRequest, detailsAvailable: true, status: values.estadodelasolicitud,
-          typification: values.tipificacion || latest.typification, amount: values.valorcredito || latest.amount,
-          totalToPay: values.valorapagar || null, createdAt: values.creado || latest.createdAt,
-          deadline: values.fechalimite || null, days: values.diasdelcredito || latest.days, history
-        };
       }
     } catch (error) {
       // Keep the exact customer match useful without presenting missing data as empty.
