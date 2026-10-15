@@ -78,7 +78,7 @@
     searchWindow.querySelector('form').addEventListener('submit', event => { event.preventDefault(); void runSearch(); });
     searchWindow.querySelector('[data-close]').addEventListener('click', closeWindow);
     searchWindow.querySelector('[data-clear]').addEventListener('click', () => {
-      const previous = input.value.trim();
+      const previous = displayedIdentification || input.value.trim();
       clearSearch();
       if (previous) void chrome.runtime.sendMessage({ type: 'ONOFF_SGC_FORGET', identification: previous }).catch(() => {});
       input.focus();
@@ -114,6 +114,7 @@
     const identification = input.value.trim();
     if (!identification) return setStatus('Ingresa la cédula del cliente.', 'error');
     const current = ++generation;
+    displayedIdentification = '';
     busy = true; input.disabled = true; submit.disabled = true; refreshButton.disabled = true;
     results.replaceChildren(); searchWindow.setAttribute('aria-busy', 'true');
     setStatus('Consultando ficha y créditos en SGC…', 'loading');
