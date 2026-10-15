@@ -188,7 +188,11 @@ async function performSearch(identification, senderTab, force, details) {
       }
       return detail;
     }
-    if (detail.request?.id !== requestId || generation !== cacheGeneration) {
+    const currentAccount = await activeSgcAccount(tab.id);
+    if (currentAccount !== account || generation !== cacheGeneration) {
+      return { ok: false, code: 'SGC_STALE_SESSION', error: 'La sesión de SGC cambió durante la consulta. Vuelva a buscar.' };
+    }
+    if (detail.request?.id !== requestId) {
       return { ok: false, code: 'SGC_STALE_SESSION', error: 'La sesión cambió durante la consulta. Vuelva a buscar.' };
     }
     const base = previous.data.latestRequest;
@@ -227,6 +231,9 @@ async function performSearch(identification, senderTab, force, details) {
   if ((hint && !data.ok) || data.code === 'SGC_SESSION_REQUIRED' || data.code === 'SGC_CUSTOMER_MISMATCH') {
     await forgetCustomer(identification, Boolean(senderTab.incognito));
     return data;
+  }
+  if (generation !== cacheGeneration || (account && await activeSgcAccount(tab.id) !== account)) {
+    return { ok: false, code: 'SGC_STALE_SESSION', error: 'La sesión de SGC cambió durante la consulta. Vuelva a buscar.' };
   }
   // Only verified and fully loaded customer fichas may be cached. Request detail
   // remains deliberately deferred and is never presented as up-to-date.
