@@ -8,6 +8,10 @@ export async function readSgcCustomer(identification) {
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
+  // Timing-only diagnostics: no documents, HTML, names, URLs or credentials are reported.
+  const startedAt = Date.now();
+  const stages = [];
+  const withTimings = result => ({ ...result, timing: { totalMs: Date.now() - startedAt, stages } });
   const text = node => String(node?.textContent || '').replace(/\s+/g, ' ').trim();
   const key = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const cells = row => [...row.children].filter(e => /^(TD|TH)$/.test(e.tagName));
@@ -47,6 +51,7 @@ export async function readSgcCustomer(identification) {
       throw fail('SGC_ROUTE', 'SGC devolvió un enlace de consulta no permitido.');
     }
     // No writes, retries, export URLs, pagination or automatic login.
+    const fetchStartedAt = Date.now();
     const response = await fetch(url.href, {
       method: 'GET', credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal
     });
@@ -55,14 +60,22 @@ export async function readSgcCustomer(identification) {
     if (!response.ok) throw fail('SGC_UNAVAILABLE', 'SGC no pudo completar la consulta. Intenta nuevamente.');
     if (response.url && new URL(response.url).origin !== origin) throw fail('SGC_SESSION_REQUIRED', 'Verifica tu sesión en SGC.');
     const html = await response.text();
+    const downloadMs = Date.now() - fetchStartedAt;
     if (html.length > 5000000) throw fail('SGC_RESPONSE_SIZE', 'La respuesta de SGC es demasiado grande para esta consulta.');
     // A detached template stays inert: remote images, iframes and scripts never run.
+    const parseStartedAt = Date.now();
     const template = document.createElement('template');
     template.innerHTML = html;
     const root = template.content;
     if (root.querySelector('input[type="password"]') && !root.querySelector('a[href$="/logout"]')) {
       throw fail('SGC_SESSION_REQUIRED', 'Tu sesión de SGC venció. Abre SGC e inicia sesión nuevamente.');
     }
+    stages.push({
+      stage: url.pathname === '/customers' ? 'cliente' : url.pathname.startsWith('/customers/show/') ? 'ficha' : 'solicitud',
+      downloadMs,
+      parseMs: Date.now() - parseStartedAt,
+      htmlChars: html.length
+    });
     return root;
   }
   function requestRows(root) {
@@ -89,7 +102,7 @@ export async function readSgcCustomer(identification) {
     if (!table) throw fail('SGC_FORMAT_CHANGED', 'No se pudo reconocer la búsqueda de clientes. Revisa tu sesión y abre SGC.');
     // SGC's filter can also match names or partial documents; never accept a fuzzy match.
     const matches = rows(table).filter(row => identificationIn(row.identificacion) === identification);
-    if (!matches.length) return { ok: true, customer: null, checkedAt: new Date().toISOString() };
+    if (!matches.length) return withTimings({ ok: true, customer: null, checkedAt: new Date().toISOString() });
     if (matches.length !== 1) throw fail('SGC_AMBIGUOUS', 'SGC devolvió más de un cliente con esa identificación. Revisa los registros directamente en SGC.');
     const row = matches[0];
     const customerPath = linkIn(row.acciones, /^\/customers\/show\/\d+$/);
@@ -150,9 +163,9 @@ export async function readSgcCustomer(identification) {
       }
     }
     result.checkedAt = new Date().toISOString();
-    return result;
+    return withTimings(result);
   } catch (error) {
-    return { ok: false, code: error.code || (controller.signal.aborted ? 'SGC_TIMEOUT' : 'SGC_CONNECTION'), error: error.code ? error.message : controller.signal.aborted ? 'SGC tardó demasiado en responder. Intenta nuevamente.' : 'No fue posible consultar SGC. Abre SGC y verifica tu sesión y conexión.' };
+    return withTimings({ ok: false, code: error.code || (controller.signal.aborted ? 'SGC_TIMEOUT' : 'SGC_CONNECTION'), error: error.code ? error.message : controller.signal.aborted ? 'SGC tardó demasiado en responder. Intenta nuevamente.' : 'No fue posible consultar SGC. Abre SGC y verifica tu sesión y conexión.' });
   } finally {
     clearTimeout(timeout);
   }
