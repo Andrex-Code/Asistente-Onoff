@@ -18,6 +18,25 @@ Extensión de navegador para apoyar la atención en iKono Chat con traducción, 
 - Visualización de título, etapa, cliente, responsable, última actualización e ID de la negociación.
 - Botones para abrir la negociación en Bitrix o copiar su enlace directo.
 - Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo en la base privada de Afacturar.
+- **Buscar en SGC** por cédula: cliente, categoría, perfil, bloqueos, última solicitud, tipificación, montos, fechas, historial reciente y créditos mostrados en su ficha.
+
+## Buscar en SGC (1.11.0)
+
+1. Mantenga una pestaña de `https://sgc.yadinero.co` abierta, con su sesión iniciada en el mismo perfil del navegador.
+2. Desde iKono ONOFF o SGC, abra **Buscar en SGC**, ingrese la cédula y pulse **Buscar**.
+3. Consulte el resumen o use **Abrir cliente en SGC** y **Abrir solicitud en SGC** para revisar el registro original.
+
+La extensión realiza hasta tres consultas GET: búsqueda exacta del cliente, ficha del cliente y detalle de su última solicitud. Reutiliza la sesión dentro de una pestaña de SGC sin extraer cookies ni claves. No necesita configurar una API, un webhook, variables de Vercel ni credenciales nuevas. Los permisos siguen siendo los del usuario que inició sesión en SGC.
+
+El resumen distingue el estado del cliente, el estado de la solicitud y el saldo de los créditos. El «valor a pagar» de una solicitud no se presenta como saldo actual. Se muestran hasta cinco solicitudes, cinco créditos y seis eventos recientes; la selección de la última solicitud usa fecha de creación e ID como desempate. «Bloqueo Fianza» y otras etiquetas del listado se conservan tal como las muestra SGC.
+
+Los datos permanecen en memoria en la extensión y en las páginas corporativas donde se muestran. Se borran al cerrar, pulsar **Limpiar** o cambiar de conversación mediante navegación de iKono. Solo se guarda la posición de la ventana. **Copiar resumen** requiere un clic del asesor; no envía mensajes ni llama a la IA. Para evitar que cualquier sitio lea datos del panel, el transporte solo acepta consultas desde los orígenes exactos de iKono ONOFF (`https://onoff.a.ikono.im`) y SGC (`https://sgc.yadinero.co`).
+
+Este conector lee el HTML existente, no una API oficial de SGC. Si cambia la estructura de las vistas o vence la sesión, muestra un error o una advertencia de ficha incompleta. Nunca ejecuta bloqueos, envíos de correo, exportaciones, reliquidaciones, formularios ni cambios de estado. Los eventos de auditoría que SGC registre al consultar sus vistas pueden generarse normalmente. La implementación corresponde al asistente interno del asesor; una integración autónoma de Yabot requiere un servicio y autenticación propios.
+
+Los casos de coincidencia exacta, datos parciales, permisos, sesión, propiedad de solicitudes, límites de consulta y transporte se comprueban con datos ficticios en `tests/sgc.test.js` (`node --test tests/sgc.test.js`).
+
+`node scripts/preview-sgc.cjs` abre una vista local con datos ficticios para revisar el panel, los temas y los mensajes de error. La comprobación de la sesión real debe realizarse después de cargar esta versión de la extensión; las pruebas automatizadas no contactan producción.
 
 ## Instalación en Chrome o Edge
 

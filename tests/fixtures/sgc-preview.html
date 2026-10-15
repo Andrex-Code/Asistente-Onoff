@@ -1,0 +1,24 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Buscar en SGC · Vista de desarrollo</title>
+<link rel="stylesheet" href="/src/content.css"><link rel="stylesheet" href="/src/bitrix-search.css"><link rel="stylesheet" href="/src/sgc-search.css"><link rel="stylesheet" href="/src/menu-polish.css"><link rel="stylesheet" href="/src/ui-refresh.css"><link rel="stylesheet" href="/src/compact.css">
+<style>body{margin:0;background:#eef3f0;color:#203832;font:14px/1.6 'Segoe UI',sans-serif;padding:50px}main{max-width:580px;padding:24px;border:1px solid #dce6df;border-radius:16px;background:white}h1{font-size:22px}main small{color:#61776b}.ikono-translator-panel{position:fixed;right:24px;bottom:70px}.preview-launcher{position:fixed;right:24px;bottom:20px;border:0;border-radius:14px;background:#158456;color:white;padding:12px 18px;cursor:pointer}@media(max-width:620px){body{padding:18px}main{padding:16px}}</style></head><body>
+<main><small>ASISTENTE ONOFF · DATOS FICTICIOS</small><h1>Buscar en SGC</h1><p>Vista de desarrollo de la búsqueda por cédula. El servicio de SGC está simulado en esta página.</p><p>Prueba con <strong>12345678</strong> para ver un resultado; <strong>00000</strong> para cliente no encontrado y <strong>11111</strong> para sesión vencida.</p><p>El resultado incluye categoría, perfil, bloqueo y motivo de la última solicitud. Su historial conserva los eventos que muestra SGC.</p></main>
+<div class="ikono-translator-panel" hidden><button type="button" data-action="bitrix-search">Buscar en Bitrix</button></div><button type="button" class="preview-launcher" onclick="document.querySelector('.ikono-translator-panel').hidden=!document.querySelector('.ikono-translator-panel').hidden">Abrir Asistente ONOFF</button>
+<script>
+(() => {
+  const local = {}, sync = { onoffTheme: 'light' }, listeners = [];
+  window.qaMessages = [];
+  window.qaStored = local;
+  const store = (values, area) => ({
+    get: (keys, callback) => { const result = Object.fromEntries((typeof keys === 'string' ? [keys] : keys).map(key => [key, values[key]])); if(callback)callback(result); return Promise.resolve(result); },
+    set: async data => { Object.assign(values, data); const changes = Object.fromEntries(Object.entries(data).map(([key,newValue])=>[key,{newValue}]));listeners.forEach(fn=>fn(changes,area)); },
+    remove: async keys => (Array.isArray(keys)?keys:[keys]).forEach(key=>delete values[key])
+  });
+  window.chrome = { storage: { local:store(local,'local'),sync:store(sync,'sync'),onChanged:{addListener:fn=>listeners.push(fn)} },runtime:{sendMessage:async message=>{
+    qaMessages.push(message.type);
+    await new Promise(resolve=>setTimeout(resolve,150));
+    if(message.identification==='11111')return {ok:false,error:'Tu sesión de SGC venció. Abre SGC e inicia sesión nuevamente.'};
+    if(message.identification==='00000')return {ok:true,customer:null};
+    return {ok:true,checkedAt:new Date().toISOString(),customer:{id:'101',identification:'12345678',name:'Cliente de prueba',state:'Habilitado',latestStatus:'RECHAZADO',category:'Turquesa',profile:'D',blocks:['Bloqueo Fianza'],url:'https://sgc.yadinero.co/customers/show/101'},latestRequest:{id:'200',status:'RECHAZADO',typification:'Rechazo por intentos de firma Auco',amount:'COP 120,000',totalToPay:'COP 185,074',createdAt:'2026-10-14 15:37:17',deadline:'Nov 13, 2026',days:'30',url:'https://sgc.yadinero.co/requests/edit/200',history:[{type:'Cambio de estado',description:'Cambio de estado a: RECHAZADO',date:'2026-10-15 11:27:12'},{type:'Cambio de estado',description:'Auco respuesta: IDENTITY_GUARD_BLOCKED',date:'2026-10-15 11:27:12'}]},requests:[],credits:[],creditsAvailable:true};
+  }}};
+})();
+</script><script src="/src/sgc-search.js"></script><script src="/src/window-layout-fix.js"></script><script src="/src/menu-polish.js"></script><script src="/src/ui-experience.js"></script></body></html>

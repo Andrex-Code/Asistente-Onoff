@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.10.1",
-  "description": "Asistente ONOFF para traducción, mejora de textos, scripts de YaDinero, plantillas, seguimientos, audios, búsqueda en Bitrix y asistencia conversacional.",
+  "version": "1.11.0",
+  "description": "Asistente ONOFF para traducción, mejora de textos, scripts de YaDinero, plantillas, seguimientos, audios, búsqueda en Bitrix y SGC y asistencia conversacional.",
   "permissions": [
     "contextMenus",
     "storage",
@@ -34,6 +34,7 @@
         "src/assistant-chat.js",
         "src/assistant-enhancements.js",
         "src/bitrix-search.js",
+        "src/sgc-search.js",
         "src/followups.js",
         "src/window-layout-fix.js",
         "src/menu-polish.js",
@@ -47,6 +48,7 @@
         "src/ui-fixes.css",
         "src/assistant-chat.css",
         "src/bitrix-search.css",
+        "src/sgc-search.css",
         "src/followups.css",
         "src/window-layout-fix.css",
         "src/menu-polish.css",

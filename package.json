@@ -1,6 +1,6 @@
 {
   "name": "asistente-onoff",
-  "version": "1.10.1",
+  "version": "1.11.0",
   "private": true,
   "scripts": {
     "dev": "vercel dev",
@@ -8,7 +8,8 @@
     "hash-password": "node scripts/hash-password.js",
     "test": "node --test",
     "build": "node scripts/build-extension.cjs && node scripts/build-web.cjs",
-    "test:ui": "node scripts/qa-extension.cjs"
+    "test:ui": "node scripts/qa-extension.cjs",
+    "preview:sgc": "node scripts/preview-sgc.cjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.0.0"
@@ -17,6 +18,7 @@
     "node": "22.x"
   },
   "devDependencies": {
+    "linkedom": "0.18.13",
     "playwright": "1.60.0"
   }
 }
