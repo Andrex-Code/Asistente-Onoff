@@ -8,7 +8,7 @@ const { parseHTML } = require('linkedom');
 const fixture = require('./fixtures/sgc.cjs');
 const readerPromise = import('../src/sgc-reader.mjs').then(module => module.readSgcCustomer);
 
-async function lookup(pages = {}, identification = '12345678', origin = 'https://sgc.yadinero.co') {
+async function lookup(pages = {}, identification = '12345678', origin = 'https://sgc.yadinero.co', options = {}) {
   const calls = [];
   const { document } = parseHTML('<!doctype html><html><body></body></html>');
   const reader = await readerPromise;
@@ -23,11 +23,11 @@ async function lookup(pages = {}, identification = '12345678', origin = 'https:/
       return { ok: true, status: 200, url, text: async () => response };
     }
   });
-  const result = await vm.runInContext(`(${reader.toString()})`, context)(identification);
+  const result = await vm.runInContext(`(${reader.toString()})`, context)(identification, options);
   return { result: JSON.parse(JSON.stringify(result)), calls };
 }
 
-test('SGC exact lookup reads only three GET views and returns selected fields', async () => {
+test('SGC initial lookup returns customer and credits without requesting slow history HTML', async () => {
   const { result, calls } = await lookup({ '/customers': fixture.list(fixture.listRow('123456789') + fixture.listRow()) });
   assert.equal(result.ok, true);
   assert.equal(result.customer.name, 'Cliente de prueba');
@@ -36,15 +36,15 @@ test('SGC exact lookup reads only three GET views and returns selected fields', 
   assert.equal(result.customer.profile, 'D');
   assert.equal(result.customer.state, 'Habilitado');
   assert.equal(result.latestRequest.status, 'RECHAZADO');
-  assert.equal(result.latestRequest.totalToPay, 'COP 185,074');
+  assert.equal(result.latestRequest.totalToPay, undefined);
   assert.equal(result.latestRequest.typification, 'Rechazo por intentos de firma Auco');
-  assert.equal(result.latestRequest.history.length, 6);
-  assert.equal(result.latestRequest.history[0].description, 'Auco respuesta: IDENTITY_GUARD_BLOCKED');
-  assert.equal(result.latestRequest.detailsAvailable, true);
+  assert.equal(result.latestRequest.history.length, 0);
+  assert.equal(result.latestRequest.detailsAvailable, false);
+  assert.equal(result.detailsDeferred, true);
   assert.equal(result.creditsAvailable, true);
   assert.equal(result.warning, null);
-  assert.equal(calls.length, 3);
-  assert.deepEqual(result.timing.stages.map(step => step.stage), ['cliente', 'ficha', 'solicitud']);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(result.timing.stages.map(step => step.stage), ['cliente', 'ficha']);
   assert.equal(result.timing.stages.length, calls.length);
   assert.ok(result.timing.totalMs >= 0);
   for (const step of result.timing.stages) {
@@ -98,7 +98,7 @@ test('SGC selects the latest request by date and ID and bounds returned rows', a
   assert.equal(result.latestRequest.id, '200');
   assert.equal(result.requests.length, 5); assert.equal(result.moreRequests, true);
   assert.equal(result.credits[0].balance, '80,000');
-  assert.equal(new URL(calls[2].url).pathname, '/requests/edit/200');
+  assert.equal(calls.length, 2);
 });
 
 test('SGC distinguishes incomplete detail from an empty credit or request list', async () => {
@@ -107,19 +107,67 @@ test('SGC distinguishes incomplete detail from an empty credit or request list',
   assert.equal(incomplete.result.warningCode, 'SGC_FORBIDDEN'); assert.notEqual(incomplete.result.creditsAvailable, true);
   const empty = await lookup({ '/customers/show/101': fixture.detail('') });
   assert.equal(empty.result.latestRequest, null); assert.equal(empty.result.warning, null); assert.equal(empty.calls.length, 2);
-  const detailMissing = await lookup({ '/requests/edit/200': { ok: false, status: 403 } });
-  assert.equal(detailMissing.result.latestRequest.detailsAvailable, false); assert.equal(detailMissing.result.warningCode, 'SGC_FORBIDDEN');
+  const detailMissing = await lookup({ '/requests/edit/200': { ok: false, status: 403 } },
+    '12345678', 'https://sgc.yadinero.co',
+    { mode: 'details', customerPath: '/customers/show/101', requestPath: '/requests/edit/200' });
+  assert.equal(detailMissing.result.code, 'SGC_FORBIDDEN'); assert.equal(detailMissing.calls.length, 1);
 });
 
 test('SGC suppresses requests whose customer ownership cannot be confirmed', async () => {
   for (const html of [fixture.request('102'), fixture.request('101', '87654321')]) {
-    const { result } = await lookup({ '/requests/edit/200': html });
-    assert.equal(result.warningCode, 'SGC_CUSTOMER_MISMATCH');
-    assert.equal(result.latestRequest, null); assert.deepEqual(result.requests, []);
+    const { result, calls } = await lookup({ '/requests/edit/200': html }, '12345678',
+      'https://sgc.yadinero.co', {
+        mode: 'details', customerPath: '/customers/show/101', requestPath: '/requests/edit/200'
+      });
+    assert.equal(result.code, 'SGC_CUSTOMER_MISMATCH');
+    assert.equal(result.ok, false); assert.equal(calls.length, 1);
   }
   const wrongCustomer = await lookup({ '/customers/show/101': fixture.detail().replace('CC-12345678', 'CC-87654321') });
   assert.equal(wrongCustomer.result.warningCode, 'SGC_CUSTOMER_MISMATCH');
   assert.equal(wrongCustomer.result.creditsAvailable, undefined); assert.equal(wrongCustomer.calls.length, 2);
+});
+
+test('SGC details request fetches exactly one verified request and limits history', async () => {
+  const opts = { mode: 'details', customerPath: '/customers/show/101', requestPath: '/requests/edit/200' };
+  const { result, calls } = await lookup({}, '12345678', 'https://sgc.yadinero.co', opts);
+  assert.equal(result.ok, true);
+  assert.equal(result.request.totalToPay, 'COP 185,074');
+  assert.equal(result.request.status, 'RECHAZADO');
+  assert.equal(result.request.history.length, 6);
+  assert.equal(result.request.history[0].description, 'Auco respuesta: IDENTITY_GUARD_BLOCKED');
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0].url).pathname, '/requests/edit/200');
+  assert.deepEqual(result.timing.stages.map(step => step.stage), ['solicitud']);
+  assert.doesNotMatch(JSON.stringify(result), /PRIVATE_|SECRET_|Score Cifin|_token/);
+  for (const bad of [
+    { mode: 'details', customerPath: '/customers/show/101', requestPath: '/requests/edit/200?export=1' },
+    { mode: 'details', customerPath: '/customers/show/101', requestPath: 'https://evil.example/requests/edit/200' },
+    { mode: 'details', customerPath: '/customers/show/abc', requestPath: '/requests/edit/200' }
+  ]) {
+    const rejected = await lookup({}, '12345678', 'https://sgc.yadinero.co', bad);
+    assert.equal(rejected.result.code, 'SGC_ROUTE'); assert.equal(rejected.calls.length, 0);
+  }
+});
+
+test('SGC verifies the document again when using a known exact customer route', async () => {
+  const hint = { hint: { path: '/customers/show/101', name: 'Nombre verificado antes' } };
+  const { result, calls } = await lookup({}, '12345678', 'https://sgc.yadinero.co', hint);
+  assert.equal(result.ok, true);
+  assert.equal(result.fastPath, true);
+  assert.equal(result.customer.name, 'Nombre verificado antes');
+  assert.equal(result.customer.state, null);
+  assert.equal(result.creditsAvailable, true);
+  assert.equal(calls.length, 1);
+  assert.equal(new URL(calls[0].url).pathname, '/customers/show/101');
+  const mismatch = await lookup({
+    '/customers/show/101': fixture.detail().replace('CC-12345678', 'CC-87654321')
+  }, '12345678', 'https://sgc.yadinero.co', hint);
+  assert.equal(mismatch.result.warningCode, 'SGC_CUSTOMER_MISMATCH');
+  assert.notEqual(mismatch.result.creditsAvailable, true);
+  assert.deepEqual(mismatch.result.requests, []);
+  const badRoute = await lookup({}, '12345678', 'https://sgc.yadinero.co',
+    { hint: { path: '/customers/show/101?export=1' } });
+  assert.equal(badRoute.calls.length, 2, 'Unsafe hints must not bypass the exact document search.');
 });
 
 function transportHarness(tabs = [{ id: 2, url: 'https://sgc.yadinero.co/dashboard', windowId: 1, incognito: false }]) {
