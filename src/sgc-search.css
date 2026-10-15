@@ -18,3 +18,5 @@
 .onoff-sgc-performance li{display:grid;gap:1px;border-bottom:1px solid var(--on-line,#e2eae6);padding-bottom:6px}
 .onoff-sgc-performance li span{color:var(--on-muted,#6c8079)}
 .onoff-sgc-performance button{font:inherit;cursor:pointer;background:var(--on-raised,#f8faf9);color:var(--on-text,#203832);border:1px solid var(--on-line,#e2eae6);border-radius:7px;padding:6px 9px;margin:4px 0 0}
+
+.onoff-sgc-notice{background:var(--on-raised,#f8faf9);color:var(--on-text,#203832);border:1px solid var(--on-line,#e2eae6);border-radius:9px;padding:9px 11px;margin:0 10px;font-size:11px;line-height:1.55}
