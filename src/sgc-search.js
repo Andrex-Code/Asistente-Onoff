@@ -1,5 +1,6 @@
 (() => {
   const POSITION_KEY = 'onoffSgcSearchPosition';
+  let buttonObserver;
   let panel, searchWindow, input, results, status, submit, drag;
   let generation = 0;
   let busy = false;
@@ -13,28 +14,45 @@
   function init() {
     panel = document.querySelector('.ikono-translator-panel');
     if (!panel) return setTimeout(init, 250);
-    if (panel.querySelector('[data-action="sgc-search"]')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.action = 'sgc-search';
-    button.innerHTML = '<span>Buscar en SGC</span><span class="onoff-chevron">›</span>';
-    button.addEventListener('click', async event => {
-      event.preventDefault(); event.stopPropagation();
-      if (!searchWindow) buildWindow();
-      const open = searchWindow.hidden;
-      if (!open) return closeWindow();
-      searchWindow.hidden = false;
-      button.classList.add('is-active');
-      const saved = (await chrome.storage.local.get(POSITION_KEY))[POSITION_KEY];
-      if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
-        searchWindow.style.left = `${saved.left}px`; searchWindow.style.top = `${saved.top}px`;
-        searchWindow.style.right = 'auto'; searchWindow.style.bottom = 'auto';
-      }
-      keepInside();
-      if (!searchWindow.hidden) input.focus();
-    });
-    const bitrix = panel.querySelector('[data-action="bitrix-search"]');
-    if (bitrix) bitrix.after(button); else panel.appendChild(button);
+    ensureButton();
+    buttonObserver?.disconnect();
+    buttonObserver = new MutationObserver(ensureButton);
+    buttonObserver.observe(panel, { childList: true });
+  }
+
+  function ensureButton() {
+    if (!panel?.isConnected) return;
+    let button = panel.querySelector(':scope > button[data-action="sgc-search"]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.action = 'sgc-search';
+      button.innerHTML = '<span>Buscar en SGC</span><span class="onoff-chevron">›</span>';
+      const bitrix = panel.querySelector(':scope > button[data-action="bitrix-search"]');
+      if (bitrix) bitrix.after(button);
+      else panel.insertBefore(button, panel.querySelector('[data-subview]') || null);
+    }
+    if (button.dataset.onoffSgcBound === 'true') return;
+    button.dataset.onoffSgcBound = 'true';
+    button.addEventListener('click', toggleWindow);
+  }
+
+  async function toggleWindow(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!searchWindow) buildWindow();
+    if (!searchWindow.hidden) return closeWindow();
+    searchWindow.hidden = false;
+    event.currentTarget.classList.add('is-active');
+    const saved = (await chrome.storage.local.get(POSITION_KEY))[POSITION_KEY];
+    if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+      searchWindow.style.left = `${saved.left}px`;
+      searchWindow.style.top = `${saved.top}px`;
+      searchWindow.style.right = 'auto';
+      searchWindow.style.bottom = 'auto';
+    }
+    keepInside();
+    if (!searchWindow.hidden) input.focus();
   }
 
   function buildWindow() {
