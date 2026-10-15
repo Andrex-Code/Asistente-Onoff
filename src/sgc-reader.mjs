@@ -196,6 +196,8 @@ export async function readSgcCustomer(identification, options = {}) {
         result.latestRequest = { ...result.requests[0], detailsAvailable: false, history: [] };
       }
     } catch (error) {
+      // Never display even a previously known name when a fast-path identity no longer matches.
+      if (usingHint && error.code === 'SGC_CUSTOMER_MISMATCH') throw error;
       // Keep the exact customer match useful without presenting missing data as empty.
       result.warning = error.code ? error.message : 'No se pudo completar la ficha. Verifica la sesión y los permisos en SGC.';
       result.warningCode = error.code || 'SGC_DETAIL_UNAVAILABLE';
