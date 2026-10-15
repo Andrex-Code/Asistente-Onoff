@@ -337,6 +337,34 @@ test('SGC invalidates an old known route if its document no longer matches', asy
   assert.equal(h.saved.onoffSgcVerifiedRoutesV1.length, 0);
 });
 
+test('SGC rejects a search response if its active account changes during lookup', async () => {
+  const h = transportHarness();
+  const original = h.chrome.scripting.executeScript;
+  h.chrome.scripting.executeScript = async options => {
+    const response = await original(options);
+    if (options.args) h.setAccount('otra-cuenta@onoff.com.co');
+    return response;
+  };
+  const result = await h.send();
+  assert.equal(result.code, 'SGC_STALE_SESSION');
+  assert.equal(result.customer, undefined);
+  assert.equal(h.saved.onoffSgcCustomerCacheV1, undefined);
+});
+
+test('SGC rejects request detail when its active account changes during lookup', async () => {
+  const h = transportHarness();
+  await h.send();
+  const original = h.chrome.scripting.executeScript;
+  h.chrome.scripting.executeScript = async options => {
+    const response = await original(options);
+    if (options.args?.[1]?.mode === 'details') h.setAccount('otra-cuenta@onoff.com.co');
+    return response;
+  };
+  const result = await h.send(undefined, undefined, { type: 'ONOFF_SGC_DETAILS' });
+  assert.equal(result.code, 'SGC_STALE_SESSION');
+  assert.equal(result.latestRequest, undefined);
+});
+
 test('SGC bounds concurrent lookups and releases lock after failure', async () => {
   const h = transportHarness();
   let release;
