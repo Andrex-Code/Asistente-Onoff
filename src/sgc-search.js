@@ -114,7 +114,7 @@
     const current = ++generation;
     busy = true; input.disabled = true; submit.disabled = true; refreshButton.disabled = true;
     results.replaceChildren(); searchWindow.setAttribute('aria-busy', 'true');
-    setStatus('Consultando cliente y última solicitud en SGC…', 'loading');
+    setStatus('Consultando ficha y créditos en SGC…', 'loading');
     mascot('search');
     try {
       const data = await chrome.runtime.sendMessage({ type: 'ONOFF_SEARCH_SGC', identification, force });
@@ -129,7 +129,7 @@
       renderResult(data);
       renderTimings(data);
       const checkedTime = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.checkedAt));
-      setStatus(data.clientCache ? `Resultado guardado temporalmente · consultado a las ${checkedTime}. Use Actualizar para obtener datos nuevos.` : `Consulta realizada ${checkedTime}`, data.clientCache ? 'info' : 'success');
+      setStatus(data.clientCache ? `Resultado guardado temporalmente · consultado a las ${checkedTime}. Use Actualizar para obtener datos nuevos.` : data.fastPath ? `Consulta rápida verificada ${checkedTime} · Actualizar comprueba los datos generales.` : `Ficha consultada ${checkedTime} · puede ampliar el detalle de la solicitud.`, data.clientCache || data.fastPath ? 'info' : 'success');
       mascot('success', 1600);
     } catch (error) {
       if (current === generation) { setStatus(error.message || 'No fue posible consultar SGC.', 'error'); mascot('error', 2000); }
@@ -159,12 +159,13 @@
       catch { setStatus('El navegador no permitió copiar el resumen.', 'error'); }
     });
     actions.appendChild(copy); customer.appendChild(actions); results.appendChild(customer);
+    if (data.notice) results.appendChild(node('p', data.notice, 'onoff-sgc-notice'));
     if (data.warning) results.appendChild(node('p', data.warning, 'onoff-sgc-warning'));
     const r = data.latestRequest;
     if (r) {
       const request = card(`Última solicitud · ${r.id}`, r.status, [
-        ['Tipificación', r.typification], ['Valor del crédito', r.amount], ['Valor a pagar de la solicitud', r.totalToPay],
-        ['Creación', r.createdAt], ['Fecha límite', r.deadline], ['Plazo en días', r.days]
+        ['Tipificación', r.typification], ['Valor del crédito', r.amount], ['Valor a pagar de la solicitud', r.detailsAvailable ? r.totalToPay : 'Ampliar detalle'],
+        ['Creación', r.createdAt], ['Fecha límite', r.detailsAvailable ? r.deadline : 'Ampliar detalle'], ['Plazo en días', r.days]
       ]);
       const open = node('div', null, 'onoff-bitrix-actions'); addLink(open, r.url, 'Abrir solicitud en SGC'); request.appendChild(open);
       if (r.history?.length) {
@@ -175,7 +176,15 @@
           const item = node('li'); item.append(node('small', [event.type, event.date].filter(Boolean).join(' · ')), node('p', event.description)); list.appendChild(item);
         });
         history.appendChild(list); request.appendChild(history);
-      } else if (r.detailsAvailable) request.appendChild(node('small', 'El historial no está disponible en esta consulta. Revísalo en SGC.'));
+      } else if (r.detailsAvailable) request.appendChild(node('small', 'El historial no está disponible en esta consulta. Revíselo en SGC.'));
+      else {
+        const detailActions = node('div', null, 'onoff-bitrix-actions');
+        const detailsButton = node('button', 'Ampliar detalle e historial');
+        detailsButton.type = 'button';
+        detailsButton.addEventListener('click', () => { void loadDetails(); });
+        detailActions.appendChild(detailsButton);
+        request.appendChild(detailActions);
+      }
       results.appendChild(request);
     } else if (!data.warning) results.appendChild(node('p', 'SGC no muestra solicitudes para este cliente.', 'onoff-bitrix-empty'));
     if (data.creditsAvailable) {
@@ -195,6 +204,44 @@
       });
       if (data.moreRequests) recent.appendChild(node('small', 'Se muestran las 5 solicitudes más recientes de la ficha.'));
       results.appendChild(recent);
+    }
+  }
+
+  async function loadDetails() {
+    if (busy) return;
+    const identification = input.value.trim();
+    if (!identification) return;
+    const current = ++generation;
+    busy = true;
+    input.disabled = true;
+    submit.disabled = true;
+    refreshButton.disabled = true;
+    searchWindow.setAttribute('aria-busy', 'true');
+    setStatus('Cargando detalle e historial de la última solicitud…', 'loading');
+    try {
+      const data = await chrome.runtime.sendMessage({ type: 'ONOFF_SGC_DETAILS', identification });
+      if (current !== generation) return;
+      if (!data?.ok) throw new Error(data?.error || 'No se pudo ampliar la solicitud.');
+      results.replaceChildren();
+      renderResult(data);
+      renderTimings(data);
+      const when = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.detailCheckedAt || data.checkedAt));
+      setStatus(`Detalle consultado en SGC a las ${when}.`, 'success');
+      mascot('success', 1300);
+    } catch (error) {
+      if (current === generation) {
+        setStatus(error.message || 'No se pudo cargar el historial. El resumen anterior continúa disponible.', 'error');
+        mascot('error', 1500);
+      }
+    } finally {
+      if (current === generation) {
+        busy = false;
+        input.disabled = false;
+        submit.disabled = false;
+        refreshButton.disabled = false;
+        searchWindow.removeAttribute('aria-busy');
+        keepInside();
+      }
     }
   }
 
@@ -264,8 +311,8 @@
       c.blocks?.length ? `Alertas: ${c.blocks.join(', ')}` : '',
       `Estado última solicitud: ${r?.status || c.latestStatus || 'No informado'}`,
       r ? `Solicitud: ${r.id} · Tipificación: ${r.typification || 'No informada'}` : '',
-      r ? `Valor del crédito: ${r.amount || 'No informado'} · Valor a pagar de la solicitud: ${r.totalToPay || 'No informado'}` : '',
-      r?.deadline ? `Fecha límite: ${r.deadline}` : '', data.warning || '', `Fuente: ${c.url}`, `Consultado: ${data.checkedAt}`
+      r ? `Valor del crédito: ${r.amount || 'No informado'} · Valor a pagar de la solicitud: ${r.detailsAvailable ? (r.totalToPay || 'No informado') : 'Detalle no consultado'}` : '',
+      r?.deadline ? `Fecha límite: ${r.deadline}` : '', data.notice || '', data.warning || '', `Fuente: ${c.url}`, `Consultado: ${data.checkedAt}`
     ].filter(Boolean).join('\n');
   }
   function setStatus(message, type) { status.textContent = message; status.dataset.type = type; }
