@@ -1,7 +1,7 @@
 (() => {
   const POSITION_KEY = 'onoffSgcSearchPosition';
   let buttonObserver;
-  let panel, searchWindow, input, results, status, submit, drag;
+  let panel, searchWindow, input, results, status, submit, refreshButton, drag;
   let generation = 0;
   let busy = false;
 
@@ -63,7 +63,7 @@
       <header class="onoff-bitrix-header onoff-sgc-header"><div><strong>Buscar en SGC</strong><small>YaDinero · Cliente y créditos por cédula</small></div><div><button type="button" data-min title="Minimizar" aria-label="Minimizar">−</button><button type="button" data-close title="Cerrar" aria-label="Cerrar">×</button></div></header>
       <div class="onoff-bitrix-content onoff-sgc-content">
         <form class="onoff-bitrix-search-form"><label for="onoff-sgc-document">Cédula del cliente</label><div><input id="onoff-sgc-document" inputmode="numeric" autocomplete="off" maxlength="40" placeholder="Número de cédula"><button type="submit">Buscar</button></div></form>
-        <div class="onoff-sgc-toolbar"><span>Usa tu sesión abierta de SGC</span><button type="button" data-clear>Limpiar</button></div>
+        <div class="onoff-sgc-toolbar"><span>Usa tu sesión abierta de SGC</span><div class="onoff-sgc-controls"><button type="button" data-refresh disabled>Actualizar</button><button type="button" data-clear>Limpiar</button></div></div>
         <div class="onoff-bitrix-status" role="status" aria-live="polite"></div>
         <div class="onoff-bitrix-results"></div>
         <div class="onoff-sgc-footer"><a href="https://sgc.yadinero.co/dashboard" target="_blank" rel="noopener noreferrer">Abrir SGC</a><span>Consulta de solo lectura</span></div>
@@ -73,9 +73,16 @@
     results = searchWindow.querySelector('.onoff-bitrix-results');
     status = searchWindow.querySelector('[role="status"]');
     submit = searchWindow.querySelector('[type="submit"]');
+    refreshButton = searchWindow.querySelector('[data-refresh]');
     searchWindow.querySelector('form').addEventListener('submit', event => { event.preventDefault(); void runSearch(); });
     searchWindow.querySelector('[data-close]').addEventListener('click', closeWindow);
-    searchWindow.querySelector('[data-clear]').addEventListener('click', () => { clearSearch(); input.focus(); });
+    searchWindow.querySelector('[data-clear]').addEventListener('click', () => {
+      const previous = input.value.trim();
+      clearSearch();
+      if (previous) void chrome.runtime.sendMessage({ type: 'ONOFF_SGC_FORGET', identification: previous }).catch(() => {});
+      input.focus();
+    });
+    refreshButton.addEventListener('click', () => { void runSearch(true); });
     searchWindow.querySelector('[data-min]').addEventListener('click', event => {
       const minimized = searchWindow.classList.toggle('is-minimized');
       event.currentTarget.textContent = minimized ? '□' : '−';
@@ -91,7 +98,7 @@
     generation += 1;
     if (!searchWindow) return;
     results.replaceChildren(); status.textContent = ''; status.dataset.type = '';
-    input.value = ''; input.disabled = false; submit.disabled = false;
+    input.value = ''; input.disabled = false; submit.disabled = false; refreshButton.disabled = true;
     searchWindow.removeAttribute('aria-busy'); busy = false;
   }
 
@@ -100,28 +107,29 @@
     panel?.querySelector('[data-action="sgc-search"]')?.classList.remove('is-active');
   }
 
-  async function runSearch() {
+  async function runSearch(force = false) {
     if (busy) return;
     const identification = input.value.trim();
     if (!identification) return setStatus('Ingresa la cédula del cliente.', 'error');
     const current = ++generation;
-    busy = true; input.disabled = true; submit.disabled = true;
+    busy = true; input.disabled = true; submit.disabled = true; refreshButton.disabled = true;
     results.replaceChildren(); searchWindow.setAttribute('aria-busy', 'true');
     setStatus('Consultando cliente y última solicitud en SGC…', 'loading');
     mascot('search');
     try {
-      const data = await chrome.runtime.sendMessage({ type: 'ONOFF_SEARCH_SGC', identification });
+      const data = await chrome.runtime.sendMessage({ type: 'ONOFF_SEARCH_SGC', identification, force });
       if (current !== generation) return;
       if (!data?.ok) throw new Error(data?.error || 'No fue posible consultar SGC. Verifica que la extensión esté actualizada.');
       if (!data.customer) { setStatus('No se encontró un cliente con esa cédula exacta.', 'info'); mascot('notify', 1600); return; }
       renderResult(data);
-      setStatus(`Consulta realizada ${new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.checkedAt))}`, 'success');
+      const checkedTime = new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(new Date(data.checkedAt));
+      setStatus(data.clientCache ? `Resultado guardado temporalmente · consultado a las ${checkedTime}. Use Actualizar para obtener datos nuevos.` : `Consulta realizada ${checkedTime}`, data.clientCache ? 'info' : 'success');
       mascot('success', 1600);
     } catch (error) {
       if (current === generation) { setStatus(error.message || 'No fue posible consultar SGC.', 'error'); mascot('error', 2000); }
     } finally {
       if (current === generation) {
-        busy = false; input.disabled = false; submit.disabled = false; searchWindow.removeAttribute('aria-busy');
+        busy = false; input.disabled = false; submit.disabled = false; refreshButton.disabled = false; searchWindow.removeAttribute('aria-busy');
         keepInside();
       }
     }
