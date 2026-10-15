@@ -113,47 +113,139 @@ test('SGC suppresses requests whose customer ownership cannot be confirmed', asy
 });
 
 function transportHarness(tabs = [{ id: 2, url: 'https://sgc.yadinero.co/dashboard', windowId: 1, incognito: false }]) {
-  let listener; const calls = [];
-  const chrome = { runtime: { id: 'extension-id', onMessage: { addListener: fn => { listener = fn; } } },
-    tabs: { query: async query => { calls.push({ query }); return tabs; } },
-    scripting: { executeScript: async options => { calls.push({ options }); return [{ frameId: 0, result: { ok: true, customer: null } }]; } }
+  let listener, account = 'asesor@onoff.com.co', readResult = {
+    ok: true, customer: { id: '101', identification: '12345678', name: 'Cliente de prueba' },
+    latestRequest: { id: '200' }, warning: null, checkedAt: new Date().toISOString()
+  };
+  const calls = [], events = {}, saved = {};
+  const readerStub = async () => {};
+  const chrome = {
+    runtime: { id: 'extension-id', onMessage: { addListener: fn => { listener = fn; } } },
+    tabs: {
+      query: async query => { calls.push({ query }); return tabs; },
+      onUpdated: { addListener: fn => { events.updated = fn; } },
+      onRemoved: { addListener: fn => { events.removed = fn; } }
+    },
+    storage: { session: {
+      get: async key => ({ [key]: saved[key] }),
+      set: async obj => { Object.assign(saved, obj); },
+      remove: async key => { delete saved[key]; }
+    } },
+    scripting: { executeScript: async options => {
+      calls.push({ options });
+      return [{ frameId: 0, result: options.args ? readResult : account }];
+    } }
   };
   const source = fs.readFileSync(path.join(__dirname, '../src/sgc-transport.js'), 'utf8').replace(/^import .*;\r?\n/, '');
-  vm.runInNewContext(source, { chrome, URL, readSgcCustomer: async () => {} });
-  const send = (identification = 'CC 12.345.678', sender = { id: 'extension-id', url: 'https://onoff.a.ikono.im/#/room/qa', frameId: 0, tab: { id: 1, windowId: 1, incognito: false } }) => new Promise(resolve => listener({ type: 'ONOFF_SEARCH_SGC', identification, url: 'https://evil.example' }, sender, resolve));
-  return { send, calls, chrome };
+  vm.runInNewContext(source, { chrome, URL, readSgcCustomer: readerStub });
+  const defaultSender = { id: 'extension-id', url: 'https://onoff.a.ikono.im/#/room/qa', frameId: 0, tab: { id: 1, windowId: 1, incognito: false } };
+  const send = (identification = 'CC 12.345.678', sender = defaultSender, options = {}) =>
+    new Promise(resolve => listener({ type: options.type || 'ONOFF_SEARCH_SGC', identification, force: options.force === true, url: 'https://evil.example' }, sender, resolve));
+  return { send, calls, chrome, events, saved, setAccount: value => { account = value; }, setReadResult: value => { readResult = value; } };
 }
 
-test('SGC transport uses an existing authenticated-origin tab in isolated world', async () => {
-  const h = transportHarness(); assert.equal((await h.send()).ok, true);
+test('SGC transport validates session identity and reads SGC in isolated world', async () => {
+  const h = transportHarness();
+  assert.equal((await h.send()).ok, true);
   assert.equal(h.calls[0].query.url, 'https://sgc.yadinero.co/*');
-  const options = h.calls[1].options;
-  assert.equal(options.target.tabId, 2); assert.equal(options.world, 'ISOLATED');
-  assert.deepEqual(Array.from(options.args), ['12345678']);
-  assert.deepEqual(Array.from(options.target.frameIds), [0]);
-  assert.equal(h.calls.length, 2);
+  const probe = h.calls[1].options;
+  const lookup = h.calls[2].options;
+  assert.equal(probe.target.tabId, 2); assert.equal(probe.world, 'ISOLATED');
+  assert.equal(lookup.target.tabId, 2); assert.equal(lookup.world, 'ISOLATED');
+  assert.deepEqual(Array.from(lookup.args), ['12345678']);
+  assert.deepEqual(Array.from(lookup.target.frameIds), [0]);
+  assert.equal(h.calls.length, 3);
 });
 
-test('SGC transport rejects other senders, frames, invalid IDs, and missing sessions', async () => {
+test('SGC transport rejects other senders, frames, invalid IDs and missing sessions', async () => {
   const h = transportHarness();
   assert.equal((await h.send('12345678', { id: 'other', frameId: 0, tab: { id: 1 } })).code, 'SGC_UNAUTHORIZED');
   assert.equal((await h.send('12345678', { id: 'extension-id', frameId: 1, tab: { id: 1 } })).code, 'SGC_UNAUTHORIZED');
-  for (const url of ['https://evil.example', 'https://onoff.a.ikono.im.evil.example', 'https://sgc.yadinero.co.evil.example', 'not-a-url']) assert.equal((await h.send('12345678', { id: 'extension-id', url, frameId: 0, tab: { id: 1 } })).code, 'SGC_UNTRUSTED_PAGE');
-  for (const id of ['1234', 'hello12345678', '<script>12345678</script>', '12345678?x=1', '1'.repeat(41), {}]) assert.equal((await h.send(id)).code, 'SGC_INVALID_IDENTIFICATION');
+  for (const url of ['https://evil.example', 'https://onoff.a.ikono.im.evil.example', 'https://sgc.yadinero.co.evil.example', 'not-a-url'])
+    assert.equal((await h.send('12345678', { id: 'extension-id', url, frameId: 0, tab: { id: 1 } })).code, 'SGC_UNTRUSTED_PAGE');
+  for (const id of ['1234', 'hello12345678', '<script>12345</script>', '12345678?x=1', '1'.repeat(41), {}])
+    assert.equal((await h.send(id)).code, 'SGC_INVALID_IDENTIFICATION');
   assert.equal(h.calls.length, 0);
   for (const tabs of [[], [{ id: 2, url: 'https://sgc.yadinero.co/login' }], [{ id: 2, url: 'https://evil.example/' }], [{ id: 2, url: 'https://sgc.yadinero.co/dashboard', incognito: true }]]) {
-    const missing = transportHarness(tabs); assert.equal((await missing.send()).code, 'SGC_SESSION_REQUIRED'); assert.equal(missing.calls.length, 1);
+    const missing = transportHarness(tabs);
+    assert.equal((await missing.send()).code, 'SGC_SESSION_REQUIRED');
+    assert.equal(missing.calls.length, 1);
   }
 });
 
-test('SGC transport bounds concurrent lookups and releases the lock after failure', async () => {
-  const h = transportHarness(); let release;
-  h.chrome.scripting.executeScript = options => { h.calls.push({ options }); return new Promise(resolve => { release = resolve; }); };
-  const pending = h.send(); await new Promise(resolve => setImmediate(resolve));
+test('SGC cache reuses complete results, supports force refresh and explicit forgetting', async () => {
+  const h = transportHarness();
+  const first = await h.send();
+  assert.equal(first.clientCache, false);
+  assert.equal(h.calls.length, 3);
+  const cached = await h.send();
+  assert.equal(cached.clientCache, true);
+  assert.equal(cached.checkedAt, first.checkedAt);
+  assert.equal(h.calls.length, 5, 'The cached hit checks the tab and account but skips the reader.');
+  const fresh = await h.send(undefined, undefined, { force: true });
+  assert.equal(fresh.clientCache, false);
+  assert.equal(h.calls.length, 8);
+  assert.equal((await h.send(undefined, undefined, { type: 'ONOFF_SGC_FORGET' })).ok, true);
+  const afterForget = await h.send();
+  assert.equal(afterForget.clientCache, false);
+  assert.equal(h.calls.length, 11);
+  assert.equal(Object.keys(h.saved).every(k => /onoffSgcCustomerCache/.test(k)), true);
+});
+
+test('SGC cache is scoped to account and invalidated on SGC navigation', async () => {
+  const h = transportHarness();
+  await h.send();
+  h.setAccount('otra-cuenta@onoff.com.co');
+  assert.equal((await h.send()).clientCache, false);
+  assert.equal((await h.send()).clientCache, true);
+  h.events.updated(2, { status: 'loading', url: 'https://sgc.yadinero.co/customers' }, { url: 'https://sgc.yadinero.co/customers' });
+  // Event cleanup uses asynchronous storage operations.
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal((await h.send()).clientCache, false);
+  h.events.updated(2, { status: 'loading', url: 'https://sgc.yadinero.co/logout' }, { url: 'https://sgc.yadinero.co/logout' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal((await h.send()).clientCache, false);
+});
+
+test('SGC never caches partial, missing or unauthorized data', async () => {
+  const h = transportHarness();
+  h.setReadResult({ ok: true, customer: null });
+  await h.send(); await h.send();
+  assert.equal(h.calls.filter(x => x.options?.args).length, 2);
+  h.setReadResult({ ok: true, customer: { id: '101' }, warning: 'Incomplete' });
+  await h.send(); await h.send();
+  assert.equal(h.calls.filter(x => x.options?.args).length, 4);
+  h.setReadResult({ ok: false, code: 'SGC_FORBIDDEN' });
+  await h.send(); await h.send();
+  assert.equal(h.calls.filter(x => x.options?.args).length, 6);
+  h.setAccount(null);
+  h.setReadResult({ ok: true, customer: { id: '101' } });
+  await h.send(); await h.send();
+  assert.equal(h.calls.filter(x => x.options?.args).length, 8);
+});
+
+test('SGC bounds concurrent lookups and releases lock after failure', async () => {
+  const h = transportHarness();
+  let release;
+  const underlying = h.chrome.scripting.executeScript;
+  h.chrome.scripting.executeScript = options => {
+    if (!options.args) return underlying(options);
+    h.calls.push({ options });
+    return new Promise(resolve => { release = resolve; });
+  };
+  const pending = h.send();
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal((await h.send('87654321')).code, 'SGC_BUSY');
-  release([{ frameId: 0, result: { ok: true, customer: null } }]); await pending;
-  h.chrome.scripting.executeScript = async () => { throw new Error('Tab closed'); };
+  release([{ frameId: 0, result: { ok: true, customer: null } }]);
+  await pending;
+  h.chrome.scripting.executeScript = async options => {
+    if (!options.args) return underlying(options);
+    throw new Error('Tab closed');
+  };
   assert.equal((await h.send()).code, 'SGC_CONNECTION');
-  h.chrome.scripting.executeScript = async () => [];
+  h.chrome.scripting.executeScript = async options => {
+    if (!options.args) return underlying(options);
+    return [];
+  };
   assert.equal((await h.send()).code, 'SGC_TAB_CLOSED');
 });
