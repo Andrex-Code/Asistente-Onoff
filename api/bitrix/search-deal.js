@@ -1,4 +1,5 @@
 const { lookupAfacturar } = require('../../lib/afacturar-store');
+const { exactTcRecords } = require('../../lib/bitrix-tc');
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
 
@@ -70,7 +71,7 @@ async function findDeals(webhookUrl, tcField, tc) {
 
   try {
     const deals = await callBitrix(webhookUrl, 'crm.deal.list', {
-      [`filter[${tcField}]`]: tc,
+      [`filter[=${tcField}]`]: tc,
       'select[]': [
         'ID',
         'TITLE',
@@ -87,7 +88,8 @@ async function findDeals(webhookUrl, tcField, tc) {
       start: 0
     });
 
-    if (Array.isArray(deals) && deals.length) return deals;
+    const exact = exactTcRecords(deals, tcField, tc);
+    if (exact.length) return exact;
   } catch (error) {
     legacyError = error;
   }
@@ -96,7 +98,7 @@ async function findDeals(webhookUrl, tcField, tc) {
     const result = await callBitrix(webhookUrl, 'crm.item.list', {
       entityTypeId: 2,
       useOriginalUfNames: 'Y',
-      [`filter[${tcField}]`]: tc,
+      [`filter[=${tcField}]`]: tc,
       'select[]': [
         'id',
         'title',
@@ -112,7 +114,7 @@ async function findDeals(webhookUrl, tcField, tc) {
       start: 0
     });
 
-    return Array.isArray(result?.items) ? result.items : [];
+    return exactTcRecords(result?.items, tcField, tc);
   } catch (error) {
     throw legacyError || error;
   }
@@ -207,7 +209,8 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
   const assignedById = String(pick(item, 'ASSIGNED_BY_ID', 'assignedById') || '').trim();
   const companyId = String(pick(item, 'COMPANY_ID', 'companyId') || '').trim();
   const contactId = String(pick(item, 'CONTACT_ID', 'contactId') || '').trim();
-  const storedTc = String(readCustomField(item, tcField) || requestedTc).trim();
+  // The record has already passed exactTcRecords; return a canonical TC.
+  const storedTc = parseTc(readCustomField(item, tcField)) || requestedTc;
 
   const client = companyId
     ? context.companies.get(companyId) || `Empresa ${companyId}`

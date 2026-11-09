@@ -9,7 +9,8 @@
     "activeTab",
     "scripting",
     "tabs",
-    "clipboardWrite"
+    "clipboardWrite",
+    "offscreen"
   ],
   "host_permissions": [
     "<all_urls>",
@@ -20,6 +21,10 @@
   "background": {
     "service_worker": "src/background-entry.js",
     "type": "module"
+  },
+  "minimum_chrome_version": "116",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src 'self'"
   },
   "content_scripts": [
     {
@@ -41,7 +46,8 @@
         "src/templates-window.js",
         "src/scripts-data.js",
         "src/scripts-window.js",
-        "src/ui-experience.js"
+        "src/ui-experience.js",
+        "src/image-scan.js"
       ],
       "css": [
         "src/content.css",

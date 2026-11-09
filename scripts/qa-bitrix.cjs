@@ -12,7 +12,7 @@ const record = label => { checks.push(label); console.log('OK ' + label); };
 const server = http.createServer(async (req, res) => {
   if (!req.url.startsWith('/api/bitrix/')) {
     res.setHeader('Content-Type', 'text/html');
-    return res.end('<!doctype html><html><body><div class="ikono-translator-panel"></div></body></html>');
+    return res.end('<!doctype html><html><body>Prueba de búsqueda exacta ONOFF</body></html>');
   }
   // Intentionally no CORS headers: the old content-script fetch must fail.
   if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
@@ -21,7 +21,10 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   if (body.tc === '9999') { res.writeHead(503); return res.end(JSON.stringify({ ok: false, error: 'Bitrix de prueba no disponible.' })); }
   const data = req.url.endsWith('search-deal')
-    ? { ok: true, deals: [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal' }] }
+    ? { ok: true, deals: [
+      ...(body.tc === '898' ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal' }]),
+      { id: 'similar', tc: body.tc + '8', title: 'Similar de otro cliente', url: 'https://example.com/other' }
+    ] }
     : req.url.endsWith('search-company') ? { ok: true, companies: [{ id: '1', name: 'Cliente ficticio', url: 'https://example.com/client' }] }
     : req.url.endsWith('search-task') ? { ok: true, task: { id: body.taskId, title: 'Radicado de prueba', url: 'https://example.com/task' } }
     : { ok: true, open: [], closed: [], counts: { open: 0, closed: 0 } };
@@ -45,6 +48,8 @@ const server = http.createServer(async (req, res) => {
         await new Promise(resolve => setTimeout(resolve, 25));
       }
       await chrome.storage.sync.set({ backendUrl });
+      // Keep this focused search regression clear of the floating launcher.
+      await chrome.storage.local.set({ onoffBitrixSearchPosition: { left: 20, top: 100 }, onoffBitrixSearchUserPlaced: true });
     }, backend);
     const page = await context.newPage();
     await page.goto('http://127.0.0.1:' + port);
@@ -54,6 +59,7 @@ const server = http.createServer(async (req, res) => {
     }, backend);
     assert.ok(blocked); record('El navegador reproduce el bloqueo del fetch directo entre orígenes');
     // The manifest loads the real content script in its isolated extension world.
+    await page.locator('.onoff-mascot').click();
     await page.locator('[data-action=bitrix-search]').click();
     const panel = page.locator('.onoff-bitrix-search');
     async function search(value) { await panel.locator('input').fill(value); await panel.locator('button[type=submit]').click(); }
@@ -62,6 +68,16 @@ const server = http.createServer(async (req, res) => {
     assert.match(await panel.innerText(), /TC8968/);
     await panel.locator('.onoff-bitrix-task-group').first().waitFor();
     record('TC 8968 y tareas funcionan por el service worker sin CORS en el servidor');
+    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
+    record('La interfaz descarta coincidencias parciales incluso de un backend anterior');
+    await search('896'); await panel.locator('.onoff-bitrix-card').waitFor();
+    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
+    assert.doesNotMatch(await panel.innerText(), /Similar de otro cliente/);
+    record('Buscar 896 muestra solo 896, sin 8968');
+    await search('898'); await panel.locator('[data-type=empty]').waitFor();
+    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 0);
+    assert.equal(await panel.locator('.onoff-bitrix-tasks').count(), 0);
+    record('Sin TC exacta no muestra tarjetas ni tareas de coincidencias similares');
     await search('9999');
     await panel.locator('[data-type=error]').waitFor();
     assert.match(await panel.locator('[data-type=error]').innerText(), /HTTP 503.*Bitrix de prueba/);

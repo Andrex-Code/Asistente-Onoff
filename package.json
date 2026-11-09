@@ -7,9 +7,10 @@
     "start": "vercel dev",
     "hash-password": "node scripts/hash-password.js",
     "test": "node --test",
-    "build": "node scripts/build-extension.cjs && node scripts/build-web.cjs",
+    "build": "node scripts/build-scan-assets.cjs && node scripts/build-extension.cjs && node scripts/build-web.cjs",
     "test:ui": "node scripts/qa-extension.cjs",
     "test:bitrix": "node scripts/qa-bitrix.cjs",
+    "test:scan": "node scripts/qa-scan.cjs",
     "preview:sgc": "node scripts/preview-sgc.cjs"
   },
   "dependencies": {
@@ -19,7 +20,11 @@
     "node": "22.x"
   },
   "devDependencies": {
+    "@tesseract.js-data/spa": "1.0.0",
+    "@zxing/library": "0.23.0",
+    "tesseract.js": "7.0.0",
     "linkedom": "0.18.13",
+    "jsbarcode": "3.12.3",
     "playwright": "1.60.0"
   }
 }

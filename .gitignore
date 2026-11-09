@@ -12,3 +12,6 @@ output/
 
 # Static output prepared at build time for Vercel
 public/
+
+# Offline OCR assets are generated from pinned packages during build.
+src/vendor/scan/

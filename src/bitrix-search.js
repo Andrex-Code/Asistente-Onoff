@@ -88,10 +88,12 @@
       const data = await queryBitrix(searchMode, parsed);
       if (generation !== searchGeneration) return;
       if (searchMode === 'tc') {
-        const deals = await enrichDealsWithLocalAfacturar(data.deals || []);
+        // Also protect clients that still point to an older backend deployment.
+        const exact = (Array.isArray(data.deals) ? data.deals : []).filter(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed));
+        const deals = await enrichDealsWithLocalAfacturar(exact);
         if (generation !== searchGeneration) return;
         renderDeals(deals, parsed);
-        void loadClientTasks(parsed, generation);
+        if (deals.length) void loadClientTasks(parsed, generation);
       }
       else if (searchMode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
@@ -125,7 +127,7 @@
   }
 
   function renderDeals(deals, tc) {
-    if (!deals.length) return empty(`No se encontró ninguna negociación asociada a TC${tc}.`);
+    if (!deals.length) return empty(`No se encontró ninguna negociación con la TC exacta ${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
     resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación', deal.afacturar)));
   }
