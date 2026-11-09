@@ -102,7 +102,8 @@
         // Also protect clients that still point to an older backend deployment.
         const candidates = (Array.isArray(data.deals) ? data.deals : []).filter(deal => deal.tc && normalizePlatform(deal.tc).includes(normalizePlatform(parsed)))
           .sort((a,b) => Number(normalizePlatform(b.tc) === normalizePlatform(parsed)) - Number(normalizePlatform(a.tc) === normalizePlatform(parsed)));
-        const deals = await enrichDealsWithLocalAfacturar(candidates);
+        const exact = candidates.filter(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed));
+        const deals = await enrichDealsWithLocalAfacturar(exact.length ? exact : candidates);
         if (generation !== searchGeneration) return;
         renderDeals(deals, parsed);
         if (deals.some(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed))) void loadClientTasks(parsed, generation);
@@ -359,7 +360,7 @@
   }
   function empty(message){setStatus(message,'empty');resultBox.innerHTML='<p class="onoff-bitrix-empty">Verifique el dato e intente nuevamente.</p>';}
   function setStatus(message,type){statusBox.textContent=message;statusBox.dataset.type=type||'';}
-  function parseValue(value){const text=String(value||''); if(mode==='tc')return normalizePlatform(text.match(/^\s*(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)\s*$/i)?.[1]||''); if(mode==='task')return text.match(/^\s*(?:RAD(?:ICADO)?\s*[-:#]?\s*|#\s*)?(\d+)\s*$/i)?.[1]||''; const digits=text.replace(/\D/g,''); return digits.length>=5&&digits.length<=20?digits:'';}
+  function parseValue(value){const text=String(value||''); if(mode==='tc')return normalizePlatform(text.match(/^\s*(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z0-9]+)*)\s*$/i)?.[1]||''); if(mode==='task')return text.match(/^\s*(?:RAD(?:ICADO)?\s*[-:#]?\s*|#\s*)?(\d+)\s*$/i)?.[1]||''; const digits=text.replace(/\D/g,''); return digits.length>=5&&digits.length<=20?digits:'';}
   function formatDate(value){if(!value)return'No especificada';const d=new Date(value);return Number.isNaN(d.getTime())?'No especificada':new Intl.DateTimeFormat('es-CO',{dateStyle:'medium',timeStyle:'short'}).format(d);}
   function startDrag(e){if(e.button!==0||e.target.closest('button'))return;e.preventDefault();const r=searchWindow.getBoundingClientRect();dragState={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};searchWindow.classList.add('is-dragging');window.addEventListener('pointermove',moveDrag,true);window.addEventListener('pointerup',endDrag,true);window.addEventListener('pointercancel',endDrag,true);}
   function moveDrag(e){if(!dragState||e.pointerId!==dragState.id)return;searchWindow.style.left=`${clamp(e.clientX-dragState.x,8,window.innerWidth-searchWindow.offsetWidth-8)}px`;searchWindow.style.top=`${clamp(e.clientY-dragState.y,8,window.innerHeight-searchWindow.offsetHeight-8)}px`;searchWindow.style.right='auto';searchWindow.style.bottom='auto';}

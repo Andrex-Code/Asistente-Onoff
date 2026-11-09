@@ -41,8 +41,8 @@ test('deal endpoint verifies exact TC before limiting and enriching records', as
   let payload, status;
   const res = { setHeader() {}, status(value) { status = value; return this; }, json(value) { payload = value; }, end() {} };
   await h.context.module.exports({ method: 'POST', body: { tc: '896' } }, res);
-  assert.equal(status, 200); assert.equal(payload.deals.length, 10); assert.equal(payload.deals[0].id, '14008');
-  assert.equal(payload.deals[0].matchType, 'exact'); assert.equal(payload.deals[1].matchType, 'similar');
+  assert.equal(status, 200); assert.equal(payload.deals.length, 1); assert.equal(payload.deals[0].id, '14008');
+  assert.equal(payload.deals[0].matchType, 'exact'); assert.equal(h.calls.some(call => call.body.get(`filter[%${field}]`)), false);
   assert.equal(h.calls[0].body.get(`filter[=${field}]`), '896');
 });
 
@@ -74,4 +74,12 @@ test('endpoint returns the company linked by ID and products belonging to each e
   assert.equal(payload.deals[0].plan.items[0], 'Servicio anual');
   assert.equal(h.calls.filter(call => call.url.includes('crm.company.get')).length, 1);
   assert.equal(h.calls.find(call => call.url.includes('crm.deal.productrows.get')).body.get('id'), '12');
+});
+
+test('numeric TC suffixes are retained and similar results are fallback only', async () => {
+ assert.equal(normalizeTc('TC20107-1-1'), '20107-1-1');
+ assert.equal(exactTcRecords([{ID:'34592',[field]:'20107-1-1'}],field,'20107').length,0);
+ const h=backend('api/bitrix/search-deal.js', url=>url.includes('crm.deal.list')?[{ID:'34592',[field]:'20107-1-1'}]:{items:[]});
+ const rows=await vm.runInNewContext('findDeals("https://bitrix.example/", "'+field+'", "20107")',h.context);
+ assert.equal(rows.length,1); assert.equal(rows[0].ID,'34592');
 });

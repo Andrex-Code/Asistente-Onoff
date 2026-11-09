@@ -100,13 +100,13 @@ const server = http.createServer(async (req, res) => {
     assert.equal(await card.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
     await card.screenshot({ path: path.join(output, 'deal-tab.png') });
     record('Pestañas muestran plan y compañía, admiten teclado y no repiten consultas');
-    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 2);
+    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
     assert.match(await panel.locator('.onoff-bitrix-card').first().innerText(), /Coincidencia exacta/);
-    record('La interfaz muestra la exacta primero y después las similares');
+    record('La interfaz muestra solo la exacta cuando existe');
     await search('896'); await panel.locator('.onoff-bitrix-card').first().waitFor();
-    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 2);
-    assert.match(await panel.locator('.onoff-bitrix-card').last().innerText(), /TC8968/);
-    record('Buscar 896 muestra primero 896 y después 8968');
+    assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
+    assert.match(await panel.locator('.onoff-bitrix-card').last().innerText(), /TC896(?:\n|$)/);
+    record('Buscar 896 muestra solo la exacta');
     assert.equal(await panel.locator('.onoff-bitrix-card').first().getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
     await search('897'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /No hay productos registrados/);

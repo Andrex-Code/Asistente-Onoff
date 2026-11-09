@@ -26,7 +26,7 @@ async function requestBitrix(action, value) {
   if (!Object.hasOwn(BITRIX_ROUTES, action)) throw bitrixFailure('INVALID_INPUT', 'Tipo de búsqueda no permitido.');
   const text = String(value || '').trim();
   const valid = action === 'identification' ? /^\d{5,20}$/.test(text)
-    : action === 'task' ? /^\d{1,20}$/.test(text) : /^\d{1,20}(?:-[A-Z])?$/i.test(text);
+    : action === 'task' ? /^\d{1,20}$/.test(text) : /^\d{1,20}(?:-[A-Z0-9]+)*$/i.test(text);
   if (!valid) throw bitrixFailure('INVALID_INPUT', 'Ingrese un valor válido para la búsqueda seleccionada.');
 
   const settings = await chrome.storage.sync.get('backendUrl');
