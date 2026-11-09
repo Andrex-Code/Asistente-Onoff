@@ -100,11 +100,12 @@
       if (generation !== searchGeneration) return;
       if (searchMode === 'tc') {
         // Also protect clients that still point to an older backend deployment.
-        const exact = (Array.isArray(data.deals) ? data.deals : []).filter(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed));
-        const deals = await enrichDealsWithLocalAfacturar(exact);
+        const candidates = (Array.isArray(data.deals) ? data.deals : []).filter(deal => deal.tc && normalizePlatform(deal.tc).includes(normalizePlatform(parsed)))
+          .sort((a,b) => Number(normalizePlatform(b.tc) === normalizePlatform(parsed)) - Number(normalizePlatform(a.tc) === normalizePlatform(parsed)));
+        const deals = await enrichDealsWithLocalAfacturar(candidates);
         if (generation !== searchGeneration) return;
         renderDeals(deals, parsed);
-        if (deals.length) void loadClientTasks(parsed, generation);
+        if (deals.some(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed))) void loadClientTasks(parsed, generation);
       }
       else if (searchMode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
@@ -138,13 +139,16 @@
   }
 
   function renderDeals(deals, tc) {
-    if (!deals.length) return empty(`No se encontró ninguna negociación con la TC exacta ${tc}.`);
+    if (!deals.length) return empty(`No se encontraron negociaciones para TC${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
     resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(dealCard(deal, tc)));
   }
 
   function dealCard(deal, tc) {
     const article = document.createElement('article'); article.className = 'onoff-bitrix-card';
+    const match = document.createElement('small'); match.className = 'onoff-bitrix-match';
+    match.textContent = normalizePlatform(deal.tc) === normalizePlatform(tc) ? 'Coincidencia exacta' : 'TC similar';
+    article.appendChild(match);
     const tabs = document.createElement('div'); tabs.className = 'onoff-bitrix-record-tabs';
     tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', `Información de TC${deal.tc || tc}`);
     const prefix = `onoff-bitrix-record-${++dealCardSequence}`;

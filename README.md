@@ -19,7 +19,7 @@ Extensión de navegador para apoyar la atención en iKono Chat con traducción, 
 - Ventana Bitrix compacta: arrastrar la cabecera para moverla, doble clic para minimizar/restaurar y chincheta para mantenerla encima de las demás herramientas ONOFF. Guarda posición y preferencia de fijación.
 - Botones para abrir la negociación en Bitrix o copiar su enlace directo.
 - Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo en la base privada de Afacturar.
-- Búsqueda exacta de TC: no mezcla `896` con `8968`, `896-C` ni otras coincidencias parciales.
+- Búsqueda de TC con coincidencias exactas primero y similares después: cada tarjeta conserva su TC real e indica el tipo de coincidencia. Las tareas del cliente se consultan únicamente cuando existe la TC exacta buscada.
 - Captura de un área de la pestaña para leer texto y códigos de barras localmente, desde el icono de escaneo junto al cierre del menú.
 - **Buscar en SGC** por cédula: cliente, categoría, perfil, bloqueos, última solicitud, tipificación, montos, fechas, historial reciente y créditos mostrados en su ficha.
 

@@ -41,7 +41,8 @@ test('deal endpoint verifies exact TC before limiting and enriching records', as
   let payload, status;
   const res = { setHeader() {}, status(value) { status = value; return this; }, json(value) { payload = value; }, end() {} };
   await h.context.module.exports({ method: 'POST', body: { tc: '896' } }, res);
-  assert.equal(status, 200); assert.equal(payload.deals.length, 1); assert.equal(payload.deals[0].id, '14008');
+  assert.equal(status, 200); assert.equal(payload.deals.length, 10); assert.equal(payload.deals[0].id, '14008');
+  assert.equal(payload.deals[0].matchType, 'exact'); assert.equal(payload.deals[1].matchType, 'similar');
   assert.equal(h.calls[0].body.get(`filter[=${field}]`), '896');
 });
 
@@ -49,7 +50,8 @@ test('deal fallback and task bindings both discard similar TC records', async ()
   for (const file of ['api/bitrix/search-deal.js', 'lib/client-tasks-legacy.js']) {
     const h = backend(file, url => url.includes('crm.deal.list') ? [{ ID: 'wrong', [field]: '8968' }]
       : { items: [{ id: 'right', ufCrm1642606760058: '896' }, { id: 'wrong2', [field]: '896-C' }] });
-    const result = await vm.runInNewContext('findDeals("https://bitrix.example/", "' + field + '", "896")', h.context);
+    const method = file.startsWith('api/') ? 'findExactDeals' : 'findDeals';
+    const result = await vm.runInNewContext(method + '("https://bitrix.example/", "' + field + '", "896")', h.context);
     assert.equal(result.length, 1); assert.equal(result[0].id, 'right');
     assert.equal(h.calls.length, 2);
     for (const call of h.calls) assert.equal(call.body.get(`filter[=${field}]`), '896');

@@ -33,6 +33,7 @@
 .onoff-bitrix-task-toggle:hover{border-color:#168447;background:#eaf7ef;color:#0f5f35}
 
 .onoff-bitrix-record-tabs{display:flex;gap:18px;border-bottom:1px solid var(--on-line,#dce5df)}
+.onoff-bitrix-match{font-size:11px;color:var(--on-ink,#0f5f35);font-weight:600}
 .onoff-bitrix-record-tabs button{padding:2px 0 9px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--on-muted,#66736b);font:600 13px/1.4 'Segoe UI',sans-serif;cursor:pointer}
 .onoff-bitrix-record-tabs button[aria-selected=true]{border-bottom-color:var(--on-ink,#168447);color:var(--on-ink,#0f5f35)}
 .onoff-bitrix-record-panel{display:grid;gap:12px;min-width:0}

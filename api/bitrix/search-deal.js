@@ -68,6 +68,33 @@ module.exports = async function handler(req, res) {
 };
 
 async function findDeals(webhookUrl, tcField, tc) {
+  const exact = await findExactDeals(webhookUrl, tcField, tc);
+  let similar;
+  try {
+    similar = await callBitrix(webhookUrl, 'crm.deal.list', {
+      [`filter[%${tcField}]`]: tc, 'select[]': ['*', tcField], 'order[DATE_MODIFY]': 'DESC', start: 0
+    });
+  } catch {
+    try {
+      const result = await callBitrix(webhookUrl, 'crm.item.list', {
+        entityTypeId: 2, useOriginalUfNames: 'Y', [`filter[%${tcField}]`]: tc, 'select[]': ['*', tcField], start: 0
+      });
+      similar = result?.items;
+    } catch { if (!exact.length) throw new Error('No fue posible consultar las coincidencias similares. Intente nuevamente.'); }
+  }
+  const seen = new Set();
+  return [...exact, ...(Array.isArray(similar) ? similar : [])].map(unwrapRecord).filter(item => {
+    const actual = parseTc(readCustomField(item, tcField));
+    const id = String(pick(item, 'ID', 'id') || '');
+    if (!id || seen.has(id) || !actual || !actual.includes(tc)) return false;
+    seen.add(id); return true;
+  }).sort((a, b) => {
+    const score = item => { const actual = parseTc(readCustomField(item, tcField)); return actual === tc ? 0 : actual.startsWith(tc) ? 1 : 2; };
+    return score(a) - score(b);
+  });
+}
+
+async function findExactDeals(webhookUrl, tcField, tc) {
   let legacyError = null;
 
   try {
@@ -225,7 +252,8 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
 
   return {
     id,
-    tc: storedTc || requestedTc,
+    tc: storedTc,
+    matchType: storedTc === requestedTc ? 'exact' : 'similar',
     title,
     stageId,
     stage: context.stages.get(`${categoryId}:${stageId}`) || stageId || 'No especificado',
