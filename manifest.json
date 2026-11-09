@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Asistente ONOFF",
-  "version": "1.12.3",
-  "description": "Asistente ONOFF para traducción, mejora de textos, scripts de YaDinero, plantillas, seguimientos, audios, búsqueda en Bitrix y SGC y asistencia conversacional.",
+  "version": "1.12.4",
+  "description": "Asistente ONOFF para traducción, mejora de textos, plantillas, seguimientos, audios, búsqueda en Bitrix y asistencia conversacional.",
   "permissions": [
     "contextMenus",
     "storage",
@@ -39,13 +39,10 @@
         "src/assistant-chat.js",
         "src/assistant-enhancements.js",
         "src/bitrix-search.js",
-        "src/sgc-search.js",
         "src/followups.js",
         "src/window-layout-fix.js",
         "src/menu-polish.js",
         "src/templates-window.js",
-        "src/scripts-data.js",
-        "src/scripts-window.js",
         "src/ui-experience.js",
         "src/image-scan.js"
       ],
@@ -54,14 +51,12 @@
         "src/ui-fixes.css",
         "src/assistant-chat.css",
         "src/bitrix-search.css",
-        "src/sgc-search.css",
         "src/followups.css",
         "src/window-layout-fix.css",
         "src/menu-polish.css",
         "src/templates-window.css",
         "src/ui-refresh.css",
         "src/robot.css",
-        "src/scripts-window.css",
         "src/compact.css"
       ],
       "run_at": "document_idle"
@@ -90,12 +85,5 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "commands": {
-    "open-scripts": {
-      "suggested_key": {
-        "default": "Alt+Shift+Y"
-      },
-      "description": "Abrir scripts de atención"
-    }
-  }
+  "commands": {}
 }
