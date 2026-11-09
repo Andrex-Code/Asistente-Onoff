@@ -3,4 +3,3 @@ import './background.js';
 import './followups-transport.js';
 import './bitrix-transport.js';
 import './scan-transport.js';
-import './sgc-transport.js';
