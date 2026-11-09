@@ -65,6 +65,17 @@ const server = http.createServer(async (req, res) => {
     await page.locator('.onoff-mascot').click();
     await page.locator('[data-action=bitrix-search]').click();
     const panel = page.locator('.onoff-bitrix-search');
+    await panel.getByRole('button', { name: 'Fijar ventana', exact: true }).click();
+    assert.equal(await panel.getAttribute('data-pinned'), 'true');
+    assert.equal((await worker.evaluate(()=>chrome.storage.local.get('onoffBitrixSearchPinned'))).onoffBitrixSearchPinned, true);
+    await panel.getByRole('button', { name: 'Fijar ventana', exact: true }).click();
+    const header = panel.locator('.onoff-bitrix-header');
+    const before = await panel.boundingBox(); const handle = await header.boundingBox();
+    await page.mouse.move(handle.x+60,handle.y+15); await page.mouse.down(); await page.mouse.move(handle.x+100,handle.y+55,{steps:6}); await page.mouse.up();
+    const after = await panel.boundingBox(); assert.ok(after.x>before.x+20 && after.y>before.y+20);
+    await header.locator('strong').dblclick(); assert.ok(await panel.evaluate(el=>el.classList.contains('is-minimized')));
+    await header.locator('strong').dblclick(); assert.equal(await panel.evaluate(el=>el.classList.contains('is-minimized')),false);
+    record('Ventana se mueve, recuerda posición, permite fijar y minimiza con doble clic');
     async function search(value) { await panel.locator('input').fill(value); await panel.locator('button[type=submit]').click(); }
     await search('TC8968');
     await panel.locator('.onoff-bitrix-card').waitFor();
@@ -84,6 +95,7 @@ const server = http.createServer(async (req, res) => {
     assert.equal(await card.getByRole('button', { name: 'Abrir negociación', exact: true }).isVisible(), false);
     assert.equal(calls.length, requestCount);
     await card.screenshot({ path: path.join(output, 'company-tab.png') });
+    await panel.screenshot({ path: path.join(output, 'compact-window.png') });
     await card.getByRole('tab', { name: 'Compañía', exact: true }).press('ArrowLeft');
     assert.equal(await card.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
     await card.screenshot({ path: path.join(output, 'deal-tab.png') });

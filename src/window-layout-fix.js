@@ -147,7 +147,7 @@
     FOCUS_CONFIG.forEach((config) => {
       const windowEl = document.querySelector(config.selector);
       if (!windowEl) return;
-      windowEl.style.zIndex = String(windowEl === target ? WINDOW_FRONT_Z : WINDOW_BASE_Z);
+      windowEl.style.zIndex = String(windowEl.dataset.pinned === 'true' ? WINDOW_FRONT_Z + 1 : windowEl === target ? WINDOW_FRONT_Z : WINDOW_BASE_Z);
     });
   }
 

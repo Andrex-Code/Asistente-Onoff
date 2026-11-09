@@ -50,3 +50,15 @@
 .onoff-bitrix-record-panel .onoff-bitrix-card-title{gap:5px}
 .onoff-bitrix-record-panel dl{grid-template-columns:110px minmax(0,1fr);row-gap:9px}
 @media(max-width:360px){.onoff-bitrix-record-panel dl{grid-template-columns:1fr}}
+.onoff-ui .onoff-bitrix-header [data-pin]{display:grid;place-items:center;width:28px;height:28px;min-height:28px;padding:0;border:1px solid var(--on-line);border-radius:8px;background:var(--on-raised);color:var(--on-muted);cursor:pointer}
+.onoff-ui .onoff-bitrix-header [data-pin][aria-pressed=true]{background:var(--on-tint);color:var(--on-ink);border-color:var(--on-ink)}
+.onoff-bitrix-search.is-dragging .onoff-bitrix-header{cursor:grabbing}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-tabs{gap:4px;padding:7px 10px 0}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-tabs button{min-height:29px;border-radius:8px;font-size:11px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-search-form{padding:9px 10px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-search-form input,.onoff-ui.onoff-bitrix-search .onoff-bitrix-search-form button{min-height:34px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-results{padding:9px 10px 10px;gap:8px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-record-panel{gap:9px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-plan{padding:9px;gap:5px}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-plan li{font-size:11px;line-height:1.5}
+.onoff-ui.onoff-bitrix-search .onoff-bitrix-record-panel dl{grid-template-columns:100px minmax(0,1fr);font-size:11px;gap:7px 8px}

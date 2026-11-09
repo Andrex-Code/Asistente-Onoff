@@ -37,7 +37,7 @@
   border-radius: 16px;
 }
 .onoff-ui.onoff-assistant-window { --on-window-width: 350px; --on-window-height: 460px; }
-.onoff-ui.onoff-bitrix-search { --on-window-width: 390px; --on-window-height: 460px; }
+.onoff-ui.onoff-bitrix-search { --on-window-width: 350px; --on-window-height: 430px; }
 .onoff-ui.onoff-sgc-search { --on-window-width: 410px; --on-window-height: 490px; }
 .onoff-ui.onoff-followups-window { --on-window-width: 410px; --on-window-height: 490px; }
 .onoff-ui.onoff-templates-window { --on-window-width: 320px; --on-window-height: 410px; }
