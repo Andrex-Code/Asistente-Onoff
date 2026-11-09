@@ -78,7 +78,7 @@ const server = http.createServer(async (req, res) => {
     record('Ventana se mueve, recuerda posición, permite fijar y minimiza con doble clic');
     async function search(value) { await panel.locator('input').fill(value); await panel.locator('button[type=submit]').click(); }
     await search('TC8968');
-    await panel.locator('.onoff-bitrix-card').waitFor();
+    await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /TC8968/);
     await panel.locator('.onoff-bitrix-task-group').first().waitFor();
     record('TC 8968 y tareas funcionan por el service worker sin CORS en el servidor');
@@ -103,18 +103,18 @@ const server = http.createServer(async (req, res) => {
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 2);
     assert.match(await panel.locator('.onoff-bitrix-card').first().innerText(), /Coincidencia exacta/);
     record('La interfaz muestra la exacta primero y después las similares');
-    await search('896'); await panel.locator('.onoff-bitrix-card').waitFor();
+    await search('896'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 2);
     assert.match(await panel.locator('.onoff-bitrix-card').last().innerText(), /TC8968/);
     record('Buscar 896 muestra primero 896 y después 8968');
     assert.equal(await panel.locator('.onoff-bitrix-card').first().getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
-    await search('897'); await panel.locator('.onoff-bitrix-card').waitFor();
+    await search('897'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /No hay productos registrados/);
     await panel.locator('.onoff-bitrix-card').first().getByRole('tab', { name: 'Compañía', exact: true }).click();
     assert.match(await panel.innerText(), /no tiene una compañía asociada/);
     assert.equal(await panel.getByRole('button', { name: 'Abrir compañía', exact: true }).count(), 0);
     record('Distingue compañía ausente y productos vacíos; cada búsqueda abre Negociación');
-    await search('898'); await panel.locator('.onoff-bitrix-card').waitFor();
+    await search('898'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
     assert.match(await panel.locator('.onoff-bitrix-card').innerText(), /TC similar/);
     assert.equal(await panel.locator('.onoff-bitrix-tasks').count(), 0);
@@ -125,10 +125,10 @@ const server = http.createServer(async (req, res) => {
     assert.equal(await panel.locator('button[type=submit]').isEnabled(), true);
     record('Un error HTTP conserva el detalle y permite volver a buscar');
     await panel.locator('[data-mode=identification]').click(); await search('123456');
-    await panel.locator('.onoff-bitrix-card').waitFor();
+    await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /Cliente ficticio/); record('Búsqueda por identificación funciona');
     await panel.locator('[data-mode=task]').click(); await search('505942');
-    await panel.locator('.onoff-bitrix-card').waitFor();
+    await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /505942/); record('Búsqueda por radicado funciona');
     await fs.writeFile(path.join(output, 'report.json'), JSON.stringify({ checks, calls, productionRequests: 0 }, null, 2));
   } catch (error) { console.error(error); console.error(JSON.stringify({ checks, calls })); process.exitCode = 1; }
