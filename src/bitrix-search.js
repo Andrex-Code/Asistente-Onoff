@@ -47,7 +47,7 @@
     searchWindow.className = 'onoff-bitrix-search';
     searchWindow.hidden = true;
     searchWindow.innerHTML = `
-      <header class="onoff-bitrix-header"><div><strong>Buscar en Bitrix</strong><small>Negociaciones, clientes y radicados</small></div><div><button data-min title="Minimizar">−</button><button data-close title="Cerrar">×</button></div></header>
+      <header class="onoff-bitrix-header" title="Arrastre para mover · Doble clic para minimizar"><div><strong>Buscar en Bitrix</strong><small>Arrastre para mover</small></div><div><button data-pin title="Mantener encima de las otras herramientas" aria-label="Fijar ventana" aria-pressed="false">♧</button><button data-min title="Minimizar" aria-label="Minimizar ventana">−</button><button data-close title="Cerrar" aria-label="Cerrar Bitrix">×</button></div></header>
       <div class="onoff-bitrix-content">
         <nav class="onoff-bitrix-tabs"><button data-mode="tc" class="is-active">Por TC</button><button data-mode="identification">Por identificación</button><button data-mode="task">Por radicado</button></nav>
         <form class="onoff-bitrix-search-form"><label data-label>Número de TC</label><div><input autocomplete="off" placeholder="TC5900 o 5900"><button type="submit">Buscar</button></div></form>
@@ -57,9 +57,19 @@
     input = searchWindow.querySelector('input'); resultBox = searchWindow.querySelector('.onoff-bitrix-results'); statusBox = searchWindow.querySelector('.onoff-bitrix-status'); submitButton = searchWindow.querySelector('button[type="submit"]');
     searchWindow.querySelector('[data-close]').onclick = closeWindow;
     searchWindow.querySelector('[data-min]').onclick = e => { searchWindow.classList.toggle('is-minimized'); e.currentTarget.textContent = searchWindow.classList.contains('is-minimized') ? '□' : '−'; };
+    const pin = searchWindow.querySelector('[data-pin]');
+    pin.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m9 3 6 0-1 6 4 4v2H6v-2l4-4-1-6ZM12 15v6"/></svg>';
+    const setPinned = value => {
+      searchWindow.dataset.pinned = String(value); pin.setAttribute('aria-pressed', String(value));
+      pin.title = value ? 'Dejar de mantener encima de las otras herramientas' : 'Mantener encima de las otras herramientas';
+      searchWindow.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    };
+    pin.onclick = () => { const value = searchWindow.dataset.pinned !== 'true'; setPinned(value); chrome.storage.local.set({ onoffBitrixSearchPinned: value }).catch(() => {}); };
+    chrome.storage.local.get('onoffBitrixSearchPinned').then(saved => setPinned(saved.onoffBitrixSearchPinned === true));
     searchWindow.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
     searchWindow.querySelector('form').onsubmit = e => { e.preventDefault(); runSearch(); };
     searchWindow.querySelector('.onoff-bitrix-header').addEventListener('pointerdown', startDrag);
+    searchWindow.querySelector('.onoff-bitrix-header').addEventListener('dblclick', event => { if (!event.target.closest('button')) searchWindow.querySelector('[data-min]').click(); });
     window.addEventListener('resize', keepInside);
   }
 
@@ -347,9 +357,9 @@
   function setStatus(message,type){statusBox.textContent=message;statusBox.dataset.type=type||'';}
   function parseValue(value){const text=String(value||''); if(mode==='tc')return normalizePlatform(text.match(/^\s*(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)\s*$/i)?.[1]||''); if(mode==='task')return text.match(/^\s*(?:RAD(?:ICADO)?\s*[-:#]?\s*|#\s*)?(\d+)\s*$/i)?.[1]||''; const digits=text.replace(/\D/g,''); return digits.length>=5&&digits.length<=20?digits:'';}
   function formatDate(value){if(!value)return'No especificada';const d=new Date(value);return Number.isNaN(d.getTime())?'No especificada':new Intl.DateTimeFormat('es-CO',{dateStyle:'medium',timeStyle:'short'}).format(d);}
-  function startDrag(e){if(e.button!==0||e.target.closest('button'))return;const r=searchWindow.getBoundingClientRect();dragState={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};window.addEventListener('pointermove',moveDrag,true);window.addEventListener('pointerup',endDrag,true);}
+  function startDrag(e){if(e.button!==0||e.target.closest('button'))return;e.preventDefault();const r=searchWindow.getBoundingClientRect();dragState={id:e.pointerId,x:e.clientX-r.left,y:e.clientY-r.top};searchWindow.classList.add('is-dragging');window.addEventListener('pointermove',moveDrag,true);window.addEventListener('pointerup',endDrag,true);window.addEventListener('pointercancel',endDrag,true);}
   function moveDrag(e){if(!dragState||e.pointerId!==dragState.id)return;searchWindow.style.left=`${clamp(e.clientX-dragState.x,8,window.innerWidth-searchWindow.offsetWidth-8)}px`;searchWindow.style.top=`${clamp(e.clientY-dragState.y,8,window.innerHeight-searchWindow.offsetHeight-8)}px`;searchWindow.style.right='auto';searchWindow.style.bottom='auto';}
-  async function endDrag(e){if(!dragState||e.pointerId!==dragState.id)return;dragState=null;window.removeEventListener('pointermove',moveDrag,true);window.removeEventListener('pointerup',endDrag,true);const r=searchWindow.getBoundingClientRect();await chrome.storage.local.set({[POSITION_KEY]:{left:r.left,top:r.top}});}
+  async function endDrag(e){if(!dragState||e.pointerId!==dragState.id)return;dragState=null;searchWindow.classList.remove('is-dragging');window.removeEventListener('pointermove',moveDrag,true);window.removeEventListener('pointerup',endDrag,true);window.removeEventListener('pointercancel',endDrag,true);const r=searchWindow.getBoundingClientRect();await chrome.storage.local.set({[POSITION_KEY]:{left:r.left,top:r.top},onoffBitrixSearchUserPlaced:true});}
   async function applyPosition(){const p=(await chrome.storage.local.get(POSITION_KEY))[POSITION_KEY];if(p){searchWindow.style.left=`${p.left}px`;searchWindow.style.top=`${p.top}px`;searchWindow.style.right='auto';searchWindow.style.bottom='auto';keepInside();}}
   function keepInside(){if(!searchWindow||searchWindow.hidden)return;const r=searchWindow.getBoundingClientRect();searchWindow.style.left=`${clamp(r.left,8,window.innerWidth-r.width-8)}px`;searchWindow.style.top=`${clamp(r.top,8,window.innerHeight-r.height-8)}px`;}
   function clamp(v,min,max){return Math.min(Math.max(v,min),Math.max(min,max));}
