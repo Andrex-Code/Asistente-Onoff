@@ -15,7 +15,7 @@ Extensión de navegador para apoyar la atención en iKono Chat con traducción, 
 - Acciones rápidas para interpretar, resumir, sugerir respuesta e identificar el siguiente paso.
 - Botón para copiar respuestas sin escribir ni enviar automáticamente dentro de iKono.
 - Búsqueda de negociaciones por `TC5900`, `TC 5900`, `TC-5900` o `5900`.
-- Visualización de título, etapa, cliente, responsable, última actualización e ID de la negociación.
+- Pestañas **Negociación** y **Compañía** al buscar una TC: plan contratado, cliente, NIT/identificación, teléfono y correo. Cada búsqueda abre Negociación; alternar las pestañas no repite consultas.
 - Botones para abrir la negociación en Bitrix o copiar su enlace directo.
 - Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo en la base privada de Afacturar.
 - Búsqueda exacta de TC: no mezcla `896` con `8968`, `896-C` ni otras coincidencias parciales.

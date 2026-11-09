@@ -3,6 +3,7 @@
   const POSITION_KEY = 'onoffBitrixSearchPosition';
   let buttonObserver;
   let searchGeneration = 0;
+  let dealCardSequence = 0;
   let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState;
 
   init();
@@ -129,7 +130,72 @@
   function renderDeals(deals, tc) {
     if (!deals.length) return empty(`No se encontró ninguna negociación con la TC exacta ${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
-    resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación', deal.afacturar)));
+    resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(dealCard(deal, tc)));
+  }
+
+  function dealCard(deal, tc) {
+    const article = document.createElement('article'); article.className = 'onoff-bitrix-card';
+    const tabs = document.createElement('div'); tabs.className = 'onoff-bitrix-record-tabs';
+    tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', `Información de TC${deal.tc || tc}`);
+    const prefix = `onoff-bitrix-record-${++dealCardSequence}`;
+    const company = deal.company;
+    const companyAvailable = company?.status === 'available';
+    const negotiation = card(`TC${deal.tc || tc}`, deal.title, [
+      ['Cliente', deal.client], ['NIT / identificación', companyAvailable ? company.identification : 'No disponible']
+    ], deal.url, 'Abrir negociación', deal.afacturar);
+    const plan = document.createElement('section'); plan.className = 'onoff-bitrix-plan';
+    const planTitle = document.createElement('strong'); planTitle.textContent = 'Plan contratado'; plan.appendChild(planTitle);
+    if (deal.plan?.status === 'available' && Array.isArray(deal.plan.items) && deal.plan.items.length) {
+      const list = document.createElement('ul');
+      deal.plan.items.forEach(name => { const item = document.createElement('li'); item.textContent = name; list.appendChild(item); });
+      plan.appendChild(list);
+      const source = document.createElement('small'); source.textContent = 'Productos registrados en «Producto Plan» de Bitrix.'; plan.appendChild(source);
+      if (deal.plan.hasMore) { const more = document.createElement('small'); more.textContent = 'Hay más productos. Abra la negociación para verlos todos.'; plan.appendChild(more); }
+    } else {
+      const message = document.createElement('p');
+      message.textContent = deal.plan?.status === 'empty' ? 'No hay productos registrados en esta negociación.' : 'No fue posible consultar el plan contratado. Abra la negociación para verificarlo.';
+      plan.appendChild(message);
+    }
+    negotiation.insertBefore(plan, negotiation.lastElementChild);
+    const updated = document.createElement('small'); updated.className = 'onoff-bitrix-record-updated';
+    updated.textContent = `Última actualización: ${formatDate(deal.updatedAt)}`;
+    negotiation.insertBefore(updated, negotiation.lastElementChild);
+
+    let companyBody;
+    if (companyAvailable) {
+      companyBody = card('Compañía asociada', company.name, [
+        ['NIT / identificación', company.identification],
+        ['Teléfono', (company.phones || []).join(' · ')], ['Correo', (company.emails || []).join(' · ')]
+      ], company.url, 'Abrir compañía');
+    } else {
+      companyBody = document.createElement('div');
+      const message = document.createElement('p'); message.className = 'onoff-bitrix-record-notice';
+      message.textContent = !company ? 'El servidor todavía no incluye los datos de compañía. Actualice el backend para usar esta pestaña.'
+        : company.status === 'none' ? 'Esta negociación no tiene una compañía asociada.'
+        : 'No fue posible consultar la compañía asociada. Verifique el acceso en Bitrix e intente buscar nuevamente.';
+      companyBody.appendChild(message);
+    }
+    const panels = [negotiation, companyBody].map((body, index) => {
+      const panel = document.createElement('section'); panel.className = 'onoff-bitrix-record-panel';
+      panel.id = `${prefix}-panel-${index}`; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', `${prefix}-tab-${index}`);
+      while (body.firstChild) panel.appendChild(body.firstChild);
+      return panel;
+    });
+    const buttons = ['Negociación', 'Compañía'].map((label, index) => {
+      const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+      button.id = `${prefix}-tab-${index}`; button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', panels[index].id);
+      button.onclick = () => select(index);
+      button.onkeydown = event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault(); const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+        select(next); buttons[next].focus();
+      };
+      tabs.appendChild(button); return button;
+    });
+    function select(index) {
+      buttons.forEach((button, i) => { button.setAttribute('aria-selected', String(i === index)); button.tabIndex = i === index ? 0 : -1; panels[i].hidden = i !== index; });
+    }
+    select(0); article.append(tabs, ...panels); return article;
   }
 
   async function loadClientTasks(tc, generation) {

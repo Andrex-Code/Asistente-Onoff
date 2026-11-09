@@ -31,3 +31,22 @@
 .onoff-bitrix-task-list{display:grid;gap:7px}
 .onoff-bitrix-task-toggle{justify-self:start;min-height:32px;padding:6px 10px;border:1px solid #cbd7cf;border-radius:9px;background:#f7f9f8;color:#33413a;font:inherit;font-size:11px;font-weight:900;cursor:pointer}
 .onoff-bitrix-task-toggle:hover{border-color:#168447;background:#eaf7ef;color:#0f5f35}
+
+.onoff-bitrix-record-tabs{display:flex;gap:18px;border-bottom:1px solid var(--on-line,#dce5df)}
+.onoff-bitrix-record-tabs button{padding:2px 0 9px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--on-muted,#66736b);font:600 13px/1.4 'Segoe UI',sans-serif;cursor:pointer}
+.onoff-bitrix-record-tabs button[aria-selected=true]{border-bottom-color:var(--on-ink,#168447);color:var(--on-ink,#0f5f35)}
+.onoff-bitrix-record-panel{display:grid;gap:12px;min-width:0}
+.onoff-bitrix-record-panel[hidden]{display:none!important}
+.onoff-bitrix-plan{display:grid;gap:6px;padding:11px;border-radius:9px;background:var(--on-tint,#eaf7ef);color:var(--on-text,#17201b)}
+.onoff-bitrix-plan>strong{font-size:12px;color:var(--on-ink,#0f5f35)}
+.onoff-bitrix-plan ul{display:grid;gap:6px;padding-left:16px;margin:0;font-size:12px;overflow-wrap:anywhere}
+.onoff-bitrix-plan p,.onoff-bitrix-record-notice{margin:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.onoff-bitrix-plan small,.onoff-bitrix-record-updated{font-size:11px;line-height:1.5;color:var(--on-muted,#66736b)}
+.onoff-ui .onoff-bitrix-task-loading,.onoff-ui .onoff-bitrix-task-empty{background:var(--on-raised);color:var(--on-muted);border:1px solid var(--on-line)}
+.onoff-ui .onoff-bitrix-task-error{background:var(--on-error-bg);color:var(--on-danger)}
+.onoff-bitrix-record-notice{padding:12px;border-radius:9px;background:var(--on-raised,#f3f6f4);color:var(--on-muted,#66736b);border:1px solid var(--on-line,#dce5df)}
+.onoff-bitrix-record-tabs{gap:20px}
+.onoff-bitrix-record-tabs button{min-height:36px;padding:5px 0 10px}
+.onoff-bitrix-record-panel .onoff-bitrix-card-title{gap:5px}
+.onoff-bitrix-record-panel dl{grid-template-columns:110px minmax(0,1fr);row-gap:9px}
+@media(max-width:360px){.onoff-bitrix-record-panel dl{grid-template-columns:1fr}}

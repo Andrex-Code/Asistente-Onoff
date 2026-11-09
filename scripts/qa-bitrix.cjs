@@ -22,7 +22,10 @@ const server = http.createServer(async (req, res) => {
   if (body.tc === '9999') { res.writeHead(503); return res.end(JSON.stringify({ ok: false, error: 'Bitrix de prueba no disponible.' })); }
   const data = req.url.endsWith('search-deal')
     ? { ok: true, deals: [
-      ...(body.tc === '898' ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal' }]),
+      ...(body.tc === '898' ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal',
+        plan: body.tc === '897' ? { status: 'empty', items: [] } : { status: 'available', items: ['Servicio anual de prueba', 'Equipo POS'] },
+        company: body.tc === '897' ? { status: 'none' } : { status: 'available', name: 'Compañía de prueba S.A.S.', identification: '900000000-0', phones: ['+57 300 000 0000'], emails: ['contacto@example.com'], url: 'https://example.com/company' }
+      }]),
       { id: 'similar', tc: body.tc + '8', title: 'Similar de otro cliente', url: 'https://example.com/other' }
     ] }
     : req.url.endsWith('search-company') ? { ok: true, companies: [{ id: '1', name: 'Cliente ficticio', url: 'https://example.com/client' }] }
@@ -68,12 +71,36 @@ const server = http.createServer(async (req, res) => {
     assert.match(await panel.innerText(), /TC8968/);
     await panel.locator('.onoff-bitrix-task-group').first().waitFor();
     record('TC 8968 y tareas funcionan por el service worker sin CORS en el servidor');
+    const card = panel.locator('.onoff-bitrix-card').first();
+    assert.equal(await card.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
+    assert.match(await card.innerText(), /Servicio anual de prueba/);
+    assert.equal(await card.locator('dt').filter({ hasText: /^(Estado|Responsable|ID)$/ }).count(), 0);
+    const requestCount = calls.length;
+    await card.getByRole('tab', { name: 'Compañía', exact: true }).click();
+    assert.match(await card.innerText(), /900000000-0/);
+    assert.match(await card.innerText(), /contacto@example.com/);
+    assert.match(await card.innerText(), /\+57 300 000 0000/);
+    assert.equal(await card.getByRole('button', { name: 'Abrir compañía', exact: true }).count(), 1);
+    assert.equal(await card.getByRole('button', { name: 'Abrir negociación', exact: true }).isVisible(), false);
+    assert.equal(calls.length, requestCount);
+    await card.screenshot({ path: path.join(output, 'company-tab.png') });
+    await card.getByRole('tab', { name: 'Compañía', exact: true }).press('ArrowLeft');
+    assert.equal(await card.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
+    await card.screenshot({ path: path.join(output, 'deal-tab.png') });
+    record('Pestañas muestran plan y compañía, admiten teclado y no repiten consultas');
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
     record('La interfaz descarta coincidencias parciales incluso de un backend anterior');
     await search('896'); await panel.locator('.onoff-bitrix-card').waitFor();
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
     assert.doesNotMatch(await panel.innerText(), /Similar de otro cliente/);
     record('Buscar 896 muestra solo 896, sin 8968');
+    assert.equal(await panel.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
+    await search('897'); await panel.locator('.onoff-bitrix-card').waitFor();
+    assert.match(await panel.innerText(), /No hay productos registrados/);
+    await panel.getByRole('tab', { name: 'Compañía', exact: true }).click();
+    assert.match(await panel.innerText(), /no tiene una compañía asociada/);
+    assert.equal(await panel.getByRole('button', { name: 'Abrir compañía', exact: true }).count(), 0);
+    record('Distingue compañía ausente y productos vacíos; cada búsqueda abre Negociación');
     await search('898'); await panel.locator('[data-type=empty]').waitFor();
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 0);
     assert.equal(await panel.locator('.onoff-bitrix-tasks').count(), 0);
@@ -90,6 +117,6 @@ const server = http.createServer(async (req, res) => {
     await panel.locator('.onoff-bitrix-card').waitFor();
     assert.match(await panel.innerText(), /505942/); record('Búsqueda por radicado funciona');
     await fs.writeFile(path.join(output, 'report.json'), JSON.stringify({ checks, calls, productionRequests: 0 }, null, 2));
-  } catch (error) { console.error(error); process.exitCode = 1; }
+  } catch (error) { console.error(error); console.error(JSON.stringify({ checks, calls })); process.exitCode = 1; }
   finally { await context?.close(); await new Promise(resolve => server.close(resolve)); }
 })();
