@@ -1,5 +1,6 @@
 const { lookupAfacturar } = require('../../lib/afacturar-store');
 const { exactTcRecords } = require('../../lib/bitrix-tc');
+const { normalizeCompany, loadPlans } = require('../../lib/bitrix-deal-details');
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
 
@@ -122,18 +123,19 @@ async function findDeals(webhookUrl, tcField, tc) {
 
 async function loadContext(webhookUrl, items) {
   const assignedIds = unique(items.map((item) => pick(item, 'ASSIGNED_BY_ID', 'assignedById')).filter(Boolean));
-  const companyIds = unique(items.map((item) => pick(item, 'COMPANY_ID', 'companyId')).filter(Boolean));
+  const companyIds = unique(items.map((item) => pick(item, 'COMPANY_ID', 'companyId')).filter(id => /^[1-9]\d*$/.test(String(id || ''))));
   const contactIds = unique(items.map((item) => pick(item, 'CONTACT_ID', 'contactId')).filter(Boolean));
   const categories = uniqueNumbers(items.map((item) => pick(item, 'CATEGORY_ID', 'categoryId')));
 
-  const [users, companies, contacts, stages] = await Promise.all([
+  const [users, companies, contacts, stages, plans] = await Promise.all([
     fetchUsers(webhookUrl, assignedIds),
     fetchCompanies(webhookUrl, companyIds),
     fetchContacts(webhookUrl, contactIds),
-    fetchStages(webhookUrl, categories)
+    fetchStages(webhookUrl, categories),
+    loadPlans(callBitrix, webhookUrl, items)
   ]);
 
-  return { users, companies, contacts, stages };
+  return { users, companies, contacts, stages, plans };
 }
 
 async function fetchUsers(webhookUrl, ids) {
@@ -154,12 +156,14 @@ async function fetchUsers(webhookUrl, ids) {
 
 async function fetchCompanies(webhookUrl, ids) {
   const map = new Map();
+  const identificationField = String(process.env.BITRIX_IDENTIFICATION_FIELD || 'UF_CRM_1599251398').trim();
+  if (!/^UF_CRM_[A-Z0-9_]+$/i.test(identificationField)) throw new Error('BITRIX_IDENTIFICATION_FIELD no tiene un formato válido.');
   await Promise.all(ids.map(async (id) => {
     try {
       const company = await callBitrix(webhookUrl, 'crm.company.get', { id });
-      if (company) map.set(String(id), String(company.TITLE || company.title || `Empresa ${id}`));
+      map.set(String(id), normalizeCompany(company, String(id), new URL(webhookUrl).origin, identificationField));
     } catch {
-      // El ID seguirá visible si no puede resolverse el nombre.
+      map.set(String(id), { status: 'unavailable', id: String(id) });
     }
   }));
   return map;
@@ -207,13 +211,14 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
   const stageId = String(pick(item, 'STAGE_ID', 'stageId') || '').trim();
   const categoryId = Number(pick(item, 'CATEGORY_ID', 'categoryId') || 0);
   const assignedById = String(pick(item, 'ASSIGNED_BY_ID', 'assignedById') || '').trim();
-  const companyId = String(pick(item, 'COMPANY_ID', 'companyId') || '').trim();
+  const companyValue = String(pick(item, 'COMPANY_ID', 'companyId') || '').trim();
+  const companyId = /^[1-9]\d*$/.test(companyValue) ? companyValue : '';
   const contactId = String(pick(item, 'CONTACT_ID', 'contactId') || '').trim();
   // The record has already passed exactTcRecords; return a canonical TC.
   const storedTc = parseTc(readCustomField(item, tcField)) || requestedTc;
 
   const client = companyId
-    ? context.companies.get(companyId) || `Empresa ${companyId}`
+    ? context.companies.get(companyId)?.name || `Empresa ${companyId}`
     : contactId
       ? context.contacts.get(contactId) || `Contacto ${contactId}`
       : 'No especificado';
@@ -225,6 +230,8 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
     stageId,
     stage: context.stages.get(`${categoryId}:${stageId}`) || stageId || 'No especificado',
     client,
+    company: companyId ? context.companies.get(companyId) || { status: 'unavailable' } : { status: 'none' },
+    plan: context.plans.get(id) || { status: 'unavailable', items: [] },
     responsible: assignedById ? context.users.get(assignedById) || `Usuario ${assignedById}` : 'No especificado',
     createdAt: toIsoOrNull(pick(item, 'DATE_CREATE', 'dateCreate')),
     updatedAt: toIsoOrNull(pick(item, 'DATE_MODIFY', 'dateModify')),

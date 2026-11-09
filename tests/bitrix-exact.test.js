@@ -20,7 +20,7 @@ function backend(file, response) {
   const calls = [], context = {
     module: { exports: {} }, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     process: { env: { BITRIX_WEBHOOK_URL: 'https://bitrix.example/rest/test/' } },
-    require: name => name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : { lookupAfacturar: async () => null },
+    require: name => name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : name.endsWith('bitrix-deal-details') ? require('../lib/bitrix-deal-details') : { lookupAfacturar: async () => null },
     fetch: async (url, options) => { calls.push({ url, body: options.body }); return { ok: true, json: async () => ({ result: response(url) }) }; }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
@@ -54,4 +54,22 @@ test('deal fallback and task bindings both discard similar TC records', async ()
     assert.equal(h.calls.length, 2);
     for (const call of h.calls) assert.equal(call.body.get(`filter[=${field}]`), '896');
   }
+});
+
+test('endpoint returns the company linked by ID and products belonging to each exact deal', async () => {
+  const h = backend('api/bitrix/search-deal.js', url => {
+    if (url.includes('crm.deal.list')) return [{ ID: '12', COMPANY_ID: '42', [field]: '8968' }];
+    if (url.includes('crm.company.get')) return { ID: '42', TITLE: 'Compañía de prueba', UF_CRM_1599251398: '900000000-0', PHONE: [{ VALUE: '3000000000' }], EMAIL: [{ VALUE: 'test@example.com' }] };
+    if (url.includes('crm.deal.productrows.get')) return [{ OWNER_ID: '12', OWNER_TYPE: 'D', PRODUCT_NAME: 'Servicio anual' }];
+    return [];
+  });
+  let payload;
+  const res = { setHeader() {}, status() { return this; }, json(data) { payload = data; } };
+  await h.context.module.exports({ method: 'POST', body: { tc: '8968' } }, res);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.deals[0].company.id, '42');
+  assert.equal(payload.deals[0].company.identification, '900000000-0');
+  assert.equal(payload.deals[0].plan.items[0], 'Servicio anual');
+  assert.equal(h.calls.filter(call => call.url.includes('crm.company.get')).length, 1);
+  assert.equal(h.calls.find(call => call.url.includes('crm.deal.productrows.get')).body.get('id'), '12');
 });
