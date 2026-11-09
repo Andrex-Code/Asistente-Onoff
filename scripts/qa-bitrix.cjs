@@ -105,8 +105,8 @@ const server = http.createServer(async (req, res) => {
     record('La interfaz muestra solo la exacta cuando existe');
     await search('896'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.equal(await panel.locator('.onoff-bitrix-card').count(), 1);
-    assert.match(await panel.locator('.onoff-bitrix-card').last().innerText(), /TC8968/);
-    record('Buscar 896 muestra primero 896 y después 8968');
+    assert.match(await panel.locator('.onoff-bitrix-card').last().innerText(), /TC896(?:\n|$)/);
+    record('Buscar 896 muestra solo la exacta');
     assert.equal(await panel.locator('.onoff-bitrix-card').first().getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
     await search('897'); await panel.locator('.onoff-bitrix-card').first().waitFor();
     assert.match(await panel.innerText(), /No hay productos registrados/);
