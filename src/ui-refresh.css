@@ -79,6 +79,7 @@
 .onoff-ui :is(.onoff-bitrix-status,.onoff-followups-status)[data-type=success]{background:var(--on-tint);border-color:var(--on-line);color:var(--on-ink);}
 .onoff-ui :is(.onoff-bitrix-status,.onoff-followups-status)[data-type=error]{background:var(--on-error-bg);border-color:var(--on-line);color:var(--on-danger);}
 .onoff-ui :is(.onoff-bitrix-status,.onoff-followups-status)[data-type=loading]{background:var(--on-raised);border-color:var(--on-line);color:var(--on-muted);}
+.onoff-ui .onoff-bitrix-status[data-type=empty]{background:var(--on-raised);border:1px solid var(--on-line);color:var(--on-text);}
 .onoff-ui :is(.onoff-bitrix-card,.onoff-bitrix-tasks,.onoff-bitrix-task,.onoff-followups-summary,.onoff-followups-form,.onoff-followups-users,.onoff-followups-sortbar,.onoff-followups-task){background:var(--on-surface);border-color:var(--on-line);border-radius:15px;box-shadow:none;}
 .onoff-ui :is(.onoff-bitrix-card-title strong,.onoff-bitrix-tasks-head strong,.onoff-followups-summary strong){color:var(--on-text);font-weight:650;}
 .onoff-ui :is(.onoff-bitrix-card-title span,.onoff-bitrix-card dt,.onoff-bitrix-task-meta span,.onoff-bitrix-tasks-head small,.onoff-followups-task-top small,.onoff-followups-task-meta dt,.onoff-followups-range,.onoff-followups-summary small,.onoff-followups-sac-note,.onoff-followups-user-copy small){color:var(--on-muted);}
