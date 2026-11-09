@@ -4,6 +4,7 @@ const fs=require('node:fs/promises'),path=require('node:path');
   const manifest=JSON.parse(await fs.readFile(path.join(root,'manifest.json'),'utf8'));
   if(manifest.manifest_version!==3)throw Error('Se requiere Manifest V3');
   const references=[manifest.background.service_worker,manifest.options_page,manifest.action.default_popup,...Object.values(manifest.icons),...manifest.content_scripts.flatMap(s=>[...s.js,...s.css])];
+  references.push('src/scan-offscreen.html','src/scan-offscreen.js','src/vendor/scan/tesseract.min.js','src/vendor/scan/worker.min.js','src/vendor/scan/zxing.min.js','src/vendor/scan/spa.traineddata.gz');
   for(const file of references)await fs.access(path.join(root,file));
   const dist=path.join(root,'dist');await fs.mkdir(dist,{recursive:true});
   if(await fs.realpath(dist)!==dist)throw Error('dist debe ser una carpeta dentro del repositorio');

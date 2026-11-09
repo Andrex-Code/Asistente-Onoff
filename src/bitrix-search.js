@@ -2,6 +2,7 @@
   const PANEL_SELECTOR = '.ikono-translator-panel';
   const POSITION_KEY = 'onoffBitrixSearchPosition';
   let buttonObserver;
+  let searchGeneration = 0;
   let panel, searchWindow, input, resultBox, statusBox, submitButton, mode = 'tc', dragState;
 
   init();
@@ -62,6 +63,7 @@
   }
 
   function setMode(next) {
+    searchGeneration += 1;
     mode = next; resultBox.innerHTML = ''; statusBox.textContent = '';
     searchWindow.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('is-active', b.dataset.mode === mode));
     const map = {
@@ -75,26 +77,37 @@
   function closeWindow() { searchWindow.hidden = true; panel.querySelector('[data-action="bitrix-search"]')?.classList.remove('is-active'); }
 
   async function runSearch() {
+    if (submitButton.disabled) return;
     const parsed = parseValue(input.value);
     if (!parsed) { setStatus('Ingrese un valor válido para la búsqueda seleccionada.', 'error'); notifyMascot('error', 1800); return; }
+    const generation = ++searchGeneration;
+    const searchMode = mode;
     notifyMascot('search');
     submitButton.disabled = true; input.disabled = true; resultBox.innerHTML = ''; setStatus('Consultando Bitrix…', 'loading');
     try {
-      const backend = String((await chrome.storage.sync.get('backendUrl')).backendUrl || 'https://asistente-onoff.vercel.app').replace(/\/$/, '');
-      const endpoint = mode === 'tc' ? 'search-deal' : mode === 'identification' ? 'search-company' : 'search-task';
-      const payload = mode === 'tc' ? { tc: parsed } : mode === 'identification' ? { identification: parsed } : { taskId: parsed };
-      const response = await fetch(`${backend}/api/bitrix/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok) throw new Error(data?.error || `El servidor respondió ${response.status}.`);
-      if (mode === 'tc') {
-        renderDeals(await enrichDealsWithLocalAfacturar(data.deals || []), parsed);
-        void loadClientTasks(backend, parsed);
+      const data = await queryBitrix(searchMode, parsed);
+      if (generation !== searchGeneration) return;
+      if (searchMode === 'tc') {
+        // Also protect clients that still point to an older backend deployment.
+        const exact = (Array.isArray(data.deals) ? data.deals : []).filter(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed));
+        const deals = await enrichDealsWithLocalAfacturar(exact);
+        if (generation !== searchGeneration) return;
+        renderDeals(deals, parsed);
+        if (deals.length) void loadClientTasks(parsed, generation);
       }
-      else if (mode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
+      else if (searchMode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);
       notifyMascot('success', 1800);
-    } catch (error) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); notifyMascot('error', 2400); }
+    } catch (error) { if (generation === searchGeneration) { setStatus(error.message || 'No fue posible consultar Bitrix.', 'error'); notifyMascot('error', 2400); } }
     finally { submitButton.disabled = false; input.disabled = false; }
+  }
+
+  async function queryBitrix(action, value) {
+    let data;
+    try { data = await chrome.runtime.sendMessage({ type: 'ONOFF_BITRIX_REQUEST', action, value }); }
+    catch { throw new Error('No fue posible comunicarse con la extensión. Recárguela y actualice esta página.'); }
+    if (!data?.ok) throw new Error(data?.error || 'La extensión no respondió. Recárguela y actualice esta página.');
+    return data;
   }
 
   async function enrichDealsWithLocalAfacturar(deals) {
@@ -114,20 +127,19 @@
   }
 
   function renderDeals(deals, tc) {
-    if (!deals.length) return empty(`No se encontró ninguna negociación asociada a TC${tc}.`);
+    if (!deals.length) return empty(`No se encontró ninguna negociación con la TC exacta ${tc}.`);
     setStatus(`${deals.length} negociación${deals.length === 1 ? '' : 'es'} encontrada${deals.length === 1 ? '' : 's'}.`, 'success');
     resultBox.innerHTML = ''; deals.forEach(deal => resultBox.appendChild(card(`TC${deal.tc || tc}`, deal.title, [['Estado',deal.stage],['Cliente',deal.client],['Responsable',deal.responsible],['Última actualización',formatDate(deal.updatedAt)],['ID',deal.id]], deal.url, 'Abrir negociación', deal.afacturar)));
   }
 
-  async function loadClientTasks(backend, tc) {
+  async function loadClientTasks(tc, generation) {
     const section=document.createElement('section');
     section.className='onoff-bitrix-tasks';
     section.innerHTML='<div class="onoff-bitrix-tasks-head"><div><strong>Tareas del cliente</strong><small>Consultando tareas asociadas a esta TC…</small></div><span class="onoff-bitrix-task-count">…</span></div><div class="onoff-bitrix-task-loading">Cargando tareas…</div>';
     resultBox.appendChild(section);
     try {
-      const response=await fetch(`${backend}/api/bitrix/search-client-tasks`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tc})});
-      const data=await response.json().catch(()=>null);
-      if(!response.ok||!data?.ok)throw new Error(data?.error||`El servidor respondió ${response.status}.`);
+      const data=await queryBitrix('tasks', tc);
+      if (generation !== searchGeneration) return;
       renderClientTasks(section,data);
     } catch(error) {
       section.innerHTML='<div class="onoff-bitrix-tasks-head"><div><strong>Tareas del cliente</strong><small>No fue posible cargar las tareas.</small></div></div>';

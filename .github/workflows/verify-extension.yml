@@ -33,3 +33,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser QA with local fixtures
         run: npm run test:ui
+      - name: Bitrix cross-origin regression with local fixtures
+        run: npm run test:bitrix
+      - name: Offline screenshot, barcode and OCR regression
+        run: npm run test:scan

@@ -18,6 +18,8 @@ Extensión de navegador para apoyar la atención en iKono Chat con traducción, 
 - Visualización de título, etapa, cliente, responsable, última actualización e ID de la negociación.
 - Botones para abrir la negociación en Bitrix o copiar su enlace directo.
 - Botón **Abrir en Afacturar** al consultar una TC cuando existe un enlace directo en la base privada de Afacturar.
+- Búsqueda exacta de TC: no mezcla `896` con `8968`, `896-C` ni otras coincidencias parciales.
+- Captura de un área de la pestaña para leer texto y códigos de barras localmente, desde el icono de escaneo junto al cierre del menú.
 - **Buscar en SGC** por cédula: cliente, categoría, perfil, bloqueos, última solicitud, tipificación, montos, fechas, historial reciente y créditos mostrados en su ficha.
 
 ## Buscar en SGC (1.11.0)
@@ -42,12 +44,16 @@ Los casos de coincidencia exacta, datos parciales, permisos, sesión, propiedad 
 
 ## Instalación en Chrome o Edge
 
-1. Descargue o clone este repositorio.
+Requiere Chrome o Edge 116 o posterior.
+
+1. Descargue o clone este repositorio y prepare el paquete con Node 22: `npm install` y `npm run build`.
 2. Abra `chrome://extensions` o `edge://extensions`.
 3. Active **Modo desarrollador**.
 4. Presione **Cargar descomprimida**.
-5. Seleccione la carpeta que contiene `manifest.json`.
-6. Abra o recargue iKono Chat.
+5. Seleccione **`dist/extension`**. La raíz descargada de GitHub no incluye los motores de reconocimiento generados durante el build.
+6. Abra o recargue iKono Chat. Si ya tenía la extensión cargada, recárguela y recargue también la página.
+
+Para los asesores, entregue la carpeta `dist/extension` ya preparada; no necesitan Node ni instalar dependencias. Los motores de lectura se incluyen en ese paquete y no descargan archivos durante el uso. La captura permite seleccionar, revisar y copiar texto/códigos, sin enviar la imagen al backend ni pegar mensajes al cliente. Detalles y validación en [Búsqueda exacta y captura](docs/busqueda-exacta-y-captura.md).
 
 ## Backend
 
