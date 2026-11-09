@@ -42,3 +42,11 @@
 .onoff-bitrix-plan ul{display:grid;gap:6px;padding-left:16px;margin:0;font-size:12px;overflow-wrap:anywhere}
 .onoff-bitrix-plan p,.onoff-bitrix-record-notice{margin:0;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 .onoff-bitrix-plan small,.onoff-bitrix-record-updated{font-size:11px;line-height:1.5;color:var(--on-muted,#66736b)}
+.onoff-ui .onoff-bitrix-task-loading,.onoff-ui .onoff-bitrix-task-empty{background:var(--on-raised);color:var(--on-muted);border:1px solid var(--on-line)}
+.onoff-ui .onoff-bitrix-task-error{background:var(--on-error-bg);color:var(--on-danger)}
+.onoff-bitrix-record-notice{padding:12px;border-radius:9px;background:var(--on-raised,#f3f6f4);color:var(--on-muted,#66736b);border:1px solid var(--on-line,#dce5df)}
+.onoff-bitrix-record-tabs{gap:20px}
+.onoff-bitrix-record-tabs button{min-height:36px;padding:5px 0 10px}
+.onoff-bitrix-record-panel .onoff-bitrix-card-title{gap:5px}
+.onoff-bitrix-record-panel dl{grid-template-columns:110px minmax(0,1fr);row-gap:9px}
+@media(max-width:360px){.onoff-bitrix-record-panel dl{grid-template-columns:1fr}}

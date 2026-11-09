@@ -170,7 +170,8 @@
     } else {
       companyBody = document.createElement('div');
       const message = document.createElement('p'); message.className = 'onoff-bitrix-record-notice';
-      message.textContent = company?.status === 'none' ? 'Esta negociación no tiene una compañía asociada.'
+      message.textContent = !company ? 'El servidor todavía no incluye los datos de compañía. Actualice el backend para usar esta pestaña.'
+        : company.status === 'none' ? 'Esta negociación no tiene una compañía asociada.'
         : 'No fue posible consultar la compañía asociada. Verifique el acceso en Bitrix e intente buscar nuevamente.';
       companyBody.appendChild(message);
     }
