@@ -106,7 +106,24 @@
         const deals = await enrichDealsWithLocalAfacturar(exact.length ? exact : candidates);
         if (generation !== searchGeneration) return;
         renderDeals(deals, parsed);
-        if (deals.some(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed))) void loadClientTasks(parsed, generation);
+        if (deals.some(deal => normalizePlatform(deal.tc) === normalizePlatform(parsed))) {
+          void loadClientTasks(parsed, generation);
+        } else {
+          // A similar TC must be selected explicitly: suffixes can identify distinct units.
+          const tcs = [...new Set(deals.map(deal => normalizePlatform(deal.tc)))];
+          for (const tc of tcs) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'onoff-bitrix-link';
+            button.textContent = 'Consultar tareas de TC' + tc;
+            button.addEventListener('click', () => {
+              if (generation !== searchGeneration || button.disabled) return;
+              button.disabled = true;
+              void loadClientTasks(tc, generation);
+            });
+            resultBox.appendChild(button);
+          }
+        }
       }
       else if (searchMode === 'identification') renderCompanies(data.companies || [], data.identificationMasked);
       else renderTask(data.task);

@@ -22,11 +22,11 @@ const server = http.createServer(async (req, res) => {
   if (body.tc === '9999') { res.writeHead(503); return res.end(JSON.stringify({ ok: false, error: 'Bitrix de prueba no disponible.' })); }
   const data = req.url.endsWith('search-deal')
     ? { ok: true, deals: [
-      ...(body.tc === '898' ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal',
+      ...(['898','20107'].includes(body.tc) ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal',
         plan: body.tc === '897' ? { status: 'empty', items: [] } : { status: 'available', items: ['Servicio anual de prueba', 'Equipo POS'] },
         company: body.tc === '897' ? { status: 'none' } : { status: 'available', name: 'Compañía de prueba S.A.S.', identification: '900000000-0', phones: ['+57 300 000 0000'], emails: ['contacto@example.com'], url: 'https://example.com/company' }
       }]),
-      { id: 'similar', tc: body.tc + '8', title: 'Similar de otro cliente', url: 'https://example.com/other' }
+      { id: 'similar', tc: body.tc === '20107' ? '20107-1-1' : body.tc + '8', title: 'Similar de otro cliente', url: 'https://example.com/other' }
     ] }
     : req.url.endsWith('search-company') ? { ok: true, companies: [{ id: '1', name: 'Cliente ficticio', url: 'https://example.com/client' }] }
     : req.url.endsWith('search-task') ? { ok: true, task: { id: body.taskId, title: 'Radicado de prueba', url: 'https://example.com/task' } }
@@ -119,6 +119,14 @@ const server = http.createServer(async (req, res) => {
     assert.match(await panel.locator('.onoff-bitrix-card').innerText(), /TC similar/);
     assert.equal(await panel.locator('.onoff-bitrix-tasks').count(), 0);
     record('Sin TC exacta muestra similares sin asociar tareas de otra TC');
+    await search('20107'); await panel.locator('.onoff-bitrix-card').first().waitFor();
+    assert.equal(await panel.locator('.onoff-bitrix-tasks').count(), 0);
+    const beforeTasks = calls.length;
+    await panel.getByRole('button', { name: 'Consultar tareas de TC20107-1-1', exact: true }).click();
+    await panel.locator('.onoff-bitrix-tasks-head small').filter({hasText:'abiertas'}).waitFor();
+    assert.equal(calls.slice(beforeTasks).filter(c => c.endpoint.endsWith('search-client-tasks') && c.body.tc === '20107-1-1').length, 1);
+    assert.equal(await panel.getByRole('button', { name: 'Consultar tareas de TC20107-1-1', exact: true }).isDisabled(), true);
+    record('TC20107 permite consultar explícitamente las tareas de TC20107-1-1 sin duplicar solicitudes');
     await search('9999');
     await panel.locator('[data-type=error]').waitFor();
     assert.match(await panel.locator('[data-type=error]').innerText(), /HTTP 503.*Bitrix de prueba/);
