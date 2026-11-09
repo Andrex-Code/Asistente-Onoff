@@ -69,6 +69,7 @@ module.exports = async function handler(req, res) {
 
 async function findDeals(webhookUrl, tcField, tc) {
   const exact = await findExactDeals(webhookUrl, tcField, tc);
+  if (exact.length) return exact;
   let similar;
   try {
     similar = await callBitrix(webhookUrl, 'crm.deal.list', {
@@ -306,7 +307,7 @@ async function callBitrix(webhookUrl, method, params = {}) {
 }
 
 function parseTc(value) {
-  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z])?)$/i);
+  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z0-9]+)*)$/i);
   return match ? match[1].replace(/\s+/g, '') : '';
 }
 
