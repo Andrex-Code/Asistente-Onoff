@@ -1,0 +1,9 @@
+{
+  "manifest_version": 3,
+  "name": "ONOFF · Prueba pasiva iKono",
+  "version": "0.1.0",
+  "description": "Diagnóstico local temporal. Sin Bitrix, IA ni envío de datos.",
+  "permissions": ["activeTab", "scripting"],
+  "action": {"default_title": "Activar prueba pasiva en esta pestaña"},
+  "background": {"service_worker": "background.js"}
+}

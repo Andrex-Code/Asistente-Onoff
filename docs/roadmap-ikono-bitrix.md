@@ -88,3 +88,10 @@ Consultar [issues de F01 a F06](https://github.com/Andrex-Code/Asistente-Onoff/i
 ## Observador pasivo preparado
 
 Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales aprobadas. No cargado en iKono. Ver [alcance y procedimiento](prueba-observador-pasivo-ikono.md). Próximo hito: cargar copia de desarrollo y observar apertura/cancelación sin cerrar la atención. F02 sigue abierta.
+
+## Paquete de diagnóstico local · avance actual
+
+- Extensión separada preparada, con inicio y detención explícitos; sin permisos permanentes de sitios ni conexión a Bitrix/IA.
+- Lector opcional de tipificación y detalle, basado en selección visible del DOM real; no confunde búsqueda con selección. Lectura final aún sin validar en cierre real.
+- **20/20 pruebas automáticas aprobadas**, incluida prueba Chromium con 20 aperturas/cancelaciones ficticias. Node 22/CI pendiente.
+- Falta aprobación para instalar el paquete de prueba y ensayarlo en la pestaña iKono autorizada. No instalado ni activo en producción. F02 permanece en investigación y 0/6 fases completadas.

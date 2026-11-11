@@ -1,11 +1,12 @@
 /* Test-only passive DOM probe. No network, chat text, room IDs or storage. */
-function installProbe(win, { enabled = false, onEvent = () => {} } = {}) {
+function installProbe(win, { enabled = false, onEvent = () => {}, readClassification } = {}) {
   if (!enabled || win.location.origin !== 'https://onoff.a.ikono.im') return () => {};
   const doc = win.document;
   let stopped = false;
   let previous = null;
   let dialog = null;
   let serial = 0;
+  let classification = '';
   const emit = (type, extra = {}) => {
     if (!stopped) { try { onEvent({ type, session: serial, ...extra }); } catch {} }
   };
@@ -20,9 +21,15 @@ function installProbe(win, { enabled = false, onEvent = () => {} } = {}) {
       if (dialog) emit('dialog-disappeared'); // Never infer successful resolution.
       dialog = next;
       previous = null;
+      classification = '';
       if (dialog) { serial++; emit('dialog-opened'); }
     }
     if (!dialog) return;
+    if (readClassification) {
+      const value = readClassification(dialog);
+      const signature = JSON.stringify(value);
+      if (signature !== classification) { classification = signature; emit('classification-observed', { classification: value }); }
+    }
     const fields = [...dialog.querySelectorAll('[role="combobox"]')];
     // Diagnostic counts only: do not mistake React Select search value for selection.
     const state = JSON.stringify(fields.map(el => ({
@@ -35,6 +42,7 @@ function installProbe(win, { enabled = false, onEvent = () => {} } = {}) {
   function click(event) {
     const button = event.target.closest?.('button');
     if (!button) return;
+    inspect(); // Fresh DOM before native click handlers can remove the dialog.
     const name = (button.getAttribute('aria-label') || button.textContent || '').trim();
     if (name === 'Resolver chat') emit('open-requested');
     if (dialog?.contains(button)) {
@@ -46,7 +54,7 @@ function installProbe(win, { enabled = false, onEvent = () => {} } = {}) {
   }
   const observer = new win.MutationObserver(inspect);
   observer.observe(doc.body, { subtree: true, childList: true, attributes: true,
-    attributeFilter: ['aria-expanded', 'aria-labelledby', 'aria-label'] });
+    characterData: true, attributeFilter: ['aria-expanded', 'aria-labelledby', 'aria-label'] });
   doc.addEventListener('click', click, { capture: true, passive: true });
   inspect();
   return () => { stopped = true; observer.disconnect(); doc.removeEventListener('click', click, true); dialog = null; previous = null; };

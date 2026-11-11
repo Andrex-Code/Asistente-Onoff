@@ -23,3 +23,19 @@ La automatización de navegador disponible permite evaluación DOM de solo lectu
 ## Validación local
 
 `node --test tests/ikono-close-probe.test.cjs tests/ikono-close-session.test.js`: 14/14, ejecutadas con Node v24.22.1; proyecto declara Node 22, por lo que falta repetir en ese entorno/CI. Tres casos del probe usan linkedom (dependencia existente); once casos corresponden al motor previo. Los eventos de resolución del test son sintéticos y no cierran iKono.
+
+## Versión instalable de prueba · avance actual
+
+Se preparó una extensión separada: ONOFF · Prueba pasiva iKono, v0.1.0. No reemplaza ni modifica la extensión habitual. Compilar con `node scripts/build-ikono-probe.cjs`; resultado: `dist/ikono-probe`. Solo solicita activeTab y scripting; no tiene permisos permanentes de sitios, red, almacenamiento o backend. Al pulsar su icono en iKono abre un panel detenido; requiere pulsar Iniciar prueba. Detener y borrar elimina los registros en memoria; Cerrar panel retira el panel y sus listeners. Al navegar se pierde el estado.
+
+El lector opcional `src/ikono-classification.cjs` usa `.mx_DropdownTypification .select__single-value`, observado en DOM real, con control de estructura y etiqueta de categoría. No toma el value de búsqueda de React Select. Devuelve unknown ante estructuras ambiguas; no dispone aún de IDs de catálogo ni garantiza estabilidad tras cambios de interfaz. El diagnóstico básico sigue sin leer selecciones si no se le proporciona ese lector. La extensión de prueba muestra las etiquetas seleccionadas únicamente en la misma pestaña.
+
+### Instalación pendiente (requiere aprobación)
+
+Cargar `dist/ikono-probe` como extensión descomprimida en Edge, desde Administrar extensiones → Modo de desarrollador → Cargar descomprimida. Esto instala código nuevo con acceso temporal a la pestaña al activarlo; no se realizó automáticamente. Usar exclusivamente en sala de prueba. Pulsar su icono, Iniciar prueba, abrir Resolver chat, seleccionar categoría/detalle y terminar con Cancelar. Nunca usar los botones Resolver conversación ni Resolver conversación sin mensaje durante este ensayo. Después Detener y borrar → Cerrar panel; retirar la extensión desde Administrar extensiones.
+
+### Resultado de validación local ampliada
+
+20/20 tests automáticos aprobados en Node 24.22.1: 11 del motor, 3 del observador, 5 de clasificación y 1 de navegador Chromium. El test de navegador hace 20 aperturas/cancelaciones en un formulario ficticio, comprueba lectura síncrona antes de retirar el formulario, detención del panel y ausencia de solicitudes externas. Toda navegación del test es interceptada y respondida localmente; no usa sesión ni servidor iKono. El simulador linkedom no reproduce correctamente captura frente a handlers del objetivo; el caso crítico se verificó en Chromium. No confundir estas 20 cancelaciones simuladas con el criterio 20/20 cierres reales del issue #38.
+
+Node 22/CI sigue pendiente: este equipo tiene Node 24 y no dispone de npx. Captura de prueba: `dist/ikono-probe-fixture.png`, sin datos de usuarios. No se ha instalado la extensión en Edge ni instrumentado iKono real. Ninguna escritura en Bitrix o cambio en main.
