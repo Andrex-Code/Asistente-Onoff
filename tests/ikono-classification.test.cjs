@@ -24,6 +24,17 @@ test('unknown structure fails closed rather than trusting order or input', () =>
   dialog.querySelector('.mx_DropdownTypification').innerHTML+='<div class="select__single-value">Ambiguous</div>';
   assert.equal(readClassification(dialog).status,'unknown');
 });
+test('third classification level is rejected rather than silently discarded', () => {
+  const {dialog}=fixture();
+  const extra=dialog.ownerDocument.createElement('div');extra.className='mx_DropdownTypification';
+  extra.innerHTML='<div class="select__single-value">TERCER NIVEL</div><input role="combobox">';dialog.append(extra);
+  assert.deepEqual(readClassification(dialog),{status:'unknown',category:'',detail:''});
+});
+test('a partial dependent mount does not produce a falsely selected classification', () => {
+  const {dialog}=fixture();
+  dialog.querySelectorAll('[role="combobox"]')[1].remove();
+  assert.deepEqual(readClassification(dialog),{status:'unknown',category:'',detail:''});
+});
 test('observes text changes and dialog removal', async () => {
   const {window,dialog}=fixture();const events=[];
   const stop=installProbe(window,{enabled:true,readClassification,onEvent:event=>events.push(event)});
@@ -47,3 +58,4 @@ test('no selection emitted on a different origin and enabled false', () => {
   installProbe(window,{enabled:true,readClassification,onEvent:e=>events.push(e)});
   window.document.querySelector('button').click();assert.deepEqual(events,[]);
 });
+

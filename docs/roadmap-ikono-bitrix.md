@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Identidad e historial · diagnóstico más reciente
+## Contraste con documentación oficial · avance actual
+
+- Revisadas características y changelog públicos de iKono: reportes e historial conservado; se documentan tipificaciones multinivel y posible encuesta al resolver. Su disponibilidad en ONOFF requiere verificación.
+- No se encontró contrato público de lectura por atención en las páginas revisadas. Perfil de agente observado sin enlace de reportes; pendiente que el usuario abra reporte filtrado a la conversación ficticia o facilite documentación autorizada.
+- Añadidas dos regresiones de clasificación para no perder un tercer nivel ni aceptar un campo dependiente sin montar: **30/30 pruebas locales**.
+- [Requisitos y ensayo de contraste preparados](consulta-autorizada-identidad-ikono.md). Sin cierre, Bitrix ni main; F02 continúa abierta.
+
+## Identidad e historial · diagnóstico previo
 
 - **Problema real confirmado:** al cargar mensajes anteriores el lector encuentra 46 mensajes elegibles y conserva 40: 6 omitidos en esa muestra. El DOM cambia al desplazarse; no certifica el total del servidor.
 - Sala y event-id no equivalen a atención. Hay marcadores históricos de cierre dentro de la misma sala; falta clave y límites de atención verificados.
