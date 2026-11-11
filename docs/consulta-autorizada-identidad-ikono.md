@@ -78,3 +78,30 @@ La validación requiere una superficie de reportes disponible para el usuario o 
 Revisar **«Onoff Detalle de Tipificaciones»** filtrado al mismo contacto de prueba, con encabezados y rango de fechas visibles, manteniendo el filtro. Buscar ID de registro/atención, fecha de tipificación, relación con conversación/sala, ruta completa y autor. Si no muestra filas para la atención pendiente, usar únicamente un ciclo histórico de prueba ya existente; no cerrar la atención actual para generar datos. No exportar clientes reales ni inventar el vínculo entre reportes.
 
 Estado: reporte de conversaciones inspeccionado visualmente; identidad única, zona horaria, correspondencia entre filas y fuente de historial siguen pendientes. Sin cierres, IA, Bitrix o main. F02 abierta.
+
+
+## Exportación XLSX diaria · revisión de estructura 2026-11-11
+
+El usuario aportó la exportación de conversaciones del día. Se abrió en modo de solo lectura, sin modificar/exportar el libro ni copiarlo al repositorio. Esta nota conserva únicamente hallazgos de estructura; excluye filas, contactos, mensajes, identificadores y métricas operativas del día.
+
+### Lo que añade frente a las capturas
+
+- Una hoja visible con 47 columnas. La columna A no tiene encabezado y sus valores coinciden exactamente con la posición de cada fila, empezando en cero. Es compatible con índice de exportación; **no hay contrato que lo valide como ID persistente de atención**. No usarlo para idempotencia.
+- No existe encabezado explícito de ID de conversación/atención. El XLSX no descarta que el sistema conserve ese ID fuera de esta exportación.
+- La combinación teléfono + línea + Fecha de inicio se repite con distintos agentes asignados, incluso usando la precisión de fecha/hora conservada en el archivo. Por tanto, no se puede tomar cada fila por una atención ni crear una tarea por fila. La granularidad exacta requiere confirmación del proveedor; es compatible con participaciones/asignaciones dentro de una atención.
+- Existen registros ON_RATING con tipificación y detalle poblados, pero sin Fecha de finalización. **Clasificación poblada no implica cierre final confirmado**. Su significado operacional debe documentarse; no habilitar creación automática solo por tipificación o desaparición del modal.
+- Los encabezados AO:AR son Tipificación, Detalle de Tipificación, Comentario de Tipificación y Resolución. No hay IDs de catálogo ni una ruta multinivel estructurada identificada por esos encabezados. No se publican valores de texto libre.
+- Fecha de inicio y finalización se leen como fechas Excel sin zona explícita; Fecha de creación del chat aparece como texto con offset UTC en la muestra de prueba. No mezclar ni restar esos campos sin normalización y confirmación de zona.
+- La fila del contacto de prueba conserva estado PENDIENTE, sin finalización ni clasificación registradas en este corte. El libro refleja una exportación puntual; no asegura sincronización en tiempo real.
+- El campo de mensajes es Último mensaje, acompañado de fecha y autor. No proporciona el historial íntegro ni certifica su cobertura. El rango diario de inicio tampoco prueba que haya terminado toda atención iniciada ese día.
+
+### Decisiones para el diseño
+
+1. Mantener pendiente identidad de atención e idempotencia persistente: ni índice de fila ni teléfono/línea/inicio bastan con esta evidencia.
+2. Separar en el modelo atención, participación/asignación del agente y clasificación; validar sus cardinalidades con fuente autorizada antes de unir tablas.
+3. Modelar encuesta como estado observado pendiente de semántica oficial; distinguir intención de resolver, atención en calificación y resolución final.
+4. Obtener ID y relación desde Detalle de Tipificaciones o documentación de exportación/API autorizada, y una fuente completa de mensajes. No inferir endpoints, consultar APIs internas ni usar credenciales extraídas.
+
+**Siguiente evidencia necesaria:** reporte Detalle de Tipificaciones o diccionario técnico autorizado que explique clave de atención, clave de participación, relación con sala y eventos/fechas de inicio-cierre. No se solicita una nueva resolución para obtenerla.
+
+Sin cambios de código o pruebas nuevas en esta revisión. Se mantienen los resultados previos de 30 pruebas locales y 20 aperturas/cancelaciones reales, con su alcance original. Sin cierres, Bitrix o main; F02 continúa abierta.
