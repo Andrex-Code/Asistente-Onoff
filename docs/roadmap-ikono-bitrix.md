@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Estado comprobado · 2026-11-11
+## Última evidencia · ensayo instrumentado en Edge
+
+- Observador ejecutado en sala de prueba: 2 aperturas/cancelaciones detectadas; ASESORIA → CONTACTO COMERCIAL leído; cambio a CARTERA invalida el detalle.
+- Diagnóstico detenido, registros borrados y panel retirado; comprobada ausencia de nuevas señales tras detener. Extensión de prueba permanece instalada.
+- Pendiente estabilizar montaje y clics rápidos: un intento temprano de Cancelar no llegó al botón; reintento con formulario estable funcionó. No se declara validación 20/20 ni interferencia cero.
+- Sin confirmaciones finales, Bitrix o main. F02 sigue en investigación; 0/6 fases completadas. [Evidencia completa](inspeccion-dom-ikono-2026-11-11.md).
+
+## Antecedentes de preparación · 2026-11-11
 
 - **F01 — En análisis:** proceso descrito preliminarmente, todavía faltan mediciones y validación de la matriz por SAC/Calidad.
 - **F02 — Viabilidad investigada (sin cerrar):** análisis de técnica de eventos `pointerdown/click` + `MutationObserver`, acceso DOM del botón «Resolver chat» comprobado en Edge; formulario y detalle dependiente inspeccionados en conversación de prueba; eventos y cierre final pendientes. Ver [documento de viabilidad](viabilidad-detector-cierre-ikono.md) e [issue #38](https://github.com/Andrex-Code/Asistente-Onoff/issues/38).
