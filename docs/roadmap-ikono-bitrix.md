@@ -2,6 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
+## Estado comprobado · 2026-11-11
+
+- **F01 — En análisis:** proceso descrito preliminarmente, todavía faltan mediciones y validación de la matriz por SAC/Calidad.
+- **F02 — Viabilidad investigada (sin cerrar):** análisis de técnica de eventos `pointerdown/click` + `MutationObserver`, pruebas pendientes sobre iKono real. Ver [documento de viabilidad](viabilidad-detector-cierre-ikono.md) e [issue #38](https://github.com/Andrex-Code/Asistente-Onoff/issues/38).
+- **Prototipo técnico no integrado:** `src/ikono-close-session.js` modela sesiones aisladas, confirmación, resúmenes que terminan tarde, errores y doble clic; 11 casos superados en ejecución JS aislada. **No se ha integrado al manifiesto, ejecutado CI ni detectado un botón real todavía.**
+- **Sin cambios productivos:** ninguna creación en Bitrix, ningún cambio en la rama `main`.
+- **Siguiente hito:** POC de detección en una sesión iKono autorizada con datos de prueba; validar DOM, selector accesible de botón y tipificación final.
+
 ## Objetivo de negocio
 Que una atención resuelta en iKono genere una tarea de trazabilidad en Bitrix con tipo de incidencia, detalle de tipificación, asunto y resumen fiel de lo conversado, sin obligar al asesor a duplicar el registro.
 
