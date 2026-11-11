@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Reporte supervisor · evidencia visual más reciente
+## Exportación XLSX · hallazgos recientes
+
+- La columna sin nombre coincide con el orden de exportación; no se valida como ID de atención. Teléfono/línea/inicio tampoco es único entre filas con distintos agentes.
+- ON_RATING puede tener clasificación sin fecha final. No tomar clasificación como confirmación de cierre. Exportación contiene último mensaje, no historial completo.
+- Pendientes: clave de atención/participación, relación con tipificaciones, semántica de cierre y zona horaria. [Contraste y decisiones](consulta-autorizada-identidad-ikono.md).
+- F02 abierta, 0/6 fases completadas. Sin publicar filas o métricas del reporte, sin cierres, Bitrix ni cambios en main.
+
+## Reporte supervisor · evidencia visual previa
 
 - Capturas filtradas de Detalle de Conversaciones: fecha de creación del chat distinta de Fecha de inicio; fila pendiente con finalización y tipificación no disponibles.
 - Columnas de tiempos/asignación/cola y clasificación identificadas. No se observa ID único de atención ni historial completo en las vistas aportadas; no se declara su inexistencia.
