@@ -2,7 +2,15 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Última evidencia · ensayo instrumentado en Edge
+## Último resultado · 20 aperturas y cancelaciones reales
+
+- **F02: 20/20 aperturas y 20/20 cancelaciones verificadas** en sala de prueba, con versión 0.1.1 y espera de formulario estable. Sin pulsar resolución. Ciclo 4 con incidencia del localizador de espera, verificada y recuperada antes de cancelar; sin repetir Cancelar.
+- **21/21 pruebas locales** aprobadas, incluidas carga tardía y geometría en movimiento. Node 22/CI pendiente.
+- Conversación Pendiente al terminar; registros del panel borrados y panel cerrado. Observador detenido; extensión de prueba permanece instalada.
+- F02 no completada: faltan confirmaciones finales autorizadas, identidad y cobertura del historial. **0/6 fases completadas**. Sin Bitrix ni cambios en main.
+- [Resultados y límites](prueba-observador-pasivo-ikono.md) · [Registro por ciclo](evidencia-ikono-20-aperturas-2026-11-11.json).
+
+## Ensayo inicial previo · antecedentes
 
 - Observador ejecutado en sala de prueba: 2 aperturas/cancelaciones detectadas; ASESORIA → CONTACTO COMERCIAL leído; cambio a CARTERA invalida el detalle.
 - Diagnóstico detenido, registros borrados y panel retirado; comprobada ausencia de nuevas señales tras detener. Extensión de prueba permanece instalada.
