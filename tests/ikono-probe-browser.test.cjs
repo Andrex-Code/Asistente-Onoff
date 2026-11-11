@@ -22,10 +22,12 @@ test('Chromium fixture: 20 cancellations, synchronous capture, panel stop and no
     });
     for(let i=0;i<20;i++) {
       await page.getByRole('button',{name:'Resolver chat',exact:true}).click();
+      await page.waitForFunction(expected => events.filter(e=>e.type==='dialog-ready').length === expected, i+1);
       await page.getByRole('button',{name:'Cancelar',exact:true}).click();
     }
     const counts=await page.evaluate(()=>events.reduce((out,e)=>(out[e.type]=(out[e.type]||0)+1,out),{}));
     assert.equal(counts['dialog-opened'],20);assert.equal(counts['cancel-requested'],20);assert.equal(counts['dialog-disappeared'],20);
+    assert.equal(counts['dialog-ready'],20);
     await page.getByRole('button',{name:'Resolver chat',exact:true}).click();
     await page.evaluate(()=>{
       const dialog=document.querySelector('[role="dialog"]');
@@ -50,5 +52,33 @@ test('Chromium fixture: 20 cancellations, synchronous capture, panel stop and no
     await page.getByRole('button',{name:'Cerrar panel',exact:true}).click();
     assert.equal(await page.locator('#onoff-ikono-passive-test').count(),0);
     assert.equal(requests,1);
+  } finally {await browser.close();}
+});
+test('readiness waits for delayed fields and stable Cancel geometry; stop cancels pending work', async () => {
+  const browser=await chromium.launch({headless:true});
+  try {
+    const page=await browser.newPage();
+    await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<html><body></body></html>'}));
+    await page.goto('https://onoff.a.ikono.im/');
+    await page.addScriptTag({path:path.resolve(__dirname,'../src/ikono-close-probe.cjs')});
+    await page.evaluate(()=>{
+      window.events=[];window.stop=ONOFFIkonoCloseProbe.installProbe(window,{enabled:true,onEvent:e=>events.push(e)});
+      const modal=document.createElement('div');modal.setAttribute('role','dialog');modal.setAttribute('aria-label','Resolver conversación');
+      modal.innerHTML='<button>Cancelar</button>';document.body.append(modal);
+    });
+    // Deliberate fixture delay: simulate iKono rendering fields after the shell.
+    await page.waitForTimeout(100);
+    assert.equal(await page.evaluate(()=>events.some(e=>e.type==='dialog-ready')),false);
+    await page.evaluate(()=>{
+      const modal=document.querySelector('[role="dialog"]');
+      const input=document.createElement('input');input.setAttribute('role','combobox');modal.append(input);
+      let n=0;const button=modal.querySelector('button');
+      const animate=()=>{button.style.transform=`translateX(${++n*10}px)`;if(n<8)requestAnimationFrame(animate);};requestAnimationFrame(animate);
+    });
+    await page.waitForFunction(()=>events.some(e=>e.type==='dialog-ready'));
+    assert.equal(await page.evaluate(()=>document.querySelector('button').getBoundingClientRect().x),88);
+    await page.evaluate(()=>{stop();document.querySelector('[role="dialog"]').remove();});
+    const count=await page.evaluate(()=>events.length);await page.waitForTimeout(100);
+    assert.equal(await page.evaluate(()=>events.length),count);
   } finally {await browser.close();}
 });

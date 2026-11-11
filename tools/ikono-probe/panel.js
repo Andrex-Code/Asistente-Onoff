@@ -12,7 +12,7 @@
     shadow.querySelector('#start').disabled = true; shadow.querySelector('#stop').disabled = false;
     status.textContent = 'Activo. Abre Resolver chat y termina con Cancelar.';
     stop = ONOFFIkonoCloseProbe.installProbe(window, {enabled:true,readClassification:ONOFFIkonoClassification.readClassification,onEvent:event => {
-      const names = {'open-requested':'Apertura solicitada','dialog-opened':'Formulario detectado','cancel-requested':'Cancelación detectada','dialog-disappeared':'Formulario retirado (no confirma cierre)','resolution-requested':'Botón de resolución pulsado (no confirma éxito)'};
+      const names = {'open-requested':'Apertura solicitada','dialog-opened':'Formulario detectado · esperando carga','dialog-ready':'Formulario listo para cancelar','cancel-requested':'Cancelación detectada','dialog-disappeared':'Formulario retirado (no confirma cierre)','resolution-requested':'Botón de resolución pulsado (no confirma éxito)'};
       let message = names[event.type];
       if (event.type === 'fields-observed') message = `Campos detectados: ${event.fields.length}`;
       if (event.type === 'classification-observed') {

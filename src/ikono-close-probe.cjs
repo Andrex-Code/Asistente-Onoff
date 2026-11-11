@@ -7,6 +7,22 @@ function installProbe(win, { enabled = false, onEvent = () => {}, readClassifica
   let dialog = null;
   let serial = 0;
   let classification = '';
+  let readyDialog = null;
+  let stableRect = '';
+  let frame = null;
+  const schedule = win.requestAnimationFrame?.bind(win);
+  function checkReady() {
+    frame = null;
+    if (stopped || !dialog || !schedule || readyDialog === dialog) return;
+    const cancel = [...dialog.querySelectorAll('button')].find(el => el.textContent.trim() === 'Cancelar');
+    const field = dialog.querySelector('[role="combobox"]');
+    const rect = cancel?.getBoundingClientRect();
+    const visible = rect && rect.width > 0 && rect.height > 0 && !cancel.disabled && field;
+    const signature = visible ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
+    if (signature && signature === stableRect) { readyDialog = dialog; emit('dialog-ready'); return; }
+    stableRect = signature;
+    frame = schedule(checkReady);
+  }
   const emit = (type, extra = {}) => {
     if (!stopped) { try { onEvent({ type, session: serial, ...extra }); } catch {} }
   };
@@ -22,13 +38,17 @@ function installProbe(win, { enabled = false, onEvent = () => {}, readClassifica
       dialog = next;
       previous = null;
       classification = '';
+      readyDialog = null;
+      stableRect = '';
       if (dialog) { serial++; emit('dialog-opened'); }
     }
     if (!dialog) return;
+    if (schedule && frame === null && readyDialog !== dialog) frame = schedule(checkReady);
     if (readClassification) {
       const value = readClassification(dialog);
       const signature = JSON.stringify(value);
-      if (signature !== classification) { classification = signature; emit('classification-observed', { classification: value }); }
+      // React mounts the shell before the fields. Do not publish that as a selector failure.
+      if (dialog.querySelector('[role="combobox"]') && signature !== classification) { classification = signature; emit('classification-observed', { classification: value }); }
     }
     const fields = [...dialog.querySelectorAll('[role="combobox"]')];
     // Diagnostic counts only: do not mistake React Select search value for selection.
@@ -57,7 +77,7 @@ function installProbe(win, { enabled = false, onEvent = () => {}, readClassifica
     characterData: true, attributeFilter: ['aria-expanded', 'aria-labelledby', 'aria-label'] });
   doc.addEventListener('click', click, { capture: true, passive: true });
   inspect();
-  return () => { stopped = true; observer.disconnect(); doc.removeEventListener('click', click, true); dialog = null; previous = null; };
+  return () => { stopped = true; observer.disconnect(); if (frame !== null) win.cancelAnimationFrame?.(frame); doc.removeEventListener('click', click, true); dialog = null; previous = null; };
 }
 if (typeof module === 'object' && module.exports) module.exports = { installProbe };
 else globalThis.ONOFFIkonoCloseProbe = { installProbe };
