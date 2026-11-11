@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Exportación XLSX · hallazgos recientes
+## Ruta asistida y maqueta local · decisión actual
+
+- Usuario confirma que el XLSX de conversaciones es la exportación disponible. No se solicita otro reporte.
+- Reglas diagnósticas preparadas para separar tipificación, encuesta y resolución verificada: **39/39 pruebas locales**. No integradas ni con envío.
+- Maqueta local con datos ficticios: revisión del tramo, borrador editable y advertencias de cobertura/identidad. Verificada en Chromium sin red, aún sin conexión al motor o extensión.
+- [Reglas, flujo y límites](flujo-asistido-ikono.md). Identidad, cobertura y cierre final siguen pendientes. F02 abierta, 0/6 fases completadas. Sin main ni Bitrix.
+
+## Exportación XLSX · hallazgos previos
 
 - La columna sin nombre coincide con el orden de exportación; no se valida como ID de atención. Teléfono/línea/inicio tampoco es único entre filas con distintos agentes.
 - ON_RATING puede tener clasificación sin fecha final. No tomar clasificación como confirmación de cierre. Exportación contiene último mensaje, no historial completo.
