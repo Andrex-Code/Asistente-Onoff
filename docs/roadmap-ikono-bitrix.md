@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Último resultado · 20 aperturas y cancelaciones reales
+## Identidad e historial · diagnóstico más reciente
+
+- **Problema real confirmado:** al cargar mensajes anteriores el lector encuentra 46 mensajes elegibles y conserva 40: 6 omitidos en esa muestra. El DOM cambia al desplazarse; no certifica el total del servidor.
+- Sala y event-id no equivalen a atención. Hay marcadores históricos de cierre dentro de la misma sala; falta clave y límites de atención verificados.
+- Evaluador diagnóstico preparado, **no integrado** a la extensión habitual; 7 pruebas nuevas, **28/28 locales** aprobadas. No habilita IA/Bitrix.
+- [Evidencia, límites y siguiente validación](identidad-cobertura-ikono.md). F02 sigue abierta, 0/6 fases completadas.
+
+## Resultado previo · 20 aperturas y cancelaciones reales
 
 - **F02: 20/20 aperturas y 20/20 cancelaciones verificadas** en sala de prueba, con versión 0.1.1 y espera de formulario estable. Sin pulsar resolución. Ciclo 4 con incidencia del localizador de espera, verificada y recuperada antes de cancelar; sin repetir Cancelar.
 - **21/21 pruebas locales** aprobadas, incluidas carga tardía y geometría en movimiento. Node 22/CI pendiente.
