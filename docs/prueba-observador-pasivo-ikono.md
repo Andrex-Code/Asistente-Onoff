@@ -61,3 +61,12 @@ Node 22/CI sigue pendiente: este equipo tiene Node 24 y no dispone de npx. Captu
 No se probó captura final al resolver, cierre sin mensaje, reconexión, cambio de sala, ID estable de atención ni cobertura de historial. Tampoco se enviaron datos a IA o Bitrix. No se copiaron teléfono, nombre de contacto, ID de sala o mensajes a esta documentación. Captura local recortada al panel: `dist/ikono-live-cancel.jpg`, sin datos de conversación; no publicada en el repositorio.
 
 **Próximo paso:** estabilizar la espera de montaje del formulario y repetir apertura/cancelación con trazas acotadas, antes de ensayar confirmaciones finales autorizadas. F02 sigue en investigación; no se habilita el MVP productivo.
+
+
+## Espera de carga corregida · versión 0.1.1
+
+El observador emite `dialog-ready` («Formulario listo para cancelar») cuando existe un combobox y el botón Cancelar está habilitado, tiene tamaño visible y conserva su rectángulo durante dos fotogramas consecutivos. No bloquea ni modifica controles nativos. La fase sin campos deja de emitir un fallo de lectura de clasificación; sigue siendo un montaje pendiente. La espera se cancela al detener el observador o desaparecer el diálogo.
+
+21/21 pruebas locales aprobadas en Node 24.22.1: las 20 previas más una prueba Chromium con campos tardíos y botón en movimiento. La prueba de 20 ciclos ficticios ahora espera `dialog-ready` antes de cancelar. Node 22/CI pendiente.
+
+Paquete actualizado en la misma carpeta `dist/ikono-probe`. Falta recarga manual de la extensión por el usuario y apertura del panel para ejecutar la serie de **20 ciclos reales sin resolución**; no se dan por ejecutados con este cambio. La señal acredita geometría estable, no garantiza por sí sola ausencia de overlays o éxito de clic: el ensayo debe verificar cada cancelación y la retirada real del modal.
