@@ -51,3 +51,25 @@ Una apertura real del formulario y cambios de selección observables mediante DO
 No se probó captura final al resolver, cierre sin mensaje, reconexión, cambio de sala, ID estable de atención ni cobertura de historial. Tampoco se enviaron datos a IA o Bitrix. No se copiaron teléfono, nombre de contacto, ID de sala o mensajes a esta documentación. Captura local recortada al panel: `dist/ikono-live-cancel.jpg`, sin datos de conversación; no publicada en el repositorio.
 
 **Próximo paso:** estabilizar la espera de montaje del formulario y repetir apertura/cancelación con trazas acotadas, antes de ensayar confirmaciones finales autorizadas. F02 sigue en investigación; no se habilita el MVP productivo.
+
+
+## Serie real de 20 aperturas y cancelaciones · 2026-11-11
+
+**Versión:** 0.1.1, recargada manualmente por el usuario. Sala de prueba autorizada en Edge, misma sala durante toda la serie. Sin selecciones de categoría/detalle en esta serie: formulario vacío y salida con Cancelar.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Apertura y formulario listo | 20/20 |
+| Cancelación detectada y diálogo retirado | 20/20 |
+| Repetición del clic Cancelar | 0 en esta serie |
+| Botones de resolución pulsados por el asistente | 0 |
+| Conversación al terminar | Pendiente |
+| Panel y modal al terminar | 0 / 0 |
+
+Antes de cada Cancelar se esperó la señal nueva «Formulario listo para cancelar», correspondiente a la última apertura, y se observó el DOM. Después se verificaron la señal de cancelación y la retirada del diálogo. La señal se emite con combobox montado y Cancelar habilitado, visible por tamaño y con rectángulo idéntico dos fotogramas consecutivos; no es una garantía general de ausencia de overlays.
+
+**Incidencia de automatización:** en el ciclo 4 el localizador de estado con expresión regular agotó su plazo, aunque la inspección posterior mostró la señal de listo. Se verificó antes de cancelar y se cambió la espera del ensayo a lectura directa del estado dentro del panel. Ese ciclo se conserva como completado con incidencia de comprobación; no se presenta como una ejecución totalmente desatendida sin incidencias. No fue necesario repetir Cancelar.
+
+Tras el ciclo 20: Detener y borrar mostró «Detenido. Registros borrados»; luego se cerró el panel. La extensión sigue instalada pero el observador de esta sesión quedó detenido. No se cambió main ni se escribió en Bitrix. Evidencia por ciclo, sin datos de contacto ni chat: [registro JSON](evidencia-ikono-20-aperturas-2026-11-11.json).
+
+**Límites:** 20 cancelaciones no equivalen a 20 confirmaciones de cierre. La lectura de categoría/detalle y reinicio de detalle se comprobó en el ensayo anterior, no en cada ciclo de esta serie. Siguen pendientes confirmación final autorizada, identidad estable entre atenciones, historial completo, reconexión, cambio de sala, Node 22/CI y criterios restantes de F02. 21/21 pruebas locales aprobadas para la corrección.
