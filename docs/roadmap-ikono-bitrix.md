@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Recorrido conectado 0.2.0 · avance actual
+## Primera pasada conectada en iKono real · resultado actual
+
+- 0.2.0 probado desde la extensión real: captura de textos, clasificación temporal, Cancelar, delimitación de dos mensajes ficticios, IA existente, corrección y revisión local. Conectividad navegador-backend comprobada.
+- Snapshot contenía intercambios anteriores; se usó un tramo histórico manual, sin declararlo atención actual completa. Borrador requirió corregir atribución de crédito y terminología de cierre.
+- Datos locales borrados, paneles cerrados y sala Pendiente. Sin resolución final, Bitrix, main o despliegue. [Evidencia y límites](recorrido-conectado-prueba-ikono.md).
+- Siguiente hito: atención ficticia delimitada y cierre nativo autorizado específicamente, con seguimiento de encuesta. Identidad/cobertura y controles productivos pendientes. F02 abierta, 0/6 fases completadas.
+
+## Preparación del recorrido 0.2.0 · antecedentes
 
 - Paquete de prueba conecta captura de textos, delimitación manual, tipificación, resumen IA autorizado y revisión local. Reutiliza backend existente, sin Bitrix ni despliegue.
 - 40/40 pruebas locales; escenario integrado repetido con límite de 40 mensajes, limpieza por cambio de sala y panel oculto durante diálogo nativo.
