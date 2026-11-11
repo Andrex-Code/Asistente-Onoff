@@ -5,14 +5,14 @@
 ## Estado comprobado · 2026-11-11
 
 - **F01 — En análisis:** proceso descrito preliminarmente, todavía faltan mediciones y validación de la matriz por SAC/Calidad.
-- **F02 — Viabilidad investigada (sin cerrar):** análisis de técnica de eventos `pointerdown/click` + `MutationObserver`, acceso DOM del botón «Resolver chat» comprobado en Edge; formulario y eventos pendientes sobre conversación de prueba. Ver [documento de viabilidad](viabilidad-detector-cierre-ikono.md) e [issue #38](https://github.com/Andrex-Code/Asistente-Onoff/issues/38).
+- **F02 — Viabilidad investigada (sin cerrar):** análisis de técnica de eventos `pointerdown/click` + `MutationObserver`, acceso DOM del botón «Resolver chat» comprobado en Edge; formulario y detalle dependiente inspeccionados en conversación de prueba; eventos y cierre final pendientes. Ver [documento de viabilidad](viabilidad-detector-cierre-ikono.md) e [issue #38](https://github.com/Andrex-Code/Asistente-Onoff/issues/38).
 - **Prototipo técnico no integrado:** `src/ikono-close-session.js` modela sesiones aisladas, confirmación, resúmenes que terminan tarde, errores y doble clic; 11 casos superados en ejecución JS aislada. **No se ha integrado al manifiesto, ejecutado CI ni validado eventos reales todavía. Inspección de solo lectura: el botón «Resolver chat» es accesible por rol/nombre y `aria-label`; no se pulsó.**
 - **Sin cambios productivos:** ninguna creación en Bitrix, ningún cambio en la rama `main`.
-- **Siguiente hito:** POC de detección en una sesión iKono autorizada con datos de prueba; validar DOM, selector accesible de botón y tipificación final.
+- **Siguiente hito:** POC de detección en una sesión iKono autorizada con datos de prueba; instrumentar eventos pasivos y validar captura final, identidad y cobertura; DOM inicial y formulario ya inspeccionados sin cierre.
 
 ## Inspección de navegador · avance parcial
 
-DOM de «Resolver chat» confirmado; eventos, «Resolver conversación», tipificación y subcategoría pendientes. El usuario abrirá una sala de prueba y avisará. No se cerró ninguna atención. Ver [evidencia y límites](inspeccion-dom-ikono-2026-11-11.md). F02 permanece en investigación, sin criterios de aceptación completados.
+DOM de «Resolver chat» y diálogo «Resolver conversación» confirmados en sala de prueba. Tipificación y detalle dependiente accesibles; cambio de categoría borra el detalle previo. Selecciones temporales descartadas con Cancelar. Eventos instrumentados y confirmación final pendientes. No se cerró ninguna atención. Ver [evidencia y límites](inspeccion-dom-ikono-2026-11-11.md). F02 permanece en investigación, sin criterios de aceptación completados.
 
 ## Objetivo de negocio
 Que una atención resuelta en iKono genere una tarea de trazabilidad en Bitrix con tipo de incidencia, detalle de tipificación, asunto y resumen fiel de lo conversado, sin obligar al asesor a duplicar el registro.
