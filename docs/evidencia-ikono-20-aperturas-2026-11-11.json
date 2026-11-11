@@ -1,0 +1,108 @@
+{
+  "version": "0.1.1",
+  "date": "2026-11-11",
+  "cycles": [
+    {
+      "cycle": 1,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 2,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 3,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 4,
+      "ready": true,
+      "cancelled": true,
+      "waitCheck": "signal present after locator timeout"
+    },
+    {
+      "cycle": 5,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 6,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 7,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 8,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 9,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 10,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 11,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 12,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 13,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 14,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 15,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 16,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 17,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 18,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 19,
+      "ready": true,
+      "cancelled": true
+    },
+    {
+      "cycle": 20,
+      "ready": true,
+      "cancelled": true
+    }
+  ],
+  "resolutionClicks": 0
+}
