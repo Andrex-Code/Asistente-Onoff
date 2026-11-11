@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Contraste con documentación oficial · avance actual
+## Reporte supervisor · evidencia visual más reciente
+
+- Capturas filtradas de Detalle de Conversaciones: fecha de creación del chat distinta de Fecha de inicio; fila pendiente con finalización y tipificación no disponibles.
+- Columnas de tiempos/asignación/cola y clasificación identificadas. No se observa ID único de atención ni historial completo en las vistas aportadas; no se declara su inexistencia.
+- Siguiente contraste: Detalle de Tipificaciones del mismo contacto de prueba, más rango y filtros globales del reporte. [Resultados y límites](consulta-autorizada-identidad-ikono.md).
+- 20/20 aperturas/cancelaciones reales y 30/30 pruebas locales previas conservan su alcance. F02 sigue abierta; 0/6 fases completadas.
+
+## Contraste con documentación oficial · antecedentes
 
 - Revisadas características y changelog públicos de iKono: reportes e historial conservado; se documentan tipificaciones multinivel y posible encuesta al resolver. Su disponibilidad en ONOFF requiere verificación.
 - No se encontró contrato público de lectura por atención en las páginas revisadas. Perfil de agente observado sin enlace de reportes; pendiente que el usuario abra reporte filtrado a la conversación ficticia o facilite documentación autorizada.
