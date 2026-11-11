@@ -6,7 +6,7 @@
 
 - **F01 — En análisis:** proceso descrito preliminarmente, todavía faltan mediciones y validación de la matriz por SAC/Calidad.
 - **F02 — Viabilidad investigada (sin cerrar):** análisis de técnica de eventos `pointerdown/click` + `MutationObserver`, acceso DOM del botón «Resolver chat» comprobado en Edge; formulario y detalle dependiente inspeccionados en conversación de prueba; eventos y cierre final pendientes. Ver [documento de viabilidad](viabilidad-detector-cierre-ikono.md) e [issue #38](https://github.com/Andrex-Code/Asistente-Onoff/issues/38).
-- **Prototipo técnico no integrado:** `src/ikono-close-session.js` modela sesiones aisladas, confirmación, resúmenes que terminan tarde, errores y doble clic; 11 casos superados en ejecución JS aislada. **No se ha integrado al manifiesto, ejecutado CI ni validado eventos reales todavía. Inspección de solo lectura: el botón «Resolver chat» es accesible por rol/nombre y `aria-label`; no se pulsó.**
+- **Prototipo técnico no integrado:** `src/ikono-close-session.js` modela sesiones aisladas, confirmación, resúmenes que terminan tarde, errores y doble clic; 11 casos del motor y 3 del observador pasivo superados con node --test (14/14, Node 24; pendiente Node 22/CI). **No se ha integrado al manifiesto, ejecutado CI ni validado eventos instrumentados en iKono todavía. Botón y formulario inspeccionados; apertura y cancelación realizadas en sala de prueba sin resolver.**
 - **Sin cambios productivos:** ninguna creación en Bitrix, ningún cambio en la rama `main`.
 - **Siguiente hito:** POC de detección en una sesión iKono autorizada con datos de prueba; instrumentar eventos pasivos y validar captura final, identidad y cobertura; DOM inicial y formulario ya inspeccionados sin cierre.
 
@@ -84,3 +84,7 @@ Consultar [issues de F01 a F06](https://github.com/Andrex-Code/Asistente-Onoff/i
 **Analista funcional/validador:** representante SAC, con revisión de Calidad y propietario Bitrix. **Implementación y pruebas técnicas:** asistente de desarrollo. **Aprobación de automatización:** gerencia/operación/seguridad según proceso corporativo.
 
 > Este roadmap es una propuesta técnica versionada. No implica autorización para usar datos de clientes, crear tareas productivas ni modificar el flujo de cierre en iKono.
+
+## Observador pasivo preparado
+
+Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales aprobadas. No cargado en iKono. Ver [alcance y procedimiento](prueba-observador-pasivo-ikono.md). Próximo hito: cargar copia de desarrollo y observar apertura/cancelación sin cerrar la atención. F02 sigue abierta.
