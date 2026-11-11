@@ -2,7 +2,14 @@
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
 
-## Ruta asistida y maqueta local · decisión actual
+## Recorrido conectado 0.2.0 · avance actual
+
+- Paquete de prueba conecta captura de textos, delimitación manual, tipificación, resumen IA autorizado y revisión local. Reutiliza backend existente, sin Bitrix ni despliegue.
+- 40/40 pruebas locales; escenario integrado repetido con límite de 40 mensajes, limpieza por cambio de sala y panel oculto durante diálogo nativo.
+- Backend real respondió a dos mensajes ficticios. Falta ensayo desde la extensión real: recarga manual y pasada con Cancelar. No se ha probado resolución final.
+- [Instrucciones, evidencia y límites](recorrido-conectado-prueba-ikono.md). Identidad, cobertura completa, seguridad productiva y cierre final siguen pendientes. F02 abierta; 0/6 fases completadas.
+
+## Ruta asistida y maqueta local · antecedente
 
 - Usuario confirma que el XLSX de conversaciones es la exportación disponible. No se solicita otro reporte.
 - Reglas diagnósticas preparadas para separar tipificación, encuesta y resolución verificada: **39/39 pruebas locales**. No integradas ni con envío.
