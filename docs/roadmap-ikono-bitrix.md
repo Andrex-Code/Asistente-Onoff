@@ -201,3 +201,16 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - [ ] Adjuntos, identidad/cobertura/cierre y asociación TC con Bitrix pendientes. Creación de tareas desactivada.
 
 [Instalación y límites](vista-previa-resumen-ikono.md) · [mediciones](medicion-resumen-0.6.0.json).
+
+
+## Fotos por OCR local · 0.7.0
+
+- [x] Resumen de texto inmediato e independiente de las fotos.
+- [x] Hasta dos fotos cargadas, OCR local sin subir imágenes; una solicitud de texto breve para complemento separado y editable.
+- [x] TC de alias AnyDesk y pie POS como candidatas; conserva lectura cruda, excluye fechas y exige confirmación humana renovada ante evidencia nueva.
+- [x] 50 comprobaciones aprobadas, incluidas extensión empaquetada/offscreen/WASM reales, no bloqueo del texto, cache, cancelación y rechazo de fallback genérico.
+- [x] Dos fotos aportadas procesadas localmente por la extensión produjeron TC70999; IA simulada, sin subirlas ni enviar su texto real. Backend del suplemento publicado y probado con datos ficticios.
+- [ ] Validar 0.7.0 en Brave con fotos montadas de iKono y calidad de miniaturas/OCR.
+- [ ] Visión semántica, audios, identidad/cobertura/cierre y asociación TC con Bitrix pendientes. Creación de tareas desactivada.
+
+[Guía y límites](vista-previa-resumen-ikono.md).
