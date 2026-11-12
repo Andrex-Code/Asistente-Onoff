@@ -1,3 +1,7 @@
+## Actualización · 0.16.2: consultar historial y evitar cierres sin preparación
+
+Dos cierres posteriores no produjeron tareas visibles en la consulta Bitrix por TC. Se corrige aviso ambiguo de cero/varios pendientes y se añade historial con estado por registro. El piloto privado requiere preparación antes de Resolver por defecto, con exclusión explícita por el asesor. Pruebas aprobadas; inspección real del diario posterior a recarga pendiente. Ver [detalle y límites](piloto-creacion-extension-0.16.2.md). No se recrearon tareas ni se cambió main.
+
 ## Estado comprobado · primera tarea real desde extensión, 0.16.1
 
 Creación PRUEBA tras Resolver humano confirmada. Recuperación de etapa del mismo ID completada desde la extensión tras corregir el truncamiento XML_ID del portal; ficha recargada y verificada. Sin segunda tarea ni cambios manuales de etapa. Piloto de otros clientes habilitado con revisión y confirmación humana; automatización general, cobertura diaria automática y regla de fecha límite siguen pendientes. Ver [resultado y límites](piloto-creacion-extension-0.16.1.md). Main intacta.
