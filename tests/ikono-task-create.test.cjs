@@ -9,7 +9,7 @@ function fixture(options={}){let task=null,adds=0,moves=0;const records=new Map(
  if(m==='tasks.template.get')return {GROUP_ID:'53',RESPONSIBLE_ID:'931952',ACCOMPLICES:'a:2:{i:0;s:3:"211";i:1;s:6:"490253";}',AUDITORS:'a:1:{i:0;s:7:"1870252";}',UF_PRODUCT:'TRYTIENDAS',REPLICATE:'N'};
  if(m==='tasks.task.getFields')return {fields:Object.fromEntries([...Object.values(mapping),'UF_PRODUCT'].map(k=>[k,{title:k,type:'string'}]))};
  if(m==='task.stages.get')return {1421:{ID:'1421',TITLE:'Finalizadas Solicitud'}};
- if(m==='crm.deal.get')return {COMPANY_ID:c.companyId,UF_CRM_1642606760058:c.tc};
+ if(m==='crm.deal.get')return options.deals?.[p.id]||{COMPANY_ID:c.companyId,UF_CRM_1642606760058:c.tc};
  if(m==='tasks.task.add'){adds++;task={id:'900',xmlId:p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
  if(m==='tasks.task.get')return {task};
  if(m==='tasks.task.list')return {tasks:task?[task]:[]};
@@ -26,4 +26,6 @@ test('stage failure retries only move, preserving single created task',async()=>
 test('simultaneous submissions reserve one creation',async()=>{const f=fixture(),p=await f.service.prepare(c,payload);await Promise.allSettled([f.service.commit(c,{intent:p.intent,evidence}),f.service.commit(c,{intent:p.intent,evidence})]);assert.equal(f.stats().adds,1);});
 test('safe numeric PHP team parser reads template arrays',()=>assert.deepEqual(ids('a:2:{i:0;s:3:"211";i:1;s:6:"490253";}'),['211','490253']));
 test('multi pilot isolates room/day/TC journals and refuses a second revision of a created daily task',async()=>{const f=fixture(),multi={...c,mode:'multi',allowUiHandoff:true};const a=await f.service.prepare(multi,payload);await f.service.commit(multi,{intent:a.intent,evidence:{...evidence,after:'ON_RATING_HANDOFF',handoff:true}});const changed=await f.service.prepare(multi,{...payload,revision:'b'.repeat(64)});await assert.rejects(f.service.commit(multi,{intent:changed.intent,evidence:{...evidence,revision:'b'.repeat(64)}}));const b=await f.service.prepare(multi,{...payload,room:'#/room/second'});await f.service.commit(multi,{intent:b.intent,evidence:{...evidence,room:'#/room/second'}});assert.equal(f.stats().adds,2);});
+
+test('other confirmed TC gets its own CRM binding, mismatched deal is refused',async()=>{const f=fixture({deals:{'22000':{COMPANY_ID:'33000',UF_CRM_1642606760058:'7777'}}}),multi={...c,mode:'multi'};const p=await f.service.prepare(multi,{...payload,tc:'7777',dealId:'22000',room:'#/room/other-client'});const signed=unseal(p.intent);assert.deepEqual(signed.fields.UF_CRM_TASK,['D_22000','CO_33000']);assert.equal(signed.fields.UF_TC,'7777');await assert.rejects(f.service.prepare(multi,{...payload,tc:'7777',dealId:c.dealId}));assert.equal(f.stats().adds,0);});
 
