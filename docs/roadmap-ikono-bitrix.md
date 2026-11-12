@@ -180,3 +180,12 @@ Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales ap
 - [ ] Verificar adjuntos, identidad/cobertura/cierre y asociación TC → compañía/negociación antes de habilitar tareas.
 
 **Creación en Bitrix desactivada.** [Prueba, instalación y límites](vista-previa-resumen-ikono.md).
+
+
+## Inicio inmediato 0.5.1
+
+- [x] Lectura y solicitud del resumen al abrir formulario; independientes de tipificación, detalle y confirmación TC.
+- [x] 43 comprobaciones locales aprobadas; reapertura del mismo tramo reutiliza borrador sin otra solicitud.
+- [ ] Validación Brave 0.5.1 y medición del servicio: usuario reportó 14,3 s con 0.5.0. Sin cambio de modelo/backend en esta entrega.
+
+TC detectada en Brave confirmada por el usuario; asociación y creación en Bitrix siguen desactivadas.

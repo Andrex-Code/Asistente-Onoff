@@ -48,3 +48,12 @@ Optimización sin cambiar modelo ni desplegar backend: pide máximo 150 palabras
 Pruebas locales: suite de 43 comprobaciones aprobadas, incluida detección de varias/una/ninguna TC, entrada manual inválida y válida, confirmación humana e invalidación por cambio de nombre, conservación de edición sin segunda llamada por tipificación, nueva llamada al cambiar el texto y limpieza al navegar. Sin clic de resolución y sin llamadas a Bitrix. Formulario y respuesta IA simulados; falta prueba supervisada de 0.5.0 en Brave. Adjuntos y audios siguen excluidos.
 
 Instalación: Volver a cargar la extensión desde la carpeta actualizada y recargar iKono; verificar 0.5.0. Abrir formulario, elegir/confirmar TC con el cliente, completar tipificación y detalle y revisar resumen. Salir con Cancelar. No pulsar botones nativos de resolución para esta prueba.
+
+
+## Inicio inmediato 0.5.1 · 2026-11-12
+
+El usuario validó detección de TC en Brave con 0.5.0 y reportó 14,3 s de generación. 0.5.1 inicia la lectura y solicitud al detectarse la apertura del formulario nativo de resolución, sin esperar tipificación, detalle, confirmación TC ni temporizador de dos segundos. Los campos no reinician la generación. La TC sigue requiriendo confirmación humana local y Bitrix continúa sin consultas ni escrituras. Reabrir el mismo tramo reutiliza el borrador editado; un tramo distinto genera otra solicitud. Cancelar aborta solicitudes cliente pendientes, sin retirar datos que el servicio ya hubiera recibido.
+
+43 comprobaciones locales aprobadas. Prueba del cambio: respuesta simulada recibida antes de 1,5 s desde abrir formulario con detalle vacío y TC aún sin confirmar; cambios de campo no repiten llamada; reapertura reutiliza edición y cambio de texto genera nueva llamada. No es una medición de latencia del proveedor. Pendiente validar 0.5.1 en Brave. Este cambio adelanta el trabajo al tiempo de llenado y elimina la espera previa; no modifica modelo ni despliega backend, por lo que no garantiza reducir los 14,3 s de la solicitud IA observada.
+
+Recargar extensión, comprobar 0.5.1 y recargar iKono. Abrir formulario y comprobar estado de generación antes de llenar campos. Confirmar TC mientras se genera. Terminar con Cancelar, sin pulsar resolución definitiva.

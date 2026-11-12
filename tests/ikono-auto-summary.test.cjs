@@ -1,18 +1,19 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const {chromium}=require('playwright');const path=require('node:path');
-test('automatic content script waits for classification, debounces, sends once, cancels and clears on navigation',async()=>{
+test('opening form immediately summarizes before classification or TC confirmation, reuses draft and clears on navigation',async()=>{
  const browser=await chromium.launch();try{const page=await browser.newPage();let calls=0;
  await page.route('**/*',r=>r.request().url().endsWith('/api/assistant-chat')?(calls++,r.fulfill({json:{ok:true,answer:'Resumen simulado'}})):r.fulfill({contentType:'text/html',body:'<body><li class="mx_EventTile" data-event-id="1" data-self="false"><div class="mx_EventTile_body translate">Consulta ficticia</div></li></body>'}));await page.goto('https://onoff.s.ikono.im/#/room/test');
  for(const f of ['src/ikono-classification.cjs','src/ikono-close-probe.cjs','tools/ikono-summary-preview/auto.js'])await page.addScriptTag({path:path.resolve(__dirname,'..',f)});
  assert.equal(calls,0);assert.equal(await page.locator('#onoff-ikono-auto-summary').isVisible(),false);
  await page.evaluate(()=>{const d=document.createElement('div');d.setAttribute('role','dialog');d.setAttribute('aria-label','Resolver conversación');d.innerHTML='<div><label>Tipificación</label><div class="mx_DropdownTypification"><div class="select__single-value">ASESORIA</div><input role="combobox"></div></div><div class="mx_DropdownTypification"><div class="select__single-value" id="detail"></div><input role="combobox"></div><button id="cancel">Cancelar</button><button id="resolve">Resolver conversación</button>';window.closes=0;d.querySelector('#resolve').onclick=()=>window.closes++;d.querySelector('#cancel').onclick=()=>d.remove();document.body.append(d);});
  const ui=page.locator('#onoff-ikono-auto-summary');
+ await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('textarea').value==='Resumen simulado',{},{timeout:1500});
+ assert.equal(calls,1);assert.equal(await page.locator('#detail').textContent(),'');assert.equal(await ui.locator('#verified').isChecked(),false);
  await page.evaluate(()=>{const p=document.createElement('p');p.id='confirmation';p.textContent="Estás seguro que quieres resolver esta conversación 'TC6775 TC6779 Cliente de prueba'?";document.querySelector('[role=dialog]').prepend(p);});
  await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('#source').textContent.includes('TC6779'));
  assert.equal(await ui.locator('#tc').inputValue(),'');
  await ui.locator('#confirm').click();assert.match(await ui.locator('#tcStatus').textContent(),/Selecciona/);
  await ui.locator('#tc').selectOption('TC6779');await ui.locator('#verified').check();await ui.locator('#confirm').click();assert.match(await ui.locator('#tcStatus').textContent(),/TC6779 confirmada/);
- await page.waitForTimeout(2100);assert.equal(calls,0);
- await page.evaluate(()=>document.querySelector('#detail').textContent='A');await page.waitForTimeout(1000);await page.evaluate(()=>document.querySelector('#detail').textContent='B');await page.waitForTimeout(1200);assert.equal(calls,0);
+ await page.evaluate(()=>document.querySelector('#detail').textContent='A');await page.evaluate(()=>document.querySelector('#detail').textContent='B');assert.equal(calls,1);
  await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('textarea').value==='Resumen simulado');assert.equal(calls,1);assert.equal(await page.evaluate(()=>window.closes),0);
  await ui.locator('textarea').fill('Resumen corregido por asesor');
  await page.evaluate(()=>document.querySelector('#detail').textContent='C');await page.waitForTimeout(2200);assert.equal(calls,1);assert.equal(await ui.locator('textarea').inputValue(),'Resumen corregido por asesor');
@@ -22,7 +23,12 @@ test('automatic content script waits for classification, debounces, sends once, 
  await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('#tc').value==='manual');
  await ui.locator('#manual').fill('mal');await ui.locator('#verified').check();await ui.locator('#confirm').click();assert.match(await ui.locator('#tcStatus').textContent(),/válida/);
  await ui.locator('#manual').fill('tc 456');await ui.locator('#verified').check();await ui.locator('#confirm').click();assert.match(await ui.locator('#tcStatus').textContent(),/TC456 confirmada/);
- await page.evaluate(()=>{document.querySelector('.mx_EventTile_body').textContent='Consulta ficticia actualizada';document.querySelector('#detail').textContent='D';});
+ await page.evaluate(()=>{window.savedDialog=document.querySelector('[role=dialog]');});
+ await page.locator('#cancel').click();
+ await page.evaluate(()=>document.body.append(window.savedDialog));
+ await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('textarea').value==='Resumen corregido por asesor');assert.equal(calls,1);
+ await page.locator('#cancel').click();
+ await page.evaluate(()=>{document.querySelector('.mx_EventTile_body').textContent='Consulta ficticia actualizada';document.body.append(window.savedDialog);});
  await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('textarea').value==='Resumen simulado');assert.equal(calls,2);
  await page.screenshot({path:path.resolve(__dirname,'../dist/ikono-tc-0.5.0.png'),fullPage:true});
  await page.locator('#cancel').click();await page.waitForTimeout(2200);assert.equal(calls,2);

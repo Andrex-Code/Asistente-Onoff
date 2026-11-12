@@ -4,7 +4,7 @@
  const root=host.attachShadow({mode:'open'});root.innerHTML=`<style>section{font:14px system-ui;background:white;color:#183038;border:1px solid #789;border-radius:12px;padding:16px;width:min(380px,calc(100vw - 56px));max-height:65vh;overflow:auto;box-shadow:0 2px 12px #777}h3{margin:0 0 8px}textarea{width:100%;height:150px;box-sizing:border-box}small{display:block;margin:8px 0}label{display:block;margin:8px 0}select,input{max-width:95%}section>button{float:right}</style><section><button aria-label="Ocultar resumen">×</button><h3>Resumen automático · 0.4.0</h3><p role="status"></p><textarea aria-label="Resumen editable" placeholder="El resumen aparecerá aquí"></textarea><small>Texto cargado en pantalla → servicio IA del Asistente ONOFF. Historial completo sin verificar; adjuntos excluidos. Sin cierre ni envío a Bitrix.</small></section>`;document.body.append(host);
  const status=t=>root.querySelector('[role=status]').textContent=t;const draft=root.querySelector('textarea');
  let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='';
- root.querySelector('h3').textContent='Resumen y TC · 0.5.0';
+ root.querySelector('h3').textContent='Resumen y TC · 0.5.1';
  const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Sin consulta ni creación en Bitrix. La confirmación no valida su asociación.</small>';
  root.querySelector('h3').after(tcBox);const el=id=>root.getElementById(id);
  function resetTC(){confirmedTC='';el('verified').checked=false;el('tcStatus').textContent='TC pendiente de confirmación. No se puede preparar una tarea.';}
@@ -32,8 +32,8 @@
   finally{clearTimeout(timeout);if(controller===request){controller=null;pendingKey='';}}
  }
  ONOFFIkonoCloseProbe.installProbe(window,{enabled:true,readClassification:ONOFFIkonoClassification.readClassification,onEvent:e=>{
-  if(e.type==='dialog-opened'){cancel();active=true;room=location.hash;draft.value='';source='invalid';refreshTC();host.style.display='';status('Completa tipificación y detalle. El resumen se generará automáticamente.');}
-  if(e.type==='classification-observed'&&active){clearTimeout(timer);if(e.classification.status==='selected'){status('Tipificación completa. Generando en 2 segundos…');timer=setTimeout(generate,2000);}else status('Completa tipificación y detalle compatibles para generar el resumen.');}
+  // Start from the opening of the native form, independently of its fields.
+  if(e.type==='dialog-opened'){cancel();active=true;room=location.hash;draft.value='';source='invalid';refreshTC();host.style.display='';generate();}
   if(['cancel-requested','resolution-requested','dialog-disappeared'].includes(e.type)){cancel();active=false;resetTC();if(!draft.value)status('Formulario cerrado. Generación detenida.');}
  }});
 })();
