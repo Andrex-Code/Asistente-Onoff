@@ -159,3 +159,13 @@ Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales ap
 - Lector opcional de tipificación y detalle, basado en selección visible del DOM real; no confunde búsqueda con selección. Lectura final aún sin validar en cierre real.
 - **20/20 pruebas automáticas aprobadas**, incluida prueba Chromium con 20 aperturas/cancelaciones ficticias. Node 22/CI pendiente.
 - Falta aprobación para instalar el paquete de prueba y ensayarlo en la pestaña iKono autorizada. No instalado ni activo en producción. F02 permanece en investigación y 0/6 fases completadas.
+
+
+## Vista previa independiente 0.3.0 · 2026-11-12
+
+- [x] Extensión separada: captura y selección manual del tramo, consentimiento explícito y espera de dos segundos tras completar tipificación y detalle.
+- [x] 41 comprobaciones locales aprobadas; prueba nueva con formulario y respuesta IA simulados. Sin cierre ni escritura en Bitrix.
+- [ ] Instalar 0.3.0 y validar calidad del resumen con el asesor sobre un tramo real autorizado.
+- [ ] Verificar identidad, cobertura completa y cierre antes de habilitar el recorrido definitivo hacia Bitrix.
+
+[Instalación, prueba y límites](vista-previa-resumen-ikono.md). La espera inicia la solicitud; no garantiza recibir el resumen en dos segundos.
