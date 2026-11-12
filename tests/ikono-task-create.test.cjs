@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const {createService,unseal,ids}=require('../lib/ikono-task-pilot');
+const {createService,unseal,ids,seal}=require('../lib/ikono-task-pilot');
 process.env.AUTH_SECRET='test-only-signing-key';
 const mapping={category:'UF_CATEGORY',detail:'UF_DETAIL',phone:'UF_PHONE',tc:'UF_TC'};
 const now=Date.parse('2026-11-12T20:00:00Z');
@@ -10,7 +10,7 @@ function fixture(options={}){let task=null,adds=0,moves=0;const records=new Map(
  if(m==='tasks.task.getFields')return {fields:Object.fromEntries([...Object.values(mapping),'UF_PRODUCT'].map(k=>[k,{title:k,type:'string'}]))};
  if(m==='task.stages.get')return {1421:{ID:'1421',TITLE:'Finalizadas Solicitud'}};
  if(m==='crm.deal.get')return options.deals?.[p.id]||{COMPANY_ID:c.companyId,UF_CRM_1642606760058:c.tc};
- if(m==='tasks.task.add'){adds++;task={id:'900',xmlId:p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
+ if(m==='tasks.task.add'){adds++;task={id:'900',xmlId:options.truncate?p.fields.XML_ID.slice(0,50):p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
  if(m==='tasks.task.get')return {task};
  if(m==='tasks.task.list')return {tasks:task?[task]:[]};
  if(m==='task.stages.movetask'){moves++;if(options.moveFails&&moves===1)throw Error('stage unavailable');task.stageId=String(p.stageId);return true;}
@@ -28,4 +28,6 @@ test('safe numeric PHP team parser reads template arrays',()=>assert.deepEqual(i
 test('multi pilot isolates room/day/TC journals and refuses a second revision of a created daily task',async()=>{const f=fixture(),multi={...c,mode:'multi',allowUiHandoff:true};const a=await f.service.prepare(multi,payload);await f.service.commit(multi,{intent:a.intent,evidence:{...evidence,after:'ON_RATING_HANDOFF',handoff:true}});const changed=await f.service.prepare(multi,{...payload,revision:'b'.repeat(64)});await assert.rejects(f.service.commit(multi,{intent:changed.intent,evidence:{...evidence,revision:'b'.repeat(64)}}));const b=await f.service.prepare(multi,{...payload,room:'#/room/second'});await f.service.commit(multi,{intent:b.intent,evidence:{...evidence,room:'#/room/second'}});assert.equal(f.stats().adds,2);});
 
 test('other confirmed TC gets its own CRM binding, mismatched deal is refused',async()=>{const f=fixture({deals:{'22000':{COMPANY_ID:'33000',UF_CRM_1642606760058:'7777'}}}),multi={...c,mode:'multi'};const p=await f.service.prepare(multi,{...payload,tc:'7777',dealId:'22000',room:'#/room/other-client'});const signed=unseal(p.intent);assert.deepEqual(signed.fields.UF_CRM_TASK,['D_22000','CO_33000']);assert.equal(signed.fields.UF_TC,'7777');await assert.rejects(f.service.prepare(multi,{...payload,tc:'7777',dealId:c.dealId}));assert.equal(f.stats().adds,0);});
+
+test('recovers a legacy task whose XML_ID Bitrix truncated to 50 characters, without adding again',async()=>{const f=fixture({truncate:true}),prepared=await f.service.prepare(c,payload),p=unseal(prepared.intent);p.fields.XML_ID='ONOFF_PRUEBA_'+'a'.repeat(64);const intent=seal(p);await f.service.commit(c,{intent,evidence});await f.service.commit(c,{intent,evidence});assert.equal(f.stats().adds,1);assert.equal(f.stats().task.xmlId.length,50);assert.equal(f.stats().moves,1);});
 
