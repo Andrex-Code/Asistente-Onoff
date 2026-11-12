@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
     if (mode === 'summary_test') {
       if (!cleanConversation.length) return res.status(400).json({ ok: false, error: 'Faltan mensajes para resumir.' });
       const { summarize } = require('../lib/ikono-summary');
-      return res.status(200).json(await summarize(cleanConversation, apiKey));
+      return res.status(200).json(await summarize(cleanConversation, apiKey,{assessImages:true}));
     }
 
     const config = await readConfig();

@@ -18,7 +18,7 @@
    const all=[...document.querySelectorAll('li.mx_EventTile[data-event-id] .mx_MImageBody img')].filter(img=>img.complete&&img.naturalWidth>80&&img.naturalHeight>40);
    const unique=[...new Map(all.map(img=>[img.closest('[data-event-id]').getAttribute('data-event-id')+'|'+img.currentSrc+'|'+img.naturalWidth+'x'+img.naturalHeight,img])).entries()];
    for(const [key,img] of unique.slice(-2)){if(cache.size>=2)break;if(!cache.has(key))cache.set(key,{img,promise:null});}
-   if(!cache.size){status('No hay fotos cargadas accesibles. Solo se resume el texto.');return;}
+   if(!cache.size){status('No hay fotos cargadas accesibles. Confirma la TC o el contexto directamente con el cliente.');return;}
    status(`Leyendo hasta ${cache.size} fotos localmente; ${Math.max(0,unique.length-cache.size)} adicionales fuera del límite. El resumen de texto continúa aparte.`);
    const rows=[];for(const item of cache.values()){
     if(!valid())return;item.promise ||= read(item.img);const result=await item.promise;item.img=null;if(!valid())return;rows.push(result);drawEvidence(rows);
@@ -29,11 +29,12 @@
    if(!texts.length){status('Sin texto legible para complementar. Confirma la TC manualmente.');return;}
    // One extra bounded text request per room. No retry when reopening the form.
    supplement={text:'',status:'Complemento pendiente.'};request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),30000);status('TC candidatas disponibles. Preparando complemento breve con el texto OCR…');
-   try{const response=await fetch('https://asistente-onoff.vercel.app/api/assistant-chat',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({mode:'image_ocr_test',question:'Complementa con texto OCR no verificado',conversation:texts,history:[]})});const data=await response.json();if(!valid())return;if(!response.ok||!data.ok||data.summaryMode!=='compact-v1'||typeof data.answer!=='string'||!data.answer.trim())throw Error('Sin complemento válido');supplement={text:data.answer,status:'Lectura completada. Revisa TC y complemento: OCR puede equivocarse.'};summary.value=supplement.text;status(supplement.status);}
+   try{const response=await fetch('https://asistente-onoff.vercel.app/api/assistant-chat',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({mode:'image_ocr_test',question:'Complementa con texto OCR no verificado',conversation:texts,history:[]})});const data=await response.json();if(!valid())return;if(!response.ok||!data.ok||data.summaryMode!=='compact-v1'||typeof data.answer!=='string'||!data.answer.trim())throw Error('Sin complemento válido');supplement={text:data.answer,status:'Lectura completada. Si no aclara la TC o el caso, confirma directamente con el cliente. OCR puede equivocarse.'};summary.value=supplement.text;status(supplement.status);}
    catch{if(valid()){supplement={text:'',status:'No se pudo obtener el complemento; el resumen principal permanece disponible.'};status(supplement.status);}}
    finally{clearTimeout(timer);if(request===controller)request=null;}
   }
   summary.oninput=()=>{if(supplement)supplement.text=summary.value;};
-  return {start,stop,clear};
+  function skip(message){stop();summary.value='';panel.querySelector('ul').replaceChildren();onCandidates([]);status(message);}
+  return {start,stop,clear,skip};
  }};
 })();

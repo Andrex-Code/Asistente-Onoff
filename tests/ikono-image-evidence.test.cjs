@@ -6,3 +6,12 @@ test('OCR aliases and POS footer yield candidates, not AnyDesk numeric IDs or da
  assert.deepEqual(read('123456789\n99/2/4\n2026/11/12\nInformación del 2026/11/12 09:41').candidates,[]);
  assert(read('a'.repeat(5000)).text.length<=1001);
 });
+test('photo policy reads only very ambiguous context or multiple unresolved TC',()=>{
+ const {photoPolicy:decide}=require('../src/ikono-image-evidence.cjs');
+ assert.equal(decide({codes:['TC1'],assessment:{ambiguous:false}}).read,false);
+ assert.equal(decide({codes:['TC1','TC2'],assessment:{ambiguous:false}}).read,true);
+ assert.equal(decide({codes:['TC1','TC2'],assessment:{ambiguous:false,chatTc:'TC2',evidence:'La gestión es para TC2'},texts:['La gestión es para TC2']}).read,false);
+ assert.equal(decide({codes:['TC1','TC2'],assessment:{ambiguous:false,chatTc:'TC2',evidence:'Frase inventada'},texts:['Otro mensaje']}).read,true);
+ assert.equal(decide({codes:['TC1','TC2'],confirmedTc:'TC2',assessment:{ambiguous:false}}).read,false);
+ assert.equal(decide({codes:['TC1'],assessment:{ambiguous:true}}).read,true);
+});
