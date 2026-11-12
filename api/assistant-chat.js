@@ -25,6 +25,12 @@ module.exports = async function handler(req, res) {
       content: String(item?.content || '').slice(0, 4000)
     })) : [];
 
+    if (mode === 'summary_test') {
+      if (!cleanConversation.length) return res.status(400).json({ ok: false, error: 'Faltan mensajes para resumir.' });
+      const { summarize } = require('../lib/ikono-summary');
+      return res.status(200).json(await summarize(cleanConversation, apiKey));
+    }
+
     const config = await readConfig();
     const searchText = `${question}\n${cleanConversation.slice(-12).map((item) => item.text).join('\n')}`;
     const knowledgeResult = findRelevantKnowledge(config.knowledgeBase, searchText);
