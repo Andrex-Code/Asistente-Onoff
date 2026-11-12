@@ -237,3 +237,13 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - [ ] Usuario debe definir diligenciamiento de campos, responsables, fechas y vínculo CRM; verificar IDs/tipos/opciones REST antes de implementar escritura.
 
 [Inventario observado y reglas pendientes](campos-tarea-bitrix-inspeccion.md). La creación permanece desactivada.
+
+
+## 2026-11-12 · Vista previa basada en PRIMER CONTACTO
+
+- Verificada en Bitrix la plantilla PRIMER CONTACTO, ID 477: responsable, participantes, observador, proyecto y ausencia de fecha límite se conservan; no se deducen de la cuenta del asesor. La recurrencia permanece desactivada.
+- Vista previa local con campos de iKono en mayúsculas: categoría → Tipo de Incidencia; detalle → Tipificación TI y asunto; TC → Plataforma. Tipificación 2 sin regla asignada. Descripción: Incidente, Revisión y análisis, Solución y referencia de conversación pendiente de ID de atención.
+- Alcance requerido: todos los contactos y reaperturas de hoy en America/Bogota, separados por TC seleccionada. TC ambigua requiere revisión humana; no se mezcla el día de otras TC.
+- Inspección DOM: sala accesible desde inicio hasta cierre; el texto disponible carece de fecha absoluta por mensaje y separadores de fecha. Una hora aislada no certifica el día. Resumen provisional marcado como tal; pendiente verificar cobertura diaria y separación por TC.
+- Añadidos módulos puros de captura diaria y composición de vista previa, con cuatro pruebas. No están integrados todavía al capturador de la extensión ni al backend; el flujo instalado continúa limitado al texto montado y al límite vigente de mensajes. No se publica una nueva versión ni se afirma captura diaria completa.
+- Sin creación, guardado de borradores, adjuntos, cambios de etapa ni otras escrituras en Bitrix. Tras una futura creación autorizada y verificación del ID, la etapa prevista es Finalizadas Solicitud; transición actualmente desactivada.
