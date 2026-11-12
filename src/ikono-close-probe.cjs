@@ -1,6 +1,6 @@
 /* Test-only passive DOM probe. No network, chat text, room IDs or storage. */
 function installProbe(win, { enabled = false, onEvent = () => {}, readClassification } = {}) {
-  if (!enabled || win.location.origin !== 'https://onoff.a.ikono.im') return () => {};
+  if (!enabled || !['https://onoff.a.ikono.im','https://onoff.s.ikono.im'].includes(win.location.origin)) return () => {};
   const doc = win.document;
   let stopped = false;
   let previous = null;

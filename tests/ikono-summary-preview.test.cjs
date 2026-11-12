@@ -3,7 +3,7 @@ test('standalone preview requires consent, debounces changes, leaves native clos
  const browser=await chromium.launch({headless:true});try{
  const page=await browser.newPage({viewport:{width:1700,height:1100}});let calls=0;
  await page.route('**/*',r=>{if(r.request().url().endsWith('/api/assistant-chat')){calls++;return r.fulfill({json:{ok:true,answer:'Respuesta ficticia para revisar.'}});}return r.fulfill({contentType:'text/html',body:'<html><body><button id="native">Resolver chat</button><ul><li class="mx_EventTile" data-event-id="test1" data-self="false"><div class="mx_EventTile_body translate">Consulta de prueba</div></li></ul></body></html>'});});
- await page.goto('https://onoff.a.ikono.im/#/room/test');
+ await page.goto('https://onoff.s.ikono.im/#/room/test');
  for(const file of ['src/ikono-classification.cjs','src/ikono-close-probe.cjs','tools/ikono-summary-preview/review.js'])await page.addScriptTag({path:path.resolve(__dirname,'..',file)});
  const ui=page.locator('#onoff-ikono-summary-preview');
  await ui.locator('#test').check();await ui.getByRole('button',{name:'Leer mensajes disponibles',exact:true}).click();assert.match(await ui.locator('#transcript').inputValue(),/Consulta de prueba/);
