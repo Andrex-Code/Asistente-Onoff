@@ -255,3 +255,10 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - Acumulación local de textos por sala y día de Colombia, deduplicados por evento; navegación y cambio de día limpian datos. Cuenta fechas desconocidas y muestra cobertura pendiente.
 - Límite explícito: la acumulación NO se conecta todavía al resumen IA. Continúa hasta 40 textos montados, sin garantizar hoy ni separación por TC. El panel lo advierte y pide revisión/separación; no se declara resumen diario completo ni filtrado automático por TC implementado.
 - Seis pruebas locales pasaron, incluyendo Chromium con consulta simulada, bloqueo sin confirmación, dos negociaciones, selección exacta y creación desactivada. El escenario afectado se repitió tras ajustes. No equivale a validación real en iKono. Paquete local 0.9.0 preparado; pendiente recarga por el usuario.
+
+
+### 0.10.0 · Resumen diario por TC con revisión humana
+- Captura acumulada conectada a revisión de mensajes: el asesor marca exclusivamente textos de hoy correspondientes a la TC confirmada y declara haber cargado todos sus contactos/reaperturas. No se asignan automáticamente fechas ausentes ni TC ambiguas.
+- Nueva ruta daily_summary_test, validada antes del recorte anterior de 40: hasta 250 mensajes / 48000 caracteres / 4000 por mensaje, una llamada mini con 600 tokens máximos, caché del mismo conjunto. Rechaza mezcla de días/TC, duplicados o exceso sin truncar. Descripción diaria separada del resumen inmediato.
+- Cobertura declarada por asesor, no certificada por iKono; falta automatizar fechas y paginación de historial. La revisión manual es necesaria para este ensayo. Mensajes mezclados requieren separación humana. Sin audio ni fotos en esta ruta.
+- Seis pruebas locales aprobadas: conservación de 80 mensajes, rechazos de alcance/límites, captura diaria y panel Chromium. Pendiente ensayo real por el usuario. Bitrix continúa sin creación ni transición.

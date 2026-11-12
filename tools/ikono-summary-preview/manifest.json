@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ONOFF Â· Vista previa de resumen",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Captura revisada, tipificaciÃ³n y borrador IA autorizado. Sin tareas Bitrix ni cierre automÃ¡tico.",
   "permissions": [
     "activeTab",

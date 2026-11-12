@@ -15,6 +15,12 @@ module.exports = async function handler(req, res) {
     if (!question || typeof question !== 'string') return res.status(400).json({ ok: false, error: 'Pregunta requerida.' });
     if (!Array.isArray(conversation)) return res.status(400).json({ ok: false, error: 'Conversación requerida.' });
 
+    if(mode==='daily_summary_test'){
+      let input;try{input=require('../lib/ikono-daily').dailyInput(req.body);}catch(error){return res.status(400).json({ok:false,error:error.message});}
+      const result=await require('../lib/ikono-summary').summarize(input.conversation,apiKey,{instruction:input.instruction,maxOutputTokens:600});
+      return res.status(200).json({...result,summaryMode:'daily-reviewed-v1',tc:req.body.tc,day:req.body.day,messageCount:input.conversation.length,coverage:'advisor-reviewed'});
+    }
+
     const cleanConversation = conversation.slice(-40).map((item) => ({
       role: item?.role === 'advisor' ? 'advisor' : 'customer',
       text: String(item?.text || '').slice(0, 4000)
