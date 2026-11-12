@@ -1,4 +1,5 @@
 module.exports = async function handler(req, res) {
+  if (req.body?.pilotAction || req.method === 'OPTIONS' && req.headers['access-control-request-headers']?.toLowerCase().includes('authorization')) return require('../../lib/ikono-task-handler')(req,res);
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
@@ -86,3 +87,4 @@ function taskStatus(value) {
 function normalizeWebhookUrl(value) { try { const url = new URL(String(value || '').trim()); return url.protocol === 'https:' ? `${url.origin}${url.pathname.replace(/\/+$/, '')}/` : ''; } catch { return ''; } }
 function toIso(value) { if (!value) return null; const date = new Date(value); return Number.isNaN(date.getTime()) ? null : date.toISOString(); }
 function setCors(res) { res.setHeader('Access-Control-Allow-Origin', '*'); res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); res.setHeader('Access-Control-Allow-Headers', 'Content-Type'); }
+
