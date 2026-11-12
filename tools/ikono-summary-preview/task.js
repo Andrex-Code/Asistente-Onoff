@@ -1,4 +1,5 @@
 (() => {
+ if(window.__onoffTaskReviewInstalled)return;window.__onoffTaskReviewInstalled=true;
  const team=['211','490253','601125','672371','1460672','1470334','1523392','1585264','2006588','2188252','2315788','2316058'];
  const template={id:'477',name:'PRIMER CONTACTO',responsible:'Guadalupe Ríos Pelaez',project:'SAC TiendasOn',participants:team,observer:'1870252'};
  const descriptionMemory=new Map();let descriptionScope='',reviewSnapshot='';const roomMemory=new Map();let dailyKey='',dailyAnswer='',dailyBusy=false;let previousTc='',descriptionEdited=false,host,root,box,room=location.hash,records=new Map(),lookup=null,epoch=0,classification={},last='';
