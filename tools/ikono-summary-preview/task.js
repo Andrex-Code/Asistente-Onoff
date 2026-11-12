@@ -1,10 +1,10 @@
 (() => {
  const team=['211','490253','601125','672371','1460672','1470334','1523392','1585264','2006588','2188252','2315788','2316058'];
  const template={id:'477',name:'PRIMER CONTACTO',responsible:'Guadalupe Ríos Pelaez',project:'SAC TiendasOn',participants:team,observer:'1870252'};
- let dailyKey='',dailyAnswer='',dailyBusy=false;let previousTc='',descriptionEdited=false,host,root,box,room=location.hash,records=new Map(),lookup=null,epoch=0,classification={},last='';
+ const roomMemory=new Map();let dailyKey='',dailyAnswer='',dailyBusy=false;let previousTc='',descriptionEdited=false,host,root,box,room=location.hash,records=new Map(),lookup=null,epoch=0,classification={},last='';
  const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());let today=day();
  function collect(){
-  if(room!==location.hash||today!==day()){room=location.hash;today=day();records.clear();lookup=null;epoch++;classification={};descriptionEdited=false;dailyKey='';dailyAnswer='';}
+  if(room!==location.hash||today!==day()){roomMemory.set(room,{day:today,records,classification});room=location.hash;today=day();const saved=roomMemory.get(room);records=saved?.day===today?saved.records:new Map();lookup=null;epoch++;classification={};descriptionEdited=false;dailyKey='';dailyAnswer='';}
   for(const e of document.querySelectorAll('li.mx_EventTile[data-event-id]')){
    if(e.matches('.mx_EventTile_info')||e.querySelector('.mx_MNoticeBody'))continue;
    const text=e.querySelector('.mx_EventTile_body.translate')?.textContent.trim();if(!text)continue;

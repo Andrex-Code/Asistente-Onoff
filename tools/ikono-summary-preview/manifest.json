@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ONOFF Â· Vista previa de resumen",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Captura revisada, tipificaciÃ³n y borrador IA autorizado. Sin tareas Bitrix ni cierre automÃ¡tico.",
   "permissions": [
     "activeTab",
@@ -24,6 +24,17 @@
         "https://onoff.s.ikono.im/*"
       ],
       "js": [
+        "guard.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://onoff.a.ikono.im/*",
+        "https://onoff.s.ikono.im/*"
+      ],
+      "js": [
+        "memory.js",
         "classification.js",
         "probe.js",
         "tc.js",

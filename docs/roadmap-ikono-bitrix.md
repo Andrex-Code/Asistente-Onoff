@@ -265,3 +265,10 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 
 
 Servicio diario desplegado READY desde 9cb4968b05d9a339322d44ceb952aa414a83d86f. Ensayo remoto solo ficticio: 60 mensajes recibidos, HTTP 200, daily-reviewed-v1, 995 tokens de entrada y 97 de salida; sin garantía de coste fijo ni latencia. Chromium adicional verificó generación diaria simulada hasta descripción. Conserva ediciones de descripción hechas durante solicitud. Creación Bitrix desactivada.
+
+
+### 0.11.0 · Protección de cierre y memoria por sala
+- Guard cargado en document_start: desactiva exactamente Resolver conversación sin mensaje en diálogos, aviso visible y bloqueo en captura de puntero/ratón/táctil/Enter/Espacio; reaplica tras remontaje. No sustituye el cierre por otro botón. Sin pruebas de cierre en chats reales.
+- Memoria volátil por sala/día de Colombia (hasta 12 salas / 250 textos por sala): deduplica eventos y conserva borradores al navegar. Sin almacenamiento persistente; recarga descarta memoria. Solo observa DOM accesible, no recibe eventos de salas ocultas.
+- Resumen provisional empieza tras observar el chat, sin abrir Resolver: pausa de 8 segundos y mínimo 20 segundos entre intentos por sala activa. Reutiliza caché y conserva ediciones humanas. Se mantiene el límite de 40 textos para el resumen inmediato; resumen diario por TC conserva revisión humana de 0.10.0. No se afirma clasificación oficial automática ni cobertura diaria completa.
+- Cinco escenarios locales únicos aprobados: protección ratón/teclado/remontaje y botones permitidos; aislamiento de tres salas; actualización previa a Resolver y preservación de edición; regresión de resumen y vista previa. IA y cierres simulados, sin datos reales ni escritura Bitrix. Pendiente comprobar guard en iKono real sin cerrar atención.
