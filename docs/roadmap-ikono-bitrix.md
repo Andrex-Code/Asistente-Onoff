@@ -1,3 +1,7 @@
+## Estado comprobado · primera tarea real desde extensión, 0.16.1
+
+Creación PRUEBA tras Resolver humano confirmada. Recuperación de etapa del mismo ID completada desde la extensión tras corregir el truncamiento XML_ID del portal; ficha recargada y verificada. Sin segunda tarea ni cambios manuales de etapa. Piloto de otros clientes habilitado con revisión y confirmación humana; automatización general, cobertura diaria automática y regla de fecha límite siguen pendientes. Ver [resultado y límites](piloto-creacion-extension-0.16.1.md). Main intacta.
+
 ## Estado actual · 0.16.0: salida a encuesta
 
 Reporte contrastado: Resolver transfiere a ON_RATING y retira la sala del asesor. Corregida detección correlacionada de salida a Inicio, sin requerir reportes en operación. Borrador persistido antes del clic; varios clientes aislados por sala/día/TC, con PRUEBA y confirmación humana. Pruebas simuladas aprobadas; primera creación real con esta versión pendiente. Ver [evidencia, inferencia y límites](piloto-creacion-extension-0.16.0.md). No se declara creada la tarea del cierre anterior ni se cambia main.

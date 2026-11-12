@@ -10,5 +10,5 @@ La comprobación posterior detuvo el movimiento a Finalizadas Solicitud: este po
 
 Hallazgo adicional: Bitrix asignó una fecha límite a la tarea, aunque la creación no envió DEADLINE y la plantilla mostraba sin fecha límite. Causa y política de automatizaciones pendientes de confirmar; no se modifica manualmente esta fecha sin regla acordada.
 
-Estado: creación real desde extensión comprobada; corrección de identidad desplegada y pruebas aprobadas; recuperación real de etapa pendiente al publicar esta nota. Evidencia y radicado conservados en dist privado, sin datos de clientes en GitHub. Main intacta.
+Estado actualizado: creación real desde extensión comprobada y recuperación real completada desde el botón de Inicio de 0.16.1. La extensión devolvió el mismo ID y Finalizadas Solicitud; se recargó la ficha de Bitrix y persistieron descripción PRUEBA, CRM, campos, equipo y etapa. No se usó creación ni cambio de etapa manual por el asistente. Evidencia y radicado conservados en dist privado, sin datos de clientes en GitHub. Main intacta.
 
