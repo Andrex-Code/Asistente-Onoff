@@ -1,3 +1,7 @@
+## Estado actual · 0.16.0: salida a encuesta
+
+Reporte contrastado: Resolver transfiere a ON_RATING y retira la sala del asesor. Corregida detección correlacionada de salida a Inicio, sin requerir reportes en operación. Borrador persistido antes del clic; varios clientes aislados por sala/día/TC, con PRUEBA y confirmación humana. Pruebas simuladas aprobadas; primera creación real con esta versión pendiente. Ver [evidencia, inferencia y límites](piloto-creacion-extension-0.16.0.md). No se declara creada la tarea del cierre anterior ni se cambia main.
+
 ## Estado actual · piloto de creación desde extensión 0.15.0
 
 Preparación firmada sin escritura y creación PRUEBA tras cierre humano y transición DOM a Resuelto de la misma sala. Plantilla/equipo y campos personalizados verificados por REST. Reserva privada evita repetir task.add y permite recuperar la etapa de la misma tarea. Pruebas simuladas aprobadas; validación real desde la extensión pendiente. Escritura restringida a un único piloto autorizado; main intacta. Ver [recorrido y límites](piloto-creacion-extension-0.15.0.md).
