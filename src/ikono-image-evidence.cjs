@@ -13,7 +13,7 @@ function imageEvidence(text,confidence=0) {
 function photoPolicy({codes,assessment,confirmedTc,texts=[]}){
  const quoted=assessment?.evidence&&texts.some(text=>text.includes(assessment.evidence));
  if(assessment?.ambiguous===true)return {read:true,reason:'El texto depende de una foto y no explica suficientemente el caso.'};
- if(codes.length>1&&!codes.includes(confirmedTc)&&!(quoted&&codes.includes(assessment?.chatTc)))return {read:true,reason:'Hay varias TC y el chat no aclara cuál recibe atención.'};
+ if(codes.length>1&&!/^TC\d+$/.test(confirmedTc||'')&&!(quoted&&codes.includes(assessment?.chatTc)))return {read:true,reason:'Hay varias TC y el chat no aclara cuál recibe atención.'};
  return {read:false,reason:quoted&&codes.includes(assessment?.chatTc)?`El chat indica ${assessment.chatTc}. Confirma la lectura como asesor; no se analizarán fotos.`:'No se necesitan fotos para este recorrido. Si hay dudas, confirma directamente con el cliente.'};
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={imageEvidence,photoPolicy};

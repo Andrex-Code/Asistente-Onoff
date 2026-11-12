@@ -214,3 +214,15 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - [ ] Visión semántica, audios, identidad/cobertura/cierre y asociación TC con Bitrix pendientes. Creación de tareas desactivada.
 
 [Guía y límites](vista-previa-resumen-ikono.md).
+
+
+## Fotos condicionadas a necesidad · 0.8.0
+
+- [x] Texto claro con TC identificada: sin OCR ni complemento de fotos.
+- [x] Varias TC no aclaradas en el chat/por asesor, o contexto muy ambiguo dependiente de fotos: lectura local limitada.
+- [x] Evaluación en la misma solicitud del resumen, sin llamada adicional para decidir. Cita de TC contrastada con el texto; confirmación humana permanece.
+- [x] 53 comprobaciones locales aprobadas y tres casos ficticios remotos verificados tras despliegue READY, mismo modelo mini.
+- [ ] Probar 0.8.0 con el asesor en Brave y comprobar falsos positivos/negativos del criterio de ambigüedad.
+- [ ] Creación y consulta de asociación en Bitrix desactivadas; identidad/cobertura/cierre aún pendientes.
+
+[Regla, evidencia y límites](vista-previa-resumen-ikono.md).

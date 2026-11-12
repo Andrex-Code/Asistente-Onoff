@@ -13,5 +13,6 @@ test('photo policy reads only very ambiguous context or multiple unresolved TC',
  assert.equal(decide({codes:['TC1','TC2'],assessment:{ambiguous:false,chatTc:'TC2',evidence:'La gestión es para TC2'},texts:['La gestión es para TC2']}).read,false);
  assert.equal(decide({codes:['TC1','TC2'],assessment:{ambiguous:false,chatTc:'TC2',evidence:'Frase inventada'},texts:['Otro mensaje']}).read,true);
  assert.equal(decide({codes:['TC1','TC2'],confirmedTc:'TC2',assessment:{ambiguous:false}}).read,false);
+ assert.equal(decide({codes:['TC1','TC2'],confirmedTc:'TC3',assessment:{ambiguous:false}}).read,false);
  assert.equal(decide({codes:['TC1'],assessment:{ambiguous:true}}).read,true);
 });

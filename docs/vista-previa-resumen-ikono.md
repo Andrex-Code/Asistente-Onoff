@@ -108,3 +108,10 @@ La extensión activa OCR si el texto es muy ambiguo, o si el nombre contiene var
 Solo en los casos activados se conservan los límites previos: hasta dos fotos locales y un complemento acotado; no se suben imágenes. Si las fotos no resuelven el caso/TC, o no hay fotos accesibles, se indica confirmar directamente con el cliente. No se selecciona ni confirma una TC automáticamente. Confirmación del asesor y Bitrix desactivado permanecen; tampoco se bloquea ni pulsa resolución nativa.
 
 53 comprobaciones locales aprobadas, incluidas rutas claras sin OCR, varias TC aclaradas en chat sin OCR, varias TC no resueltas con OCR, ambigüedad visual con OCR, cita inventada rechazada, cache/cancelación y motor de extensión empaquetado. Falta verificación remota de la evaluación estructurada y prueba Brave 0.8.0. Es necesario actualizar la extensión y recargar iKono: 0.7.0 no aplica esta política aunque se actualice el servidor.
+
+
+### Verificación del despliegue 0.8.0
+
+Backend READY `dpl_gxJgkwuV5z1K6YrSexn7rioAZvQq`, commit `dfa45eed3790ec5e07bc9577e8eb268f876ba4e1`; dominio productivo verificado, sin modificar main. Tres pruebas remotas ficticias aprobaron: caso claro con foto pendiente → ambiguous=false; afirmación explícita de TC en chat → TC67890 con cita literal; "mira la foto, me sale esto" sin descripción → ambiguous=true. Tiempos aislados 3,106/1,440/1,279 s, entradas 341/339/338 tokens y salidas 52/50/45, mismo mini. No son benchmark de casos reales. Ninguna prueba requirió subir imágenes ni consultar Bitrix.
+
+Una TC confirmada manualmente por el asesor, aunque no esté entre las del encabezado, también evita leer fotos solo para resolver TC. La ambigüedad del contenido sigue siendo motivo independiente. Las decisiones del modelo pueden equivocarse; mantener revisión y confirmación humana. Debe instalarse 0.8.0 y recargarse iKono para aplicar el nuevo comportamiento.
