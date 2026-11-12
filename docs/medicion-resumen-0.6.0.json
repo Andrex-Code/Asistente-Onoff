@@ -1,0 +1,31 @@
+{
+  "date": "2026-11-12",
+  "source": "synthetic-only, six text messages; no customer data; two sequential requests per version",
+  "baseline": {
+    "deployment": "dpl_7LgyPYXHZduth3Y6uPaZ9wrWx8nR",
+    "seconds": [
+      4.409,
+      3.531
+    ],
+    "usage": "not exposed by previous route"
+  },
+  "optimized": {
+    "deployment": "dpl_GZdpkFZZYMsnV1uHJayfLwL8HZxa",
+    "commit": "f45cc0af85bc1126ef88b4c4c0751afd79747fa5",
+    "seconds": [
+      2.112,
+      1.882
+    ],
+    "model": "gpt-4o-mini-2024-07-18",
+    "input_tokens": [
+      223,
+      223
+    ],
+    "output_tokens": [
+      77,
+      84
+    ],
+    "max_output_tokens": 450
+  },
+  "limitations": "Not a controlled benchmark or a guarantee for the user's longer conversation that took 14.3 seconds. No Bitrix calls. No images or audio."
+}

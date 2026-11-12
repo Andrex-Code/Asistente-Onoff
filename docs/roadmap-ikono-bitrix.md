@@ -189,3 +189,15 @@ Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales ap
 - [ ] Validación Brave 0.5.1 y medición del servicio: usuario reportó 14,3 s con 0.5.0. Sin cambio de modelo/backend en esta entrega.
 
 TC detectada en Brave confirmada por el usuario; asociación y creación en Bitrix siguen desactivadas.
+
+
+## Ruta compacta y TC numérica 0.6.0
+
+- [x] El usuario validó resumen/TC en varios chats con 0.5.1; pide admitir números sin prefijo.
+- [x] 0.6.0 detecta candidatos al inicio del nombre y de negocios entre paréntesis, elimina repetidos y exige confirmación humana.
+- [x] Ruta compacta publicada desde rama de trabajo, sin modificar main ni activar Bitrix; mismo modelo mini, salida limitada y sin cargar conocimiento general.
+- [x] 47 comprobaciones locales únicas aprobadas. Caso ficticio de seis mensajes: antes 4,41/3,53 s y después 2,11/1,88 s; muestra pequeña, no comparable directamente con el caso real de 14,3 s.
+- [ ] Probar 0.6.0 en Brave con TC sin prefijo y medir calidad/tiempos reales.
+- [ ] Adjuntos, identidad/cobertura/cierre y asociación TC con Bitrix pendientes. Creación de tareas desactivada.
+
+[Instalación y límites](vista-previa-resumen-ikono.md) · [mediciones](medicion-resumen-0.6.0.json).
