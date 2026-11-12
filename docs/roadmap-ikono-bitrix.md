@@ -262,3 +262,6 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - Nueva ruta daily_summary_test, validada antes del recorte anterior de 40: hasta 250 mensajes / 48000 caracteres / 4000 por mensaje, una llamada mini con 600 tokens máximos, caché del mismo conjunto. Rechaza mezcla de días/TC, duplicados o exceso sin truncar. Descripción diaria separada del resumen inmediato.
 - Cobertura declarada por asesor, no certificada por iKono; falta automatizar fechas y paginación de historial. La revisión manual es necesaria para este ensayo. Mensajes mezclados requieren separación humana. Sin audio ni fotos en esta ruta.
 - Seis pruebas locales aprobadas: conservación de 80 mensajes, rechazos de alcance/límites, captura diaria y panel Chromium. Pendiente ensayo real por el usuario. Bitrix continúa sin creación ni transición.
+
+
+Servicio diario desplegado READY desde 9cb4968b05d9a339322d44ceb952aa414a83d86f. Ensayo remoto solo ficticio: 60 mensajes recibidos, HTTP 200, daily-reviewed-v1, 995 tokens de entrada y 97 de salida; sin garantía de coste fijo ni latencia. Chromium adicional verificó generación diaria simulada hasta descripción. Conserva ediciones de descripción hechas durante solicitud. Creación Bitrix desactivada.
