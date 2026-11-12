@@ -12,5 +12,8 @@ test('API summary mode bypasses knowledge loading and uses the compact service',
  const modulePath=require.resolve('../api/assistant-chat');delete require.cache[modulePath];
  try{let payload;global.fetch=async(url,options)=>{payload=JSON.parse(options.body);return {ok:true,json:async()=>({output_text:'Resumen ficticio',status:'completed'})};};const handler=require('../api/assistant-chat');let code,body;const res={setHeader(){},status(c){code=c;return this;},json(value){body=value;return this;}};
  await handler({method:'POST',body:{mode:'summary_test',question:'Resume',conversation:[{role:'customer',text:'Consulta ficticia'}]}},res);assert.equal(code,200);assert.equal(body.summaryMode,'compact-v1');assert.equal(payload.max_output_tokens,450);
+ await handler({method:'POST',body:{mode:'image_ocr_test',question:'OCR',conversation:[{role:'customer',text:'tc70999@ad'}]}},res);assert.equal(code,200);assert.equal(payload.max_output_tokens,250);assert.match(payload.input[0].content,/OCR no verificado/);assert(!payload.input.some(x=>x.content.includes('data:image')));
+ await handler({method:'POST',body:{mode:'image_ocr_test',question:'OCR',conversation:Array.from({length:3},()=>({text:'Foto'}))}},res);assert.equal(code,400);
+ await handler({method:'POST',body:{mode:'image_ocr_test',question:'OCR',conversation:[{text:'a'.repeat(1201)}]}},res);assert.equal(code,400);
  }finally{config.readConfig=previousRead;global.fetch=previousFetch;if(previousKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=previousKey;delete require.cache[modulePath];}
 });

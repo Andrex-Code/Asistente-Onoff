@@ -1,29 +1,32 @@
 (() => {
  if(window.__onoffAutoSummary)return;window.__onoffAutoSummary=true;
  const host=document.createElement('div');host.id='onoff-ikono-auto-summary';host.style='position:fixed;right:12px;top:12px;z-index:2147483647;display:none';
- const root=host.attachShadow({mode:'open'});root.innerHTML=`<style>section{font:14px system-ui;background:white;color:#183038;border:1px solid #789;border-radius:12px;padding:16px;width:min(380px,calc(100vw - 56px));max-height:65vh;overflow:auto;box-shadow:0 2px 12px #777}h3{margin:0 0 8px}textarea{width:100%;height:150px;box-sizing:border-box}small{display:block;margin:8px 0}label{display:block;margin:8px 0}select,input{max-width:95%}section>button{float:right}</style><section><button aria-label="Ocultar resumen">×</button><h3>Resumen automático · 0.4.0</h3><p role="status"></p><textarea aria-label="Resumen editable" placeholder="El resumen aparecerá aquí"></textarea><small>Texto cargado en pantalla → servicio IA del Asistente ONOFF. Historial completo sin verificar; adjuntos excluidos. Sin cierre ni envío a Bitrix.</small></section>`;document.body.append(host);
+ const root=host.attachShadow({mode:'open'});root.innerHTML=`<style>section{font:14px system-ui;background:white;color:#183038;border:1px solid #789;border-radius:12px;padding:16px;width:min(380px,calc(100vw - 56px));max-height:65vh;overflow:auto;box-shadow:0 2px 12px #777}h3{margin:0 0 8px}textarea{width:100%;height:150px;box-sizing:border-box}small{display:block;margin:8px 0}label{display:block;margin:8px 0}select,input{max-width:95%}section>button{float:right}</style><section><button aria-label="Ocultar resumen">×</button><h3>Resumen automático · 0.4.0</h3><p role="status"></p><textarea aria-label="Resumen editable" placeholder="El resumen aparecerá aquí"></textarea><small>Texto cargado en pantalla → servicio IA del Asistente ONOFF. Historial completo sin verificar. Fotos: complemento aparte; audios excluidos. Sin cierre ni envío a Bitrix.</small></section>`;document.body.append(host);
  const status=t=>root.querySelector('[role=status]').textContent=t;const draft=root.querySelector('textarea');
- let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='';
- root.querySelector('h3').textContent='Resumen y TC · 0.6.0';
+ let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='',tcSignature='',imageCandidates=[];
+ let imageReader;
+ root.querySelector('h3').textContent='Resumen, TC y fotos · 0.7.0';
  const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Sin consulta ni creación en Bitrix. La confirmación no valida su asociación.</small>';
  root.querySelector('h3').after(tcBox);const el=id=>root.getElementById(id);
  function resetTC(){confirmedTC='';el('verified').checked=false;el('tcStatus').textContent='TC pendiente de confirmación. No se puede preparar una tarea.';}
  function title(){const d=[...document.querySelectorAll('[role="dialog"]')].find(d=>(d.getAttribute('aria-label')||document.getElementById(d.getAttribute('aria-labelledby'))?.textContent||'').trim()==='Resolver conversación');return d?.textContent.match(/Estás seguro[\s\S]*?conversación\s*['"]([^'"]+)['"]/i)?.[1]||document.querySelector('.mx_RoomHeader .mx_RoomHeader_name')?.textContent?.trim()||'';}
  function refreshTC(){
-  const next=title();if(next===source)return;source=next;resetTC();el('manual').value='';el('tc').replaceChildren();
-  const candidates=ONOFFIkonoTC.parseTCCandidates(source),codes=candidates.map(c=>c.code);
+  const next=title(),signature=next+JSON.stringify(imageCandidates);if(signature===tcSignature)return;tcSignature=signature;source=next;resetTC();el('manual').value='';el('tc').replaceChildren();
+  const named=ONOFFIkonoTC.parseTCCandidates(source),merged=new Map(named.map(c=>[c.code,c]));
+  for(const c of imageCandidates)if(!merged.has(c.code))merged.set(c.code,{...c,source:'photo'});
+  const candidates=[...merged.values()],codes=candidates.map(c=>c.code);
   const add=(value,text)=>{const o=document.createElement('option');o.value=value;o.textContent=text;el('tc').append(o);};
-  add('','Seleccionar TC');for(const c of candidates)add(c.code,c.code+(c.source==='position'?' (número sin prefijo; confirmar)':''));add('manual','Ingresar otra TC');
+  add('','Seleccionar TC');for(const c of candidates)add(c.code,c.code+(c.source==='position'?' (número sin prefijo; confirmar)':c.source==='photo'?` (foto ${c.photo}; verificar OCR)`:''));add('manual','Ingresar otra TC');
   if(codes.length===1)el('tc').value=codes[0];if(!codes.length)el('tc').value='manual';
-  el('source').textContent=codes.length?`TC candidatas del nombre: ${codes.join(', ')}. Confirma con el cliente cuál recibió atención.`:'No se detectó TC en el nombre. Ingrésala y confírmala con el cliente.';
+  el('source').textContent=codes.length?`TC candidatas del nombre/fotos: ${codes.join(', ')}. Confirma con el cliente cuál recibió atención.`:'No se detectó TC en el nombre. Ingrésala y confírmala con el cliente.';
  }
  el('tc').onchange=resetTC;el('manual').oninput=resetTC;el('verified').onchange=()=>{confirmedTC='';el('tcStatus').textContent='TC pendiente de confirmación.';};
  el('confirm').onclick=()=>{if(!active){el('tcStatus').textContent='Abre el formulario para confirmar la TC de esta atención.';return;}refreshTC();const value=el('tc').value==='manual'?el('manual').value.trim().replace(/\s/g,'').toUpperCase():el('tc').value;if(!/^TC\d+$/.test(value)||!el('verified').checked){el('tcStatus').textContent='Selecciona una TC válida y confirma que la verificaste con el cliente.';return;}confirmedTC=value;el('tcStatus').textContent=`${confirmedTC} confirmada por el asesor para esta prueba. Bitrix sin consulta ni creación.`;};
  new MutationObserver(()=>{if(active)refreshTC();}).observe(document.body,{childList:true,subtree:true,characterData:true});
  draft.oninput=()=>{if(cache)cache.text=draft.value;};
  function cancel(){clearTimeout(timer);revision++;controller?.abort();controller=null;pendingKey='';}
- function clear(){cancel();active=false;room=location.hash;cache=null;source='';resetTC();el('manual').value='';el('tc').replaceChildren();draft.value='';host.style.display='none';}
- root.querySelector('button').onclick=()=>{cancel();host.style.display='none';};window.addEventListener('hashchange',clear);
+ function clear(){cancel();imageReader?.clear();imageCandidates=[];tcSignature='';active=false;room=location.hash;cache=null;source='';resetTC();el('manual').value='';el('tc').replaceChildren();draft.value='';host.style.display='none';}
+ root.querySelector('button').onclick=()=>{cancel();imageReader?.stop();active=false;host.style.display='none';};window.addEventListener('hashchange',clear);
  function messages(){const seen=new Set(),all=[];for(const node of document.querySelectorAll('li.mx_EventTile[data-event-id]')){const id=node.getAttribute('data-event-id'),self=node.getAttribute('data-self');if(!id||seen.has(id)||!['true','false'].includes(self)||node.matches('.mx_EventTile_info')||node.querySelector('.mx_MNoticeBody,.mx_EventTile_info,[data-event-type*="notice"]'))continue;const text=node.querySelector('.mx_EventTile_body.translate')?.textContent?.trim();if(!text)continue;seen.add(id);all.push({role:self==='true'?'advisor':'customer',text});}return all;}
  async function generate(){
   if(!active||location.hash!==room)return;
@@ -38,9 +41,10 @@
   catch(e){if(token===revision)status(e.name==='AbortError'?'La solicitud agotó el tiempo de espera.':'No se pudo generar: '+e.message);}
   finally{clearTimeout(timeout);if(controller===request){controller=null;pendingKey='';}}
  }
+ imageReader=window.ONOFFIkonoImages?.create({root,onCandidates:values=>{if(active){imageCandidates=values;refreshTC();}}});
  ONOFFIkonoCloseProbe.installProbe(window,{enabled:true,readClassification:ONOFFIkonoClassification.readClassification,onEvent:e=>{
   // Start from the opening of the native form, independently of its fields.
-  if(e.type==='dialog-opened'){cancel();active=true;room=location.hash;draft.value='';source='invalid';refreshTC();host.style.display='';generate();}
-  if(['cancel-requested','resolution-requested','dialog-disappeared'].includes(e.type)){cancel();active=false;resetTC();if(!draft.value)status('Formulario cerrado. Generación detenida.');}
+  if(e.type==='dialog-opened'){cancel();active=true;room=location.hash;draft.value='';tcSignature='invalid';refreshTC();host.style.display='';generate();imageReader?.start();}
+  if(['cancel-requested','resolution-requested','dialog-disappeared'].includes(e.type)){cancel();imageReader?.stop();active=false;resetTC();if(!draft.value)status('Formulario cerrado. Generación detenida.');}
  }});
 })();
