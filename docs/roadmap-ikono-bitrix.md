@@ -169,3 +169,14 @@ Módulo desactivado por defecto y fuera del manifiesto; 3 pruebas DOM locales ap
 - [ ] Verificar identidad, cobertura completa y cierre antes de habilitar el recorrido definitivo hacia Bitrix.
 
 [Instalación, prueba y límites](vista-previa-resumen-ikono.md). La espera inicia la solicitud; no garantiza recibir el resumen en dos segundos.
+
+
+## TC y resumen 0.5.0 · 2026-11-12
+
+- [x] Detección de TC en el nombre y confirmación humana local; varias TC requieren elección; ninguna permite ingreso manual. No valida asociación en Bitrix.
+- [x] Resumen breve y reutilización del mismo tramo sin llamadas repetidas por cambios de tipificación; muestra tiempo de generación.
+- [x] 43 comprobaciones locales aprobadas; flujo nuevo con formulario e IA simulados.
+- [ ] Verificar 0.5.0 con el asesor en Brave y medir tiempos/calidad reales.
+- [ ] Verificar adjuntos, identidad/cobertura/cierre y asociación TC → compañía/negociación antes de habilitar tareas.
+
+**Creación en Bitrix desactivada.** [Prueba, instalación y límites](vista-previa-resumen-ikono.md).
