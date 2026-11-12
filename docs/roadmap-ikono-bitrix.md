@@ -1,3 +1,15 @@
+## Estado actual · piloto de creación desde extensión 0.15.0
+
+Preparación firmada sin escritura y creación PRUEBA tras cierre humano y transición DOM a Resuelto de la misma sala. Plantilla/equipo y campos personalizados verificados por REST. Reserva privada evita repetir task.add y permite recuperar la etapa de la misma tarea. Pruebas simuladas aprobadas; validación real desde la extensión pendiente. Escritura restringida a un único piloto autorizado; main intacta. Ver [recorrido y límites](piloto-creacion-extension-0.15.0.md).
+
+| Recorrido | Estado |
+|---|---|
+| Memoria, TC y resumen revisado | Implementado |
+| Plantilla, CRM y campos | Verificados en lectura |
+| Creación desde extensión y reintentos | Pruebas simuladas aprobadas |
+| Primera creación real desde extensión | Pendiente del asesor |
+| Cobertura diaria automática y despliegue general | Pendientes |
+
 ## Estado actual · primera tarea PRUEBA asistida
 
 Primera creación real autorizada por el usuario, realizada de forma asistida en la interfaz de Bitrix y verificada tras recargar. La extensión continúa sin creación automática. El formulario de resolución de iKono quedó abierto; el asistente no confirmó el cierre.
@@ -322,3 +334,4 @@ Servicio corregido desplegado READY en dpl_64yZ8cCe9gEgxumdELfSH9Bh3Zqx desde f8
 - Creación confirmada por radicado, ficha visible y consulta API de solo lectura. Se pasó a Finalizadas Solicitud, conforme a la instrucción del usuario, sin pulsar Completar. Tras recargar persistieron descripción PRUEBA, campos, CRM y etapa. La tarea conserva estado Pendiente, distinto de etapa del tablero.
 - No se modificó el borrador previo del usuario, no se creó una tarea para el segundo candidato que ya tenía una abierta, y no se enviaron mensajes al cliente ni se pulsó resolución en iKono. Versión visible de extensión 0.14.0; Resolver seguía abierto al terminar.
 - Evidencia privada local: captura antes/después y registro con radicado/TC/CRM. No se publican identificadores ni datos de cliente en GitHub. Esta creación asistida no valida todavía creación desde extensión/API, idempotencia persistente ni cierre nativo automático. F02 y límites de historial/identidad siguen abiertos.
+

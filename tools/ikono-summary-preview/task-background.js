@@ -1,0 +1,20 @@
+importScripts('pilot-auth.js');
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+ if(m?.type!=='ONOFF_TASK_PILOT')return false;
+ let url;try{url=new URL(sender.url);}catch{return false;}
+ if(sender.id!==chrome.runtime.id||!sender.tab||!['https://onoff.a.ikono.im','https://onoff.s.ikono.im'].includes(url.origin))return false;
+ (async()=>{
+  const auth=self.ONOFF_TASK_PILOT;if(!auth||auth.expires<Date.now())throw Error('Piloto no configurado o vencido.');
+  if(m.action==='info')return {tc:auth.tc,room:auth.room,expires:auth.expires,previousTaskId:auth.previousTaskId};
+  if(!['prepare','commit','resume'].includes(m.action))throw Error('Acción inválida.');
+  const key='onoff-task-pilot-'+auth.scope;
+  if(m.action==='resume'){const saved=(await chrome.storage.local.get(key))[key];if(!saved?.evidence)throw Error('No hay cierre verificado pendiente de consultar.');m={...saved,action:'commit'};}
+  if(m.action==='prepare'&&(m.payload?.room!==url.hash||m.payload?.room!==auth.room||m.payload?.tc!==auth.tc))throw Error('Este piloto solo permite la TC y sala autorizadas.');
+  if(m.action==='commit')await chrome.storage.local.set({[key]:{intent:m.intent,evidence:m.evidence}});
+  const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:m.action,payload:m.payload,intent:m.intent,evidence:m.evidence}),signal:AbortSignal.timeout(55000)});
+  const data=await r.json();if(!r.ok||!data.ok)throw Error(data.error||'Servicio no disponible.');
+  if(m.action==='commit')await chrome.storage.local.set({[key]:{...((await chrome.storage.local.get(key))[key]),result:data.data}});
+  return data.data;
+ })().then(data=>reply({ok:true,data}),e=>reply({ok:false,error:e.message||'Sin respuesta. Consulta el resultado antes de reintentar.'}));return true;
+});
+

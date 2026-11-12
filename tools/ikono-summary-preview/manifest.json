@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.14.0",
-  "description": "Resumen por chat y vista previa revisada. Sin creación de tareas Bitrix ni cierre automático.",
+  "version": "0.15.0",
+  "description": "Resumen por chat y piloto de tarea PRUEBA tras cierre humano verificado. Confirmación de TC y revisión obligatorias.",
   "permissions": [
     "activeTab",
     "scripting",
-    "offscreen"
+    "offscreen",
+    "storage"
   ],
+  "host_permissions": ["https://asistente-onoff.vercel.app/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
@@ -43,9 +45,11 @@
         "images.js",
         "auto.js",
         "task.js",
+        "task-create.js",
         "dashboard.js"
       ],
       "run_at": "document_idle"
     }
   ]
 }
+

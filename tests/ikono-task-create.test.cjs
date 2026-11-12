@@ -1,0 +1,28 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+const {createService,unseal,ids}=require('../lib/ikono-task-pilot');
+process.env.AUTH_SECRET='test-only-signing-key';
+const mapping={category:'UF_CATEGORY',detail:'UF_DETAIL',phone:'UF_PHONE',tc:'UF_TC'};
+const now=Date.parse('2026-11-12T20:00:00Z');
+const c={tc:'5046',dealId:'20934',companyId:'30342',actor:'2315788',room:'#/room/test',scope:'fixture',expires:now+86400000,fields:mapping};
+const payload={tc:c.tc,dealId:c.dealId,room:c.room,tcConfirmed:true,reviewed:true,duplicateAcknowledged:true,day:'2026-11-12',category:'FALLAS EN SOFTWARE',detail:'PENDIENTES POR SINCRONIZAR',description:'TIPIFICACIÓN DEL CHAT\nMotivo: Sincronización\nGestión: Revisión\nResultado: Pendiente del radicado anterior.',phone:'573000000000',revision:'a'.repeat(64)};
+function fixture(options={}){let task=null,adds=0,moves=0;const records=new Map();const service=createService({now:()=>now,storage:{get:async p=>records.has(p)?{statusCode:200,stream:new Blob([records.get(p)]).stream()}:null,put:async(p,b,o)=>{if(!o.allowOverwrite&&records.has(p))throw Error('exists');records.set(p,b);return {}; }},bitrix:async(m,p)=>{
+ if(m==='tasks.template.get')return {GROUP_ID:'53',RESPONSIBLE_ID:'931952',ACCOMPLICES:'a:2:{i:0;s:3:"211";i:1;s:6:"490253";}',AUDITORS:'a:1:{i:0;s:7:"1870252";}',UF_PRODUCT:'TRYTIENDAS',REPLICATE:'N'};
+ if(m==='tasks.task.getFields')return {fields:Object.fromEntries([...Object.values(mapping),'UF_PRODUCT'].map(k=>[k,{title:k,type:'string'}]))};
+ if(m==='task.stages.get')return {1421:{ID:'1421',TITLE:'Finalizadas Solicitud'}};
+ if(m==='crm.deal.get')return {COMPANY_ID:c.companyId,UF_CRM_1642606760058:c.tc};
+ if(m==='tasks.task.add'){adds++;task={id:'900',xmlId:p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
+ if(m==='tasks.task.get')return {task};
+ if(m==='tasks.task.list')return {tasks:task?[task]:[]};
+ if(m==='task.stages.movetask'){moves++;if(options.moveFails&&moves===1)throw Error('stage unavailable');task.stageId=String(p.stageId);return true;}
+ throw Error(m);
+ }});return {service,stats:()=>({adds,moves,task}),records};}
+const evidence={room:c.room,revision:payload.revision,before:'En seguimiento',after:'Resuelto',clickedAt:now};
+test('prepare preserves template/team, maps fields, marks PRUEBA and never creates',async()=>{const f=fixture(),p=await f.service.prepare(c,payload),s=unseal(p.intent);assert.equal(f.stats().adds,0);assert.deepEqual(s.fields.ACCOMPLICES,['211','490253']);assert.equal(s.fields.RESPONSIBLE_ID,'931952');assert.equal(s.fields.UF_PRODUCT,'TRYTIENDAS');assert.match(s.fields.DESCRIPTION,/PRUEBA/);assert.equal(s.fields.UF_CATEGORY,payload.category);assert.deepEqual(s.fields.UF_CRM_TASK,['D_20934','CO_30342']);assert.equal(s.fields.REPLICATE,'N');});
+test('wrong TC, room, deal or missing review cannot prepare',async()=>{for(const change of [{tc:'5058'},{room:'#/other'},{dealId:'999'},{reviewed:false},{tcConfirmed:false},{duplicateAcknowledged:false}])await assert.rejects(fixture().service.prepare(c,{...payload,...change}));});
+test('click or vanished dialog alone cannot create; signature tampering rejected',async()=>{const f=fixture(),p=await f.service.prepare(c,payload);for(const change of [undefined,{...evidence,after:'Pendiente'},{...evidence,room:'#/other'},{...evidence,revision:'x'}])await assert.rejects(f.service.commit(c,{intent:p.intent,evidence:change}));assert.equal(f.stats().adds,0);await assert.rejects(f.service.commit(c,{intent:p.intent+'x',evidence}));});
+test('verified close creates once and repeat requests recover same task',async()=>{const f=fixture(),p=await f.service.prepare(c,payload);const a=await f.service.commit(c,{intent:p.intent,evidence});const b=await f.service.commit(c,{intent:p.intent,evidence});assert.equal(a.taskId,b.taskId);assert.equal(f.stats().adds,1);assert.equal(f.stats().moves,1);});
+test('ambiguous task.add timeout never repeats add and reconciles XML_ID',async()=>{const f=fixture({timeout:true}),p=await f.service.prepare(c,payload);await assert.rejects(f.service.commit(c,{intent:p.intent,evidence}),/sin respuesta/);const r=await f.service.commit(c,{intent:p.intent,evidence});assert.equal(r.taskId,'900');assert.equal(f.stats().adds,1);});
+test('stage failure retries only move, preserving single created task',async()=>{const f=fixture({moveFails:true}),p=await f.service.prepare(c,payload);await assert.rejects(f.service.commit(c,{intent:p.intent,evidence}));await f.service.commit(c,{intent:p.intent,evidence});assert.equal(f.stats().adds,1);assert.equal(f.stats().moves,2);});
+test('simultaneous submissions reserve one creation',async()=>{const f=fixture(),p=await f.service.prepare(c,payload);await Promise.allSettled([f.service.commit(c,{intent:p.intent,evidence}),f.service.commit(c,{intent:p.intent,evidence})]);assert.equal(f.stats().adds,1);});
+test('safe numeric PHP team parser reads template arrays',()=>assert.deepEqual(ids('a:2:{i:0;s:3:"211";i:1;s:6:"490253";}'),['211','490253']));
+
