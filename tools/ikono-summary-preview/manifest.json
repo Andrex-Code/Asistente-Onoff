@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "Resumen por chat y vista previa revisada. Sin creación de tareas Bitrix ni cierre automático.",
   "permissions": [
     "activeTab",

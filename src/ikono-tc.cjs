@@ -6,6 +6,9 @@ function parseTCCandidates(name) {
  // Unlabelled numbers: only at the start of the name or a parenthesized name.
  // 1–9 digits is a heuristic to exclude phone numbers, not a validated TC format.
  for(const m of text.matchAll(/(?:^|\()\s*(\d{1,9})(?!\d)\s*[-–—:]?\s*(?=\p{L})/gu))add(m[1],'position');
+ // A short numeric suffix separated from the customer's name is only a candidate.
+ const suffix=text.match(/^[^()\d]{1,120}[-–—]\s*(\d{1,9})(?!\d)(?=\s*(?:\(|$))/u);
+ if(suffix&&!(suffix[1].length===4&&Number(suffix[1])>=1900&&Number(suffix[1])<=2099))add(suffix[1],'position');
  return [...found.values()];
 }
 if(typeof module!=='undefined'&&module.exports)module.exports={parseTCCandidates};

@@ -7,3 +7,5 @@ test('extracts deduplicated numeric prefixes of person and business names, exclu
  assert.deepEqual(parse('573227142843Cliente'),[]);
  assert.deepEqual(parse('70999Cliente TC70999'),[{code:'TC70999',source:'explicit'}]);
 });
+
+test('short suffix after a name is a candidate, while phone numbers and ambiguous years are excluded',()=>{assert.deepEqual(parse('Cliente-61523 (573000000000)').map(c=>c.code),['TC61523']);assert.deepEqual(parse('Cliente - 573000000000'),[]);assert.deepEqual(parse('Negocio-2026'),[]);});
