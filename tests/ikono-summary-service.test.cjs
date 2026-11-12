@@ -23,3 +23,5 @@ test('API summary mode bypasses knowledge loading and uses the compact service',
  await handler({method:'POST',body:{mode:'image_ocr_test',question:'OCR',conversation:[{text:'a'.repeat(1201)}]}},res);assert.equal(code,400);
  }finally{config.readConfig=previousRead;global.fetch=previousFetch;if(previousKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=previousKey;delete require.cache[modulePath];}
 });
+
+test('unverified attention closure is rejected rather than displayed as final result',async()=>{const {summarize}=require('../lib/ikono-summary');await assert.rejects(()=>summarize([{text:'El cliente confirma que ya sincroniza.'}],'fake',{fetchImpl:async()=>({ok:true,json:async()=>({output_text:'Resultado: Atención finalizada.'})})}),/cierre de atención/);});

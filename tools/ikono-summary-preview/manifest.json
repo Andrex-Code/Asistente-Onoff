@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.12.0",
+  "version": "0.13.1",
   "description": "Resumen por chat y vista previa revisada. Sin creación de tareas Bitrix ni cierre automático.",
   "permissions": [
     "activeTab",
@@ -34,6 +34,7 @@
         "https://onoff.s.ikono.im/*"
       ],
       "js": [
+        "move.js",
         "memory.js",
         "classification.js",
         "probe.js",

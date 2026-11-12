@@ -3,7 +3,7 @@ chrome.action.onClicked.addListener(async tab => {
   let url;
   try { url = new URL(tab.url); } catch { return; }
   if (!tab.id || url.protocol !== 'https:' || !['onoff.a.ikono.im','onoff.s.ikono.im'].includes(url.hostname)) return;
-  try { await chrome.scripting.executeScript({target:{tabId:tab.id},files:['guard.js','memory.js','classification.js','probe.js','tc.js','image-evidence.js','images.js','auto.js','task.js','dashboard.js']}); }
+  try { await chrome.scripting.executeScript({target:{tabId:tab.id},files:['guard.js','move.js','memory.js','classification.js','probe.js','tc.js','image-evidence.js','images.js','auto.js','task.js','dashboard.js']}); }
   catch { /* No alternate access or silent retry. */ }
 });
 let creating;
