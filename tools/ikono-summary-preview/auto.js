@@ -7,7 +7,7 @@
  let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='',tcSignature='',imageCandidates=[];
  let imageReader,lastObserved='',lastAttempt=0,edited=false,lastMemory=null;
  const memory=()=>window.ONOFFIkonoMemory?.get(location.hash);
- root.querySelector('h3').textContent='Resumen y vista previa · 0.16.0';
+ root.querySelector('h3').textContent='Resumen y vista previa · 0.16.1';
  const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Consulta de TC en la vista previa. Piloto PRUEBA requiere revisión y cierre humano.</small>';
  root.querySelector('h3').after(tcBox);window.ONOFFMovable?.(host,root.querySelector('h3'));const el=id=>root.getElementById(id);
  function saveTC(target=memory()){if(target)target.tcState={source,selected:el('tc').value,manual:el('manual').value,confirmed:confirmedTC,verified:el('verified').checked,imageSignature:JSON.stringify(imageCandidates),seen:[...target.messages.entries()].map(([id,m])=>[id,m.text])};}
