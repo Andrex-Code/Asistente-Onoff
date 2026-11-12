@@ -1,3 +1,7 @@
+## Estado actual · primera tarea PRUEBA asistida
+
+Primera creación real autorizada por el usuario, realizada de forma asistida en la interfaz de Bitrix y verificada tras recargar. La extensión continúa sin creación automática. El formulario de resolución de iKono quedó abierto; el asistente no confirmó el cierre.
+
 # Roadmap · Automatización de trazabilidad iKono → Bitrix
 
 **Inicio:** 2026-11-11. **Estado:** F01 · Análisis, en curso. **Ámbito:** Asistente ONOFF (extensión Chrome/Edge + backend Vercel). **Modo inicial:** confirmación humana. **Producción:** sin cambios.
@@ -309,3 +313,12 @@ Servicio corregido desplegado READY en dpl_64yZ8cCe9gEgxumdELfSH9Bh3Zqx desde f8
 - El usuario autorizó una futura primera tarea asistida sobre clientes que atiende, marcada PRUEBA. Dos candidatos revisados por TC exacta: ambos con negociación única; la consulta de uno no devolvió tareas, el otro ya tiene una tarea abierta y requiere revisar duplicidad. Datos de contactos, IDs CRM y capturas conservados solo en dist privado, no publicados.
 - Durante verificación: ninguna tarea creada ni transición Bitrix, ningún mensaje enviado ni cierre nativo. La extensión mantiene creación desactivada. La primera creación será asistida en la UI de Bitrix desde PRIMER CONTACTO, descripción con PRUEBA, después de revisar TC, clasificación, resumen diario/resultado y vínculo CRM con el formulario humano abierto. Asunto conserva la regla TC + TIPIFICACIÓN + detalle en mayúsculas. El cierre en iKono lo realiza el asesor.
 - Preparación 0.14.0 lista; pendiente carga del usuario y primera ejecución real. Creación desde la extensión/API e idempotencia persistente siguen fuera de esta versión.
+
+
+### 2026-11-12 · Primera tarea PRUEBA creada y verificada
+- Usuario eligió un contacto real autorizado y dejó abierto Resolver con categoría/detalle. Se releyeron las selecciones actuales y el tramo de texto bajo el separador hoy, excluyendo contactos históricos anteriores al marcador. Se preparó manualmente un resumen Motivo/Gestión/Resultado con PRUEBA visible, sin números de documento, correos ni imágenes de identificación.
+- La revisión distingue solicitud de retiro pendiente de validación, cancelación efectiva del servicio y cierre del contacto por inactividad. No se afirmó cancelación del servicio ni cierre nativo confirmado.
+- Consulta previa de tareas no devolvió registros para la TC elegida. Se creó una sola tarea desde PRIMER CONTACTO 477, conservando responsable/equipo/observador/proyecto/sin fecha límite y asignando negociación y compañía exactas. Tipo de Incidencia y Tipificación TI replican respectivamente categoría y detalle de iKono; Plataforma contiene la TC, Gestión SAC la línea/contacto del chat y Producto/Prioridad conservan la plantilla. Tipificación 2 sin asignación por falta de regla.
+- Creación confirmada por radicado, ficha visible y consulta API de solo lectura. Se pasó a Finalizadas Solicitud, conforme a la instrucción del usuario, sin pulsar Completar. Tras recargar persistieron descripción PRUEBA, campos, CRM y etapa. La tarea conserva estado Pendiente, distinto de etapa del tablero.
+- No se modificó el borrador previo del usuario, no se creó una tarea para el segundo candidato que ya tenía una abierta, y no se enviaron mensajes al cliente ni se pulsó resolución en iKono. Versión visible de extensión 0.14.0; Resolver seguía abierto al terminar.
+- Evidencia privada local: captura antes/después y registro con radicado/TC/CRM. No se publican identificadores ni datos de cliente en GitHub. Esta creación asistida no valida todavía creación desde extensión/API, idempotencia persistente ni cierre nativo automático. F02 y límites de historial/identidad siguen abiertos.
