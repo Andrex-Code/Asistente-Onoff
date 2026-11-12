@@ -226,3 +226,14 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - [ ] Creación y consulta de asociación en Bitrix desactivadas; identidad/cobertura/cierre aún pendientes.
 
 [Regla, evidencia y límites](vista-previa-resumen-ikono.md).
+
+
+## Primera vista previa de tarea · inspección sin escritura
+
+- [x] Consulta de TC y revisión de negociación en Bitrix, solo lectura.
+- [x] Inspección del formulario detallado y siete campos personalizados; formulario descartado sin crear tarea.
+- [x] Vista previa local revisable con creación desactivada. Datos privados y capturas permanecen locales.
+- [ ] Confirmar asociación TC/negociación ante diferencias de nombre y varios establecimientos de una compañía.
+- [ ] Usuario debe definir diligenciamiento de campos, responsables, fechas y vínculo CRM; verificar IDs/tipos/opciones REST antes de implementar escritura.
+
+[Inventario observado y reglas pendientes](campos-tarea-bitrix-inspeccion.md). La creación permanece desactivada.
