@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ONOFF Â· Vista previa de resumen",
-  "version": "0.11.0",
-  "description": "Captura revisada, tipificaciÃ³n y borrador IA autorizado. Sin tareas Bitrix ni cierre automÃ¡tico.",
+  "name": "ONOFF · Chats y tipificaciones",
+  "version": "0.12.0",
+  "description": "Resumen por chat y vista previa revisada. Sin creación de tareas Bitrix ni cierre automático.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -41,7 +41,8 @@
         "image-evidence.js",
         "images.js",
         "auto.js",
-        "task.js"
+        "task.js",
+        "dashboard.js"
       ],
       "run_at": "document_idle"
     }
