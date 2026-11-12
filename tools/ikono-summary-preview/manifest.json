@@ -1,11 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "ONOFF · Vista previa de resumen",
-  "version": "0.8.0",
-  "description": "Captura revisada, tipificación y borrador IA autorizado. Sin tareas Bitrix ni cierre automático.",
-  "permissions": ["activeTab", "scripting", "offscreen"],
-  "content_security_policy": {"extension_pages":"script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"},
-  "action": {"default_title": "Abrir vista previa de resumen"},
-  "background": {"service_worker": "background.js"},
-  "content_scripts": [{"matches":["https://onoff.a.ikono.im/*","https://onoff.s.ikono.im/*"],"js":["classification.js","probe.js","tc.js","image-evidence.js","images.js","auto.js"],"run_at":"document_idle"}]
+  "name": "ONOFF Â· Vista previa de resumen",
+  "version": "0.9.0",
+  "description": "Captura revisada, tipificaciÃ³n y borrador IA autorizado. Sin tareas Bitrix ni cierre automÃ¡tico.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "offscreen"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "action": {
+    "default_title": "Abrir vista previa de resumen"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://onoff.a.ikono.im/*",
+        "https://onoff.s.ikono.im/*"
+      ],
+      "js": [
+        "classification.js",
+        "probe.js",
+        "tc.js",
+        "image-evidence.js",
+        "images.js",
+        "auto.js",
+        "task.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

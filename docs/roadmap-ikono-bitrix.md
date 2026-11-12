@@ -247,3 +247,11 @@ TC detectada en Brave confirmada por el usuario; asociación y creación en Bitr
 - Inspección DOM: sala accesible desde inicio hasta cierre; el texto disponible carece de fecha absoluta por mensaje y separadores de fecha. Una hora aislada no certifica el día. Resumen provisional marcado como tal; pendiente verificar cobertura diaria y separación por TC.
 - Añadidos módulos puros de captura diaria y composición de vista previa, con cuatro pruebas. No están integrados todavía al capturador de la extensión ni al backend; el flujo instalado continúa limitado al texto montado y al límite vigente de mensajes. No se publica una nueva versión ni se afirma captura diaria completa.
 - Sin creación, guardado de borradores, adjuntos, cambios de etapa ni otras escrituras en Bitrix. Tras una futura creación autorizada y verificación del ID, la etapa prevista es Finalizadas Solicitud; transición actualmente desactivada.
+
+
+### Extensión 0.9.0 · Vista previa integrada
+- Panel desplegable PRIMER CONTACTO con valores de plantilla 477 verificados el 12/11/2026; no lectura dinámica de la plantilla. Conserva responsable, proyecto, equipo y observador, sin fecha límite ni recurrencia.
+- Campos categoría/detalle/TC y teléfono disponibles en DOM; descripción provisional editable. Consulta de TC exclusivamente de lectura, tras confirmación humana; selección explícita de negociación cuando hay varias. No existe llamada de creación ni transición de etapa.
+- Acumulación local de textos por sala y día de Colombia, deduplicados por evento; navegación y cambio de día limpian datos. Cuenta fechas desconocidas y muestra cobertura pendiente.
+- Límite explícito: la acumulación NO se conecta todavía al resumen IA. Continúa hasta 40 textos montados, sin garantizar hoy ni separación por TC. El panel lo advierte y pide revisión/separación; no se declara resumen diario completo ni filtrado automático por TC implementado.
+- Seis pruebas locales pasaron, incluyendo Chromium con consulta simulada, bloqueo sin confirmación, dos negociaciones, selección exacta y creación desactivada. El escenario afectado se repitió tras ajustes. No equivale a validación real en iKono. Paquete local 0.9.0 preparado; pendiente recarga por el usuario.

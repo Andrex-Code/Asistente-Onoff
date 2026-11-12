@@ -5,8 +5,8 @@
  const status=t=>root.querySelector('[role=status]').textContent=t;const draft=root.querySelector('textarea');
  let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='',tcSignature='',imageCandidates=[];
  let imageReader;
- root.querySelector('h3').textContent='Resumen, TC y fotos · 0.8.0';
- const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Sin consulta ni creación en Bitrix. La confirmación no valida su asociación.</small>';
+ root.querySelector('h3').textContent='Resumen y vista previa · 0.9.0';
+ const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Consulta opcional de TC en la vista previa. Creación desactivada.</small>';
  root.querySelector('h3').after(tcBox);const el=id=>root.getElementById(id);
  function resetTC(){confirmedTC='';el('verified').checked=false;el('tcStatus').textContent='TC pendiente de confirmación. No se puede preparar una tarea.';}
  function title(){const d=[...document.querySelectorAll('[role="dialog"]')].find(d=>(d.getAttribute('aria-label')||document.getElementById(d.getAttribute('aria-labelledby'))?.textContent||'').trim()==='Resolver conversación');return d?.textContent.match(/Estás seguro[\s\S]*?conversación\s*['"]([^'"]+)['"]/i)?.[1]||document.querySelector('.mx_RoomHeader .mx_RoomHeader_name')?.textContent?.trim()||'';}
