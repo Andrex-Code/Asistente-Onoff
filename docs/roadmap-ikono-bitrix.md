@@ -1,3 +1,7 @@
+## Estado actual · 0.21.0: TC contextual y recuadro condicional
+
+Detección general por contexto de TC en nombre/chat, con OCR acotado si hace falta. Sin número específico codificado. TC única clara: aviso compacto, consulta CRM y borrador preparados sin rellenar tarjeta blanca; el asesor confirma TC y resumen en el paso final antes de escribir en Bitrix. Sin TC o con ambigüedad: ingreso/elección explícitos. Se conservan fechas/atenciones, correcciones, completar después de etapa y reintentos. Ver [reglas y recorrido](piloto-creacion-extension-0.21.0.md). Ensayo real pendiente; main intacta.
+
 ## Estado actual · 0.20.1: etapa y tarea completada
 
 Las nuevas tareas verifican primero Finalizadas Solicitud y después estado Completada. Reintentos recuperan el mismo radicado y no repiten completar si ya llegó a estado 5. El éxito parcial no se presenta como tarea terminada. Incluye las correcciones de fecha, atención y diseño de 0.20.0. No se editan tareas previas automáticamente. Ver [guía y evidencia](piloto-creacion-extension-0.20.0.md#actualización-0201--etapa-y-después-completar). Main intacta.
