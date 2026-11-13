@@ -1,3 +1,7 @@
+## 0.22.6 — validación de la sala actual
+
+122/122 pruebas de regresión y prueba independiente de extensión cargada aprobadas. Prepare consulta la URL actual de la pestaña y conserva los límites de origen y piloto; distingue cambio de sala de capacidad de una sola TC. Permisos limitados a los dos sitios iKono para leer la URL sin clic en barra. Ver [evidencia y actualización](sala-actual-piloto-0.22.6.md). Sin chats cerrados ni tareas creadas en esta corrección; main intacta.
+
 ## 0.22.5 — selector de TC sin pasos intermedios
 
 TC clara: sin selector. TC ausente/ambigua: escribir/elegir consulta CRM y prepara automáticamente; negociación única automática, varias requieren solo selección. Buscar TC y Confirmar establecimiento ocultos. Campos iKono, resumen y preparación vigentes siguen necesarios. Ver [recorrido](selector-tc-automatico-0.22.5.md). Main intacta.
