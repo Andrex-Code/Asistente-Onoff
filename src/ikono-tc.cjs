@@ -29,5 +29,15 @@ function parseChatTCCandidates(messages){
  }
  return [...found.values()];
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={parseTCCandidates,parseChatTCCandidates};
-if(typeof window!=='undefined')window.ONOFFIkonoTC={parseTCCandidates,parseChatTCCandidates};
+// Resolve name alternatives only with evidence from this captured contact.
+function attendedTC(messages,assessment){
+ const candidates=parseChatTCCandidates(messages),certain=candidates.filter(c=>!c.uncertain);
+ const codes=[...new Set(certain.map(c=>c.code))];if(codes.length>1)return '';
+ const quoted=String(assessment?.evidence||''),code=assessment?.chatTc;
+ const sources=(messages||[]).filter(m=>quoted&&String(m.text||'').includes(quoted));
+ const unambiguous=text=>!/[?¿]|\b(?:no|otra|anterior|antes|equivocad[ao]|ejemplo)\b/i.test(text);
+ if(/^TC\d{1,8}$/.test(code||'')&&sources.length&&sources.every(m=>unambiguous(m.text))){const q=parseChatTCCandidates([{text:quoted}]);if(q.length===1&&q[0].code===code&&!q[0].uncertain&&(!codes.length||codes[0]===code))return code;}
+ if(codes.length===1&&!candidates.some(c=>c.uncertain))return codes[0];return '';
+}
+if(typeof module!=='undefined'&&module.exports)module.exports={parseTCCandidates,parseChatTCCandidates,attendedTC};
+if(typeof window!=='undefined')window.ONOFFIkonoTC={parseTCCandidates,parseChatTCCandidates,attendedTC};

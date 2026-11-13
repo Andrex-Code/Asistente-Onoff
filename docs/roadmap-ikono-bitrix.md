@@ -1,3 +1,7 @@
+## 0.22.4 — TC atendida desde el chat
+
+El nombre puede contener varias TC: una afirmación inequívoca de la atención o la cita literal de la misma respuesta IA del resumen permite proponer la TC atendida. Sin llamada IA adicional; consulta CRM y confirmación final siguen obligatorias. Preguntas, conflictos y evidencia inventada no resuelven la TC. Ver [reglas y pruebas](tc-atendida-chat-0.22.4.md). Main intacta.
+
 ## 0.22.3 — recuperación integrada y revisión final
 
 110/110 pruebas aprobadas. Recuperación en cada arranque real del worker antes de nuevos envíos y alarmas; historial consultable con autorización vencida, escrituras siguen bloqueadas. Piloto vigente comprobado; ensayo autorizado con dos clientes consecutivos pendiente de ejecución del asesor. Ver [revisión](revision-recuperacion-0.22.3.md). Main intacta.
