@@ -1,3 +1,7 @@
+## Estado actual · 0.20.1: etapa y tarea completada
+
+Las nuevas tareas verifican primero Finalizadas Solicitud y después estado Completada. Reintentos recuperan el mismo radicado y no repiten completar si ya llegó a estado 5. El éxito parcial no se presenta como tarea terminada. Incluye las correcciones de fecha, atención y diseño de 0.20.0. No se editan tareas previas automáticamente. Ver [guía y evidencia](piloto-creacion-extension-0.20.0.md#actualización-0201--etapa-y-después-completar). Main intacta.
+
 ## Estado actual · 0.20.0: hoy, atención separada y estados visibles
 
 Confirmada en DOM la existencia de separadores Hoy/Ayer. Captura excluye otras fechas y fechas desconocidas, separa cierres/reaperturas y usa saludo de asesor como señal revisable. Memoria/resumen/fotos aislados por atención; selección visible de contacto de hoy. Resumen acotado completo sin recorte a 40. Alcance firmado por atención/TC para tareas separadas con reintentos idempotentes. TC única compacta, estados de carga, Resolver bloqueado durante preparación, confirmación centrada y contraste explícito. 59 pruebas pertinentes aprobadas; ensayo real de 0.20 pendiente. Ver [hallazgos y límites](piloto-creacion-extension-0.20.0.md). No se modifica la tarea anterior ni main.

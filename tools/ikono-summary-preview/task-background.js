@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
    const all=await chrome.storage.local.get(null),items=[];
    for(const [key,v]of Object.entries(all)){if(!key.startsWith('onoff-task-pilot-'+auth.scope+'-')||v.superseded)continue;let p;try{p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(v.intent.split('.')[0].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))));}catch{p={};}
     const confirmationExpires=Math.min(p.expires||Infinity,v.evidence?.clickedAt?v.evidence.clickedAt+15*60000:Infinity);
-    items.push({key,tc:v.tc||p.tc||'Sin TC',room:v.room||p.room||'',state:v.result?'created':v.phase==='failed'?'failed':v.evidence?(v.confirmed!==true?(confirmationExpires<Date.now()?'expired':'confirmation'):'pending'):'prepared',title:p.fields?.TITLE||'',description:p.fields?.DESCRIPTION||'',review:p.review,locked:{category:p.review?.category,detail:p.review?.detail},attempts:v.attempts||0,error:v.lastError||'',nextAt:v.nextAt,taskId:v.result?.taskId,url:v.result?.url,stage:v.result?.stage,at:v.at||p.created||0});
+    items.push({key,tc:v.tc||p.tc||'Sin TC',room:v.room||p.room||'',state:v.result?'created':v.phase==='failed'?'failed':v.evidence?(v.confirmed!==true?(confirmationExpires<Date.now()?'expired':'confirmation'):'pending'):'prepared',title:p.fields?.TITLE||'',description:p.fields?.DESCRIPTION||'',review:p.review,locked:{category:p.review?.category,detail:p.review?.detail},attempts:v.attempts||0,error:v.lastError||'',nextAt:v.nextAt,taskId:v.result?.taskId,url:v.result?.url,stage:v.result?.stage,completed:v.result?.completed===true,at:v.at||p.created||0});
    }return {items:items.sort((a,b)=>b.at-a.at)};
   }
   if(!['prepare','commit','resume','await-confirmation','confirm','amend'].includes(m.action))throw Error('Acción inválida.');
@@ -42,4 +42,3 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   return data.data;
  })().then(data=>reply({ok:true,data}),e=>reply({ok:false,error:e.message||'Sin respuesta. Consulta el resultado antes de reintentar.'}));return true;
 });
-
