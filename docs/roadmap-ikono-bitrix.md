@@ -1,3 +1,7 @@
+## Estado actual · 0.20.0: hoy, atención separada y estados visibles
+
+Confirmada en DOM la existencia de separadores Hoy/Ayer. Captura excluye otras fechas y fechas desconocidas, separa cierres/reaperturas y usa saludo de asesor como señal revisable. Memoria/resumen/fotos aislados por atención; selección visible de contacto de hoy. Resumen acotado completo sin recorte a 40. Alcance firmado por atención/TC para tareas separadas con reintentos idempotentes. TC única compacta, estados de carga, Resolver bloqueado durante preparación, confirmación centrada y contraste explícito. 59 pruebas pertinentes aprobadas; ensayo real de 0.20 pendiente. Ver [hallazgos y límites](piloto-creacion-extension-0.20.0.md). No se modifica la tarea anterior ni main.
+
 ## Estado actual · 0.19.0: TC validada en la interfaz del asesor
 
 La tarjeta dentro de Resolver reúne candidatas del nombre/chat/fotos, ingreso manual, confirmación humana, negociación/compañía exactas y revisión del resumen diario de la TC. Diagnóstico oculto: no se necesita para operar. Sin TC confirmada y asociada no se prepara ni crea tarea. Cambios de TC/mensajes invalidan la revisión; correcciones conservadas al cancelar/reabrir. Después del cierre humano se mantiene confirmación final, editor y reintentos de 0.18. Pruebas locales aprobadas; ensayo real de la nueva tarjeta pendiente. Ver [recorrido y reglas](piloto-creacion-extension-0.19.0.md). Main intacta.

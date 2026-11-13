@@ -13,9 +13,9 @@
    }catch{return {ok:false,error:'No se pudo acceder a los píxeles de esta foto. No se envió.'};}
   }
   async function start(){
-   stop();const token=generation,current=location.hash;if(current!==room){room=current;cache.clear();supplement=null;summary.value='';panel.querySelector('ul').replaceChildren();}
-   const valid=()=>token===generation&&current===location.hash;
-   const all=[...document.querySelectorAll('li.mx_EventTile[data-event-id] .mx_MImageBody img')].filter(img=>img.complete&&img.naturalWidth>80&&img.naturalHeight>40);
+   stop();const token=generation,current=location.hash+'|'+(window.ONOFFIkonoMemory?.get(location.hash)?.attention||'');if(current!==room){room=current;cache.clear();supplement=null;summary.value='';panel.querySelector('ul').replaceChildren();}
+   const valid=()=>token===generation&&current===location.hash+'|'+(window.ONOFFIkonoMemory?.get(location.hash)?.attention||'');
+   const all=[...document.querySelectorAll('li.mx_EventTile[data-event-id] .mx_MImageBody img')].filter(img=>(!window.ONOFFTimeline||window.ONOFFIkonoMemory?.get(location.hash)?.photoIds?.includes(img.closest('[data-event-id]').dataset.eventId))&&img.complete&&img.naturalWidth>80&&img.naturalHeight>40);
    const unique=[...new Map(all.map(img=>[img.closest('[data-event-id]').getAttribute('data-event-id')+'|'+img.currentSrc+'|'+img.naturalWidth+'x'+img.naturalHeight,img])).entries()];
    for(const [key,img] of unique.slice(-2)){if(cache.size>=2)break;if(!cache.has(key))cache.set(key,{img,promise:null});}
    if(!cache.size){status('No hay fotos cargadas accesibles. Confirma la TC o el contexto directamente con el cliente.');return;}
