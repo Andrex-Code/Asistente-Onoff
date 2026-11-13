@@ -1,3 +1,7 @@
+## Continuidad desde casa
+
+Estado vigente, preparación del equipo, pruebas y siguiente ensayo: [Continuar desde casa — 0.22.6](continuar-en-casa-0.22.6.md). Código y pruebas publicados; paquete con autorización y diarios locales no viajan por GitHub.
+
 ## 0.22.6 — validación de la sala actual
 
 122/122 pruebas de regresión y prueba independiente de extensión cargada aprobadas. Prepare consulta la URL actual de la pestaña y conserva los límites de origen y piloto; distingue cambio de sala de capacidad de una sola TC. Permisos limitados a los dos sitios iKono para leer la URL sin clic en barra. Ver [evidencia y actualización](sala-actual-piloto-0.22.6.md). Sin chats cerrados ni tareas creadas en esta corrección; main intacta.
