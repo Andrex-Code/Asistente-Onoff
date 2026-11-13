@@ -1,3 +1,7 @@
+## 0.22.5 — selector de TC sin pasos intermedios
+
+TC clara: sin selector. TC ausente/ambigua: escribir/elegir consulta CRM y prepara automáticamente; negociación única automática, varias requieren solo selección. Buscar TC y Confirmar establecimiento ocultos. Campos iKono, resumen y preparación vigentes siguen necesarios. Ver [recorrido](selector-tc-automatico-0.22.5.md). Main intacta.
+
 ## 0.22.4 — TC atendida desde el chat
 
 El nombre puede contener varias TC: una afirmación inequívoca de la atención o la cita literal de la misma respuesta IA del resumen permite proponer la TC atendida. Sin llamada IA adicional; consulta CRM y confirmación final siguen obligatorias. Preguntas, conflictos y evidencia inventada no resuelven la TC. Ver [reglas y pruebas](tc-atendida-chat-0.22.4.md). Main intacta.
