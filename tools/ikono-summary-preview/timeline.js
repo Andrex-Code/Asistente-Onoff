@@ -27,5 +27,19 @@
    if(!e.notice&&e.text)current.messages.set(e.id,{text:e.text,role:e.role,day:e.day});
   }return result;
  }
- window.ONOFFTimeline={day,read,sessions};
+ function currentContact(events,active){
+  if(!active||!events.length)return null;
+  let closed=-1;for(let i=0;i<events.length;i++)if(events[i].closed)closed=i;
+  let start=closed>=0?closed+1:-1;
+  if(start<0){for(let i=0;i<events.length;i++)if(events[i].joined||events[i].greeting)start=i;}
+  if(start<0)return null;
+  const part=events.slice(start);
+  // A visible date always wins. Never relabel yesterday as today's attention.
+  if(part.some(e=>e.day&&e.day!==day()))return null;
+  const meaningful=part.filter(e=>e.role!=='bot'&&!e.notice&&(e.text||e.photo));
+  if(!meaningful.length||!meaningful.some(e=>!e.day))return null;
+  const anchor=part.find(e=>e.joined||e.greeting)||meaningful[0];
+  return {id:anchor.id,reason:'Atención activa · fecha por confirmar',messages:new Map(meaningful.filter(e=>e.text).map(e=>[e.id,{text:e.text,role:e.role,day:e.day||null}])),photoIds:meaningful.filter(e=>e.photo).map(e=>e.id),captureEvidence:{mode:'active-contact-boundary',boundary:anchor.id,datesVerified:false}};
+ }
+ window.ONOFFTimeline={day,read,sessions,currentContact};
 })();

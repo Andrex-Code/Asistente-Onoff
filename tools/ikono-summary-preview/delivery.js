@@ -9,7 +9,7 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
   v={...v,attempts:(v.attempts||0)+1,phase:'sending',lastAttempt:now(),nextAt:null};await chrome.storage.local.set({[key]:v});
   try{
    if(token.expires<now())throw Error('Piloto vencido.');
-   const r=await fetchImpl('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true}),signal:AbortSignal.timeout(55000)});
+   const r=await fetchImpl('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true,dateReviewed:v.dateReviewed===true}),signal:AbortSignal.timeout(55000)});
    const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se recibió confirmación del servidor.');
    await chrome.storage.local.set({[key]:{...v,result:d.data,phase:'created',lastError:'',nextAt:null}});try{await chrome.alarms?.clear(prefix+key);}catch{/* A stale alarm will see the saved result and never resend. */}return d.data;
   }catch(e){
@@ -24,4 +24,3 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
  async function restore(){const a=auth();for(const [key,v]of Object.entries(await chrome.storage.local.get(null)))if(key.startsWith('onoff-task-pilot-'+a.scope+'-')&&v.confirmed&&!v.result&&!v.superseded&&v.phase!=='failed'&&(v.attempts||0)<4)await chrome.alarms?.create(prefix+key,{when:Math.max(now()+1000,v.nextAt||now()+1000)});}
  return {deliver,restore,onAlarm:async alarm=>{if(alarm.name.startsWith(prefix))try{await deliver(alarm.name.slice(prefix.length));}catch{/* Failure and retry state already persisted. */}}};
 };
-

@@ -1,3 +1,7 @@
+## 0.22.0 — atención activa sin bloqueo por fecha ausente
+
+Captura provisional acotada al contacto activo si faltan fechas; confirmación de alcance/fecha al crear, exigida por servidor. TC del chat sin nombre, cambio de origen, vencimiento y recuperación de fallos cubiertos por pruebas. Ver [evidencia y límites](piloto-creacion-extension-0.22.0.md). No se cerraron chats ni crearon tareas reales; recarga real pendiente por interrupción del control de Edge. Main intacta.
+
 ## 0.21.4 — fecha de mensajes nuevos
 
 Se conserva el ancla de fecha verificada de la sala cuando Hoy desaparece del DOM. Extracción de frase completa y formulario mínimo cubiertos por pruebas dirigidas. Ver [hallazgo](captura-fecha-0.21.4.md). Ensayo real pendiente.
