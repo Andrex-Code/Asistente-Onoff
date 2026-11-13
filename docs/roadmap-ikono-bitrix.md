@@ -1,3 +1,7 @@
+## 0.22.3 — recuperación integrada y revisión final
+
+110/110 pruebas aprobadas. Recuperación en cada arranque real del worker antes de nuevos envíos y alarmas; historial consultable con autorización vencida, escrituras siguen bloqueadas. Piloto vigente comprobado; ensayo autorizado con dos clientes consecutivos pendiente de ejecución del asesor. Ver [revisión](revision-recuperacion-0.22.3.md). Main intacta.
+
 ## 0.22.2 — recuperación de interrupciones
 
 QA amplió siete casos; 36/36 pruebas de cola, journal y servidor aprobadas. Reinicio durante el último intento ahora deja fallo visible recuperable con la misma intención. Sin escrituras reales. Ver [informe](qa-interrupciones.md). Main intacta.

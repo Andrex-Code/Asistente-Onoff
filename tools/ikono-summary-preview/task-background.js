@@ -1,14 +1,20 @@
 importScripts('pilot-auth.js','delivery.js');
 const delivery=self.createONOFFDelivery({chrome,fetchImpl:fetch,auth:()=>self.ONOFF_TASK_PILOT});
-chrome.alarms?.onAlarm.addListener(delivery.onAlarm);
-chrome.runtime.onStartup?.addListener(()=>delivery.restore().catch(()=>{}));
-chrome.runtime.onInstalled?.addListener(()=>delivery.restore().catch(()=>{}));
+// A suspended MV3 worker can restart without onStartup or onInstalled.
+// Finish recovery before processing alarms/messages so it cannot overwrite a new send.
+const deliveryReady=delivery.restore().then(()=>null,e=>e);
+chrome.alarms?.onAlarm.addListener(async alarm=>{if(!await deliveryReady)await delivery.onAlarm(alarm);});
+chrome.runtime.onStartup?.addListener(()=>deliveryReady);
+chrome.runtime.onInstalled?.addListener(()=>deliveryReady);
 chrome.runtime.onMessage.addListener((m,sender,reply)=>{
  if(m?.type!=='ONOFF_TASK_PILOT')return false;
  let url;try{url=new URL(sender.url);}catch{return false;}
  if(sender.id!==chrome.runtime.id||!sender.tab||!['https://onoff.a.ikono.im','https://onoff.s.ikono.im'].includes(url.origin))return false;
  (async()=>{
-  const auth=self.ONOFF_TASK_PILOT;if(!auth||auth.expires<Date.now())throw Error('Piloto no configurado o vencido.');
+  const recoveryError=await deliveryReady;const auth=self.ONOFF_TASK_PILOT;if(!auth)throw Error('Piloto no configurado.');
+  // History stays readable after expiry; creation and retries remain gated below.
+  if(m.action!=='list'&&auth.expires<Date.now())throw Error('Piloto no configurado o vencido.');
+  if(recoveryError&&m.action!=='list')throw Error('No se pudo recuperar la cola: '+recoveryError.message);
   if(m.action==='info')return {tc:auth.tc,room:auth.room,expires:auth.expires,previousTaskId:auth.previousTaskId,mode:auth.mode};
   if(m.action==='list'){
    const all=await chrome.storage.local.get(null),items=[];
