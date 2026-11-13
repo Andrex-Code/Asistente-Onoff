@@ -1,3 +1,7 @@
+## 0.21.4 — fecha de mensajes nuevos
+
+Se conserva el ancla de fecha verificada de la sala cuando Hoy desaparece del DOM. Extracción de frase completa y formulario mínimo cubiertos por pruebas dirigidas. Ver [hallazgo](captura-fecha-0.21.4.md). Ensayo real pendiente.
+
 ## Formato de tarea: párrafos y contacto
 
 Descripción normalizada con etiquetas en negrita y pie Conversación: iKono (teléfono). Sustituye el bloque técnico visible en nuevas preparaciones/ediciones; 20 pruebas aprobadas. Ver [formato](formato-tipificacion.md). Main intacta.
