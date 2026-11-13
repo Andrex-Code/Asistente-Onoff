@@ -1,3 +1,7 @@
+## Estado actual · 0.17.0: confirmación posterior a Resolver
+
+Implementado: preparación automática de vista previa tras revisión, conservación del borrador, cierre humano y aviso posterior para Confirmar crear tarea PRUEBA. Recargar, consultar o aplazar no crea tareas. Pruebas locales de flujo y recuperación; ensayo real de esta interacción pendiente. La creación y recuperación reales anteriores siguen verificadas; cobertura diaria automática y fecha límite del portal pendientes. Ver [estado y guía de continuidad](continuar-piloto-0.17.0.md). Sin cambios main.
+
 ## Actualización · 0.16.2: consultar historial y evitar cierres sin preparación
 
 Dos cierres posteriores no produjeron tareas visibles en la consulta Bitrix por TC. Se corrige aviso ambiguo de cero/varios pendientes y se añade historial con estado por registro. El piloto privado requiere preparación antes de Resolver por defecto, con exclusión explícita por el asesor. Pruebas aprobadas; inspección real del diario posterior a recarga pendiente. Ver [detalle y límites](piloto-creacion-extension-0.16.2.md). No se recrearon tareas ni se cambió main.
