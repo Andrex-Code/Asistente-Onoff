@@ -1,6 +1,6 @@
 const fs=require('node:fs/promises');const path=require('node:path');
 (async()=>{const root=path.resolve(__dirname,'..');const out=path.join(root,'dist','ikono-summary-preview');await fs.mkdir(out,{recursive:true});
-for(const file of ['manifest.json','guard.js','move.js','memory.js','hub.js','dashboard.js','background.js','review.js','auto.js','task.js','closure.js','task-create.js','task-background.js','images.js','ocr.js','ocr.html'])await fs.copyFile(path.join(root,'tools/ikono-summary-preview',file),path.join(out,file));
+for(const file of ['manifest.json','guard.js','move.js','memory.js','hub.js','dashboard.js','background.js','review.js','auto.js','task.js','closure.js','task-create.js','task-background.js','delivery.js','images.js','ocr.js','ocr.html'])await fs.copyFile(path.join(root,'tools/ikono-summary-preview',file),path.join(out,file));
 await fs.copyFile(path.join(root,'tools/ikono-summary-preview/pilot-auth.example.js'),path.join(out,'pilot-auth.js'));
 if(process.argv.includes('--pilot')){const auth=JSON.parse(await fs.readFile(path.join(root,'dist/task-pilot-private.json'),'utf8'));await fs.writeFile(path.join(out,'pilot-auth.js'),'self.ONOFF_TASK_PILOT='+JSON.stringify({token:auth.token,...auth.config,tokenHash:undefined})+';\n');}
 await fs.copyFile(path.join(root,'src/ikono-classification.cjs'),path.join(out,'classification.js'));

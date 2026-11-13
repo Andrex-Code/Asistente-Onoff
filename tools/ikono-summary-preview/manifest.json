@@ -1,15 +1,18 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Resumen por chat y piloto de tarea PRUEBA tras cierre humano verificado. Confirmación de TC y revisión obligatorias.",
   "permissions": [
     "activeTab",
     "scripting",
     "offscreen",
-    "storage"
+    "storage",
+    "alarms"
   ],
-  "host_permissions": ["https://asistente-onoff.vercel.app/*"],
+  "host_permissions": [
+    "https://asistente-onoff.vercel.app/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },

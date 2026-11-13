@@ -1,3 +1,7 @@
+## Estado actual · 0.18.0: editor real y reintentos
+
+Editor de borrador conectado al servicio: resumen/título/campos permitidos/CRM; tipificación, detalle y equipo bloqueados en servidor. Confirmación sin Más tarde. Un intento inicial más tres reintentos duraderos; fallos conservados por registro. Corregida desactivación tras el primer cliente. Pruebas aprobadas; ensayo real de esta versión pendiente en el chat de pruebas del usuario. Ver [recorrido y límites](piloto-creacion-extension-0.18.0.md). Main intacta.
+
 ## Estado actual · 0.17.0: confirmación posterior a Resolver
 
 Implementado: preparación automática de vista previa tras revisión, conservación del borrador, cierre humano y aviso posterior para Confirmar crear tarea PRUEBA. Recargar, consultar o aplazar no crea tareas. Pruebas locales de flujo y recuperación; ensayo real de esta interacción pendiente. La creación y recuperación reales anteriores siguen verificadas; cobertura diaria automática y fecha límite del portal pendientes. Ver [estado y guía de continuidad](continuar-piloto-0.17.0.md). Sin cambios main.
