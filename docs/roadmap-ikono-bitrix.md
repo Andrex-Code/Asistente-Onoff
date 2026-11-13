@@ -1,3 +1,7 @@
+## Estado actual · 0.21.2: éxito breve sin panel residual
+
+Confirmación cerrada tras éxito, aviso Tipificación creada por un segundo y avisos flotantes persistentes retirados. Consulta flotante solo con pendientes/fallos; historial manual cerrable. Se conservan confirmaciones obligatorias y recuperación de errores. Ver [detalle](piloto-creacion-extension-0.21.2.md). Main intacta.
+
 ## Estado actual · 0.21.1: sincronización de Resolver
 
 Se descartan valores de clasificación vacíos y respuestas de formularios cancelados. ONOFF deja disabled bajo control de iKono y sincroniza su barrera de preparación con la firma vigente. Recorridos de vacío, selección parcial/completa, vaciado, cancelación/reapertura y respuesta tardía cubiertos en pruebas sintéticas. No se cerraron chats ni crearon tareas reales. Ver [fallos y validación](piloto-creacion-extension-0.21.1.md). Main intacta; ensayo real de esta versión pendiente.
