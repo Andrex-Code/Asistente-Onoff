@@ -1,3 +1,7 @@
+## Formato de tarea: párrafos y contacto
+
+Descripción normalizada con etiquetas en negrita y pie Conversación: iKono (teléfono). Sustituye el bloque técnico visible en nuevas preparaciones/ediciones; 20 pruebas aprobadas. Ver [formato](formato-tipificacion.md). Main intacta.
+
 ## Estado actual · 0.21.2: éxito breve sin panel residual
 
 Confirmación cerrada tras éxito, aviso Tipificación creada por un segundo y avisos flotantes persistentes retirados. Consulta flotante solo con pendientes/fallos; historial manual cerrable. Se conservan confirmaciones obligatorias y recuperación de errores. Ver [detalle](piloto-creacion-extension-0.21.2.md). Main intacta.
