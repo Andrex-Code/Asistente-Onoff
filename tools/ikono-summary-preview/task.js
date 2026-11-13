@@ -13,7 +13,7 @@
    const timestamp=/^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d\d:\d\d)$/.test(raw||'')?Date.parse(raw):NaN;
    records.set(e.getAttribute('data-event-id'),{text,timestamp});
   }
-  for(const d of document.querySelectorAll('[role=dialog]')){const c=ONOFFIkonoClassification.readClassification(d);if(c.category)classification=c;}
+  for(const d of document.querySelectorAll('[role=dialog]')){const c=ONOFFIkonoClassification.readClassification(d);classification=c;}
  }
  function reviewVersion(){return JSON.stringify([room,today,window.ONOFFIkonoMemory?.get(room)?.attention||'',selected(),[...records.entries()]]);}
  function preserveDescription(){if(box&&descriptionEdited)descriptionMemory.set(descriptionScope,box.querySelector('[data-description]').value);}

@@ -1,3 +1,7 @@
+## Estado actual · 0.21.1: sincronización de Resolver
+
+Se descartan valores de clasificación vacíos y respuestas de formularios cancelados. ONOFF deja disabled bajo control de iKono y sincroniza su barrera de preparación con la firma vigente. Recorridos de vacío, selección parcial/completa, vaciado, cancelación/reapertura y respuesta tardía cubiertos en pruebas sintéticas. No se cerraron chats ni crearon tareas reales. Ver [fallos y validación](piloto-creacion-extension-0.21.1.md). Main intacta; ensayo real de esta versión pendiente.
+
 ## Estado actual · 0.21.0: TC contextual y recuadro condicional
 
 Detección general por contexto de TC en nombre/chat, con OCR acotado si hace falta. Sin número específico codificado. TC única clara: aviso compacto, consulta CRM y borrador preparados sin rellenar tarjeta blanca; el asesor confirma TC y resumen en el paso final antes de escribir en Bitrix. Sin TC o con ambigüedad: ingreso/elección explícitos. Se conservan fechas/atenciones, correcciones, completar después de etapa y reintentos. Ver [reglas y recorrido](piloto-creacion-extension-0.21.0.md). Ensayo real pendiente; main intacta.
