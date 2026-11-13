@@ -1,3 +1,7 @@
+## 0.22.2 — recuperación de interrupciones
+
+QA amplió siete casos; 36/36 pruebas de cola, journal y servidor aprobadas. Reinicio durante el último intento ahora deja fallo visible recuperable con la misma intención. Sin escrituras reales. Ver [informe](qa-interrupciones.md). Main intacta.
+
 ## 0.22.1 — QA de tipificaciones consecutivas
 
 **100/100 pruebas aprobadas**, incluidos nueve recorridos QA independientes. Reproducido y corregido el bloqueo del segundo chat: sincronización de sala antes de generar, respuestas antiguas de seguimiento descartadas y eliminación del corte global de doce salas. Memoria y correcciones por atención conservadas; servidor y métodos de escritura sin cambios. Ver [corrección](piloto-creacion-extension-0.22.1.md) e [informe QA independiente](qa-secuencial-0.22.md). Prueba en la instalación del usuario pendiente; main intacta.

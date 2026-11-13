@@ -21,6 +21,6 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
   }
  }
  const deliver=(key,options)=>{if(active.has(key))return active.get(key);const p=run(key,options).finally(()=>active.delete(key));active.set(key,p);return p;};
- async function restore(){const a=auth();for(const [key,v]of Object.entries(await chrome.storage.local.get(null)))if(key.startsWith('onoff-task-pilot-'+a.scope+'-')&&v.confirmed&&!v.result&&!v.superseded&&v.phase!=='failed'&&(v.attempts||0)<4)await chrome.alarms?.create(prefix+key,{when:Math.max(now()+1000,v.nextAt||now()+1000)});}
+ async function restore(){const a=auth();for(const [key,v]of Object.entries(await chrome.storage.local.get(null))){if(!key.startsWith('onoff-task-pilot-'+a.scope+'-')||!v.confirmed||v.result||v.superseded||v.phase==='failed')continue;if((v.attempts||0)>=4){await chrome.storage.local.set({[key]:{...v,phase:'failed',nextAt:null,lastError:'Envío interrumpido sin resultado confirmado. Revisa o reintenta este mismo registro; no crees otra tarea.'}});try{await chrome.alarms?.clear(prefix+key);}catch{}continue;}await chrome.alarms?.create(prefix+key,{when:Math.max(now()+1000,v.nextAt||now()+1000)});}}
  return {deliver,restore,onAlarm:async alarm=>{if(alarm.name.startsWith(prefix))try{await deliver(alarm.name.slice(prefix.length));}catch{/* Failure and retry state already persisted. */}}};
 };
