@@ -11,7 +11,7 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
    if(token.expires<now())throw Error('Piloto vencido.');
    const r=await fetchImpl('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true}),signal:AbortSignal.timeout(55000)});
    const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se recibió confirmación del servidor.');
-   await chrome.storage.local.set({[key]:{...v,result:d.data,phase:'created',lastError:'',nextAt:null}});await chrome.alarms?.clear(prefix+key);return d.data;
+   await chrome.storage.local.set({[key]:{...v,result:d.data,phase:'created',lastError:'',nextAt:null}});try{await chrome.alarms?.clear(prefix+key);}catch{/* A stale alarm will see the saved result and never resend. */}return d.data;
   }catch(e){
    const fatal=/vencid|no autorizado|otra sesión|fuera del piloto|no se verificó|campo bloqueado|no coincide con el piloto/i.test(e.message);
    const retry=!fatal&&v.attempts<=delays.length;
