@@ -1,3 +1,7 @@
+## Estado actual · 0.19.0: TC validada en la interfaz del asesor
+
+La tarjeta dentro de Resolver reúne candidatas del nombre/chat/fotos, ingreso manual, confirmación humana, negociación/compañía exactas y revisión del resumen diario de la TC. Diagnóstico oculto: no se necesita para operar. Sin TC confirmada y asociada no se prepara ni crea tarea. Cambios de TC/mensajes invalidan la revisión; correcciones conservadas al cancelar/reabrir. Después del cierre humano se mantiene confirmación final, editor y reintentos de 0.18. Pruebas locales aprobadas; ensayo real de la nueva tarjeta pendiente. Ver [recorrido y reglas](piloto-creacion-extension-0.19.0.md). Main intacta.
+
 ## Estado actual · 0.18.0: editor real y reintentos
 
 Editor de borrador conectado al servicio: resumen/título/campos permitidos/CRM; tipificación, detalle y equipo bloqueados en servidor. Confirmación sin Más tarde. Un intento inicial más tres reintentos duraderos; fallos conservados por registro. Corregida desactivación tras el primer cliente. Pruebas aprobadas; ensayo real de esta versión pendiente en el chat de pruebas del usuario. Ver [recorrido y límites](piloto-creacion-extension-0.18.0.md). Main intacta.
@@ -354,4 +358,3 @@ Servicio corregido desplegado READY en dpl_64yZ8cCe9gEgxumdELfSH9Bh3Zqx desde f8
 - Creación confirmada por radicado, ficha visible y consulta API de solo lectura. Se pasó a Finalizadas Solicitud, conforme a la instrucción del usuario, sin pulsar Completar. Tras recargar persistieron descripción PRUEBA, campos, CRM y etapa. La tarea conserva estado Pendiente, distinto de etapa del tablero.
 - No se modificó el borrador previo del usuario, no se creó una tarea para el segundo candidato que ya tenía una abierta, y no se enviaron mensajes al cliente ni se pulsó resolución en iKono. Versión visible de extensión 0.14.0; Resolver seguía abierto al terminar.
 - Evidencia privada local: captura antes/después y registro con radicado/TC/CRM. No se publican identificadores ni datos de cliente en GitHub. Esta creación asistida no valida todavía creación desde extensión/API, idempotencia persistente ni cierre nativo automático. F02 y límites de historial/identidad siguen abiertos.
-

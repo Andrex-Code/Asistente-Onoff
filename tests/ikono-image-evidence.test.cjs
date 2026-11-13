@@ -16,3 +16,4 @@ test('photo policy reads only very ambiguous context or multiple unresolved TC',
  assert.equal(decide({codes:['TC1','TC2'],confirmedTc:'TC3',assessment:{ambiguous:false}}).read,false);
  assert.equal(decide({codes:['TC1'],assessment:{ambiguous:true}}).read,true);
 });
+test('missing TC uses photo fallback, explicit or cited chat TC avoids unnecessary OCR',()=>{const {photoPolicy}=require('../src/ikono-image-evidence.cjs');assert.equal(photoPolicy({codes:[],texts:['No conecta el equipo'],assessment:{ambiguous:false}}).read,true);assert.equal(photoPolicy({codes:[],texts:['Atendemos TC1234'],assessment:{ambiguous:false}}).read,false);assert.equal(photoPolicy({codes:[],texts:['Es el establecimiento 1234'],assessment:{ambiguous:false,chatTc:'TC1234',evidence:'Es el establecimiento 1234'}}).read,false);});

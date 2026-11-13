@@ -18,7 +18,13 @@
  function reviewVersion(){return JSON.stringify([room,today,selected(),[...records.entries()]]);}
  function preserveDescription(){if(box&&descriptionEdited)descriptionMemory.set(descriptionScope,box.querySelector('[data-description]').value);}
  function selected(){return root?.getElementById('tc')?.value==='manual'?root.getElementById('manual').value:root?.getElementById('tc')?.value||'';}
- window.ONOFFTaskReview={snapshot(){
+ window.ONOFFTaskReview={advisorApply({tc,deal,description,messageIds}){
+  if(!deal||String(deal.tc)!==tc.replace(/^TC/i,'')||!deal.company?.id)throw Error('Negociación o compañía no válidas.');
+  window.ONOFFAdvisorContext.confirm(tc);render();review();
+  const checked=new Set(messageIds||[]);if(!checked.size||[...checked].some(id=>!records.has(id)))throw Error('Revisa los textos de esta atención.');
+  for(const e of box.querySelectorAll('[data-messages] input'))e.checked=checked.has(e.dataset.id);
+  lookup={tc:tc.replace(/^TC/i,''),deals:[deal],selected:deal};descriptionEdited=true;box.querySelector('[data-description]').value=description;preserveDescription();box.querySelector('[data-dayreview]').checked=true;render();
+ },snapshot(){
   collect();if(!box)throw Error('Vista previa pendiente.');
   const tc=selected().replace(/^TC\s*/i,'');const phone=(document.querySelector('.mx_RoomHeader')?.textContent||document.title).match(/\((\d{10,15})\)/)?.[1]||'';
   const checked=[...box.querySelectorAll('[data-messages] input:checked')].map(e=>e.dataset.id);
@@ -58,4 +64,3 @@
  function mount(){host=document.getElementById('onoff-ikono-auto-summary');root=host?.shadowRoot;if(!root||box)return;box=document.createElement('details');const label=document.createElement('summary');label.textContent='Vista previa de tarea · PRIMER CONTACTO';box.append(label);const body=document.createElement('div');body.innerHTML='<p data-coverage></p><button data-search>Consultar TC en Bitrix · solo lectura</button><p data-result></p><select data-deals aria-label="Negociación para la TC"></select><div data-fields></div><button data-review>Revisar mensajes acumulados para hoy y esta TC</button><div data-messages style="max-height:260px;overflow:auto;white-space:pre-wrap"></div><label><input type="checkbox" data-dayreview>Verifiqué que los textos marcados son de hoy y solo de esta TC, y que cargué todos sus contactos de hoy.</label><button data-daily>Generar resumen diario revisado</button><p data-dailystatus></p><label>Descripción provisional para revisar<textarea data-description aria-label="Descripción provisional de tarea"></textarea></label><p>TIPIFICACIÓN DEL CHAT · Motivo · Gestión · Resultado: revisar el borrador antes de usarlo. ID de atención y cobertura diaria pendientes. Etapa prevista: Finalizadas Solicitud, después del cierre humano verificado en el piloto.</p><button disabled>Crear tarea · desactivado</button>';box.append(body);root.querySelector('section').append(box);box.querySelector('[data-search]').onclick=search;box.querySelector('[data-review]').onclick=review;box.querySelector('[data-daily]').onclick=daily;box.querySelector('[data-description]').oninput=()=>{descriptionEdited=true;preserveDescription();};box.querySelector('[data-deals]').onchange=e=>{if(lookup)lookup.selected=lookup.deals.find(d=>String(d.id)===e.target.value)||null;render();};render();}
  setInterval(()=>{mount();if(box&&host.style.display!=='none'){const signature=location.hash+selected()+root.querySelector('textarea')?.value+document.querySelectorAll('li.mx_EventTile').length;collect();last=signature;render();}},1000);
 })();
-

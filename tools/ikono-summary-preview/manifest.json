@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Resumen por chat y piloto de tarea PRUEBA tras cierre humano verificado. Confirmación de TC y revisión obligatorias.",
   "permissions": [
     "activeTab",
@@ -48,6 +48,7 @@
         "images.js",
         "auto.js",
         "task.js",
+        "advisor.js",
         "closure.js",
         "task-create.js",
         "dashboard.js"
@@ -56,4 +57,3 @@
     }
   ]
 }
-

@@ -3,7 +3,7 @@ chrome.action.onClicked.addListener(async tab => {
   let url;
   try { url = new URL(tab.url); } catch { return; }
   if (!tab.id || url.protocol !== 'https:' || !['onoff.a.ikono.im','onoff.s.ikono.im'].includes(url.hostname)) return;
-  try { await chrome.scripting.executeScript({target:{tabId:tab.id},files:['guard.js','move.js','memory.js','classification.js','probe.js','tc.js','image-evidence.js','images.js','auto.js','task.js','closure.js','task-create.js','dashboard.js']}); }
+  try { await chrome.scripting.executeScript({target:{tabId:tab.id},files:['guard.js','move.js','memory.js','classification.js','probe.js','tc.js','image-evidence.js','images.js','auto.js','task.js','advisor.js','closure.js','task-create.js','dashboard.js']}); }
   catch { /* No alternate access or silent retry. */ }
 });
 let creating;
@@ -19,4 +19,3 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   return chrome.runtime.sendMessage({type:'ONOFF_LOCAL_OCR_INTERNAL',image:m.image});
  })().then(reply,()=>reply({ok:false,error:'El lector local no está disponible.'}));return true;
 });
-

@@ -7,7 +7,7 @@
  let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='',tcSignature='',imageCandidates=[];
  let imageReader,lastObserved='',lastAttempt=0,edited=false,lastMemory=null;
  const memory=()=>window.ONOFFIkonoMemory?.get(location.hash);
- root.querySelector('h3').textContent='Resumen y vista previa · 0.18.0';
+ root.querySelector('h3').textContent='Resumen y vista previa · 0.19.0';
  const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Consulta de TC en la vista previa. Piloto PRUEBA requiere revisión y cierre humano.</small>';
  root.querySelector('h3').after(tcBox);window.ONOFFMovable?.(host,root.querySelector('h3'));const el=id=>root.getElementById(id);
  function saveTC(target=memory()){if(target)target.tcState={source,selected:el('tc').value,manual:el('manual').value,confirmed:confirmedTC,verified:el('verified').checked,imageSignature:JSON.stringify(imageCandidates),seen:[...target.messages.entries()].map(([id,m])=>[id,m.text])};}
@@ -35,6 +35,15 @@
  function messages(){const state=window.ONOFFIkonoMemory?.capture(location.hash);if(state)return [...state.messages.values()];const seen=new Set(),all=[];for(const node of document.querySelectorAll('li.mx_EventTile[data-event-id]')){const id=node.getAttribute('data-event-id'),self=node.getAttribute('data-self');if(!id||seen.has(id)||!['true','false'].includes(self)||node.matches('.mx_EventTile_info')||node.querySelector('.mx_MNoticeBody,.mx_EventTile_info,[data-event-type*="notice"]'))continue;const text=node.querySelector('.mx_EventTile_body.translate')?.textContent?.trim();if(!text)continue;seen.add(id);all.push({role:self==='true'?'advisor':'customer',text});}return all;}
  function photoDecision(assessment){if(!imageReader)return;const decision=ONOFFIkonoImageEvidence.photoPolicy({codes:ONOFFIkonoTC.parseTCCandidates(title()).map(c=>c.code),assessment,confirmedTc:textsTc(),texts:messages().slice(-40).map(m=>m.text)});if(decision.read)imageReader.start();else imageReader.skip(decision.reason);}
  function textsTc(){return el('verified').checked?confirmedTC:'';}
+ window.ONOFFAdvisorContext={read(){
+  messages();refreshTC();const candidates=new Map();
+  const add=(code,origin)=>{if(!/^TC\d{1,8}$/.test(code))return;const item=candidates.get(code)||{code,sources:[]};if(!item.sources.includes(origin))item.sources.push(origin);candidates.set(code,item);};
+  for(const c of ONOFFIkonoTC.parseTCCandidates(title()))add(c.code,'nombre');
+  for(const m of messages())for(const x of m.text.matchAll(/\bTC\s*[-:]?\s*(\d{1,8})(?!\d)/gi))add('TC'+x[1],'chat');
+  if(cache?.assessment?.chatTc&&cache.assessment.evidence&&messages().some(m=>m.text.includes(cache.assessment.evidence)))add(cache.assessment.chatTc,'chat (cita)');
+  for(const c of imageCandidates)add(c.code,'foto OCR');
+  return {room:location.hash,candidates:[...candidates.values()],confirmed:confirmedTC,summary:draft.value,photos:root.querySelector('#imageStatus')?.textContent||''};
+ },confirm(code){if(!active)throw Error('Abre Resolver conversación antes de validar.');if(!/^TC\d{1,8}$/.test(code))throw Error('TC inválida.');const option=[...el('tc').options].some(o=>o.value===code);el('tc').value=option?code:'manual';el('manual').value=option?'':code;el('verified').checked=true;el('confirm').onclick();if(confirmedTC!==code)throw Error('No se pudo confirmar la TC.');return true;}};
  async function generate(){
   if(!active||location.hash!==room)return;messages();refreshTC();if(window.__onoffPriorityKey&&window.__onoffPriorityKey!==location.origin+'/'+location.hash){status('Actualización en espera: otro chat está en revisión de cierre.');return;}if(edited){const state=memory(),seen=new Map(state?.editedSeen||[]),changes=[...state?.messages.entries()||[]].filter(([id,m])=>seen.get(id)!==m.text).map(([,m])=>m.text);pending.hidden=!changes.length;pending.open=changes.length>0;pending.querySelector('pre').textContent=changes.join('\n\n');status(changes.length?'Se conserva tu corrección. Revisa los mensajes nuevos antes de considerar final el resumen.':'Corrección conservada; no hay mensajes nuevos detectados. Revisa día y TC.');return;}lastAttempt=Date.now();
   const all=messages(),conversation=all.slice(-40);if(memory()?.overflow){status('La sala supera 250 textos. Requiere revisión; actualización automática detenida.');return;}if(!conversation.length){status('No se encontraron mensajes de texto cargados.');return;}if(conversation.some(m=>m.text.length>4000)){status('Un mensaje supera el límite admitido. No se envió el tramo.');return;}
@@ -57,4 +66,3 @@
   if(['cancel-requested','resolution-requested','dialog-disappeared'].includes(e.type)){window.__onoffCloseReview='';window.__onoffPriorityKey='';window.dispatchEvent(new Event('onoff-close-priority'));cancel();imageReader?.stop();active=false;if(confirmedTC)saveTC();resetTC(false);if(!draft.value)status('Formulario cerrado. Generación detenida.');}
  }});
 })();
-
