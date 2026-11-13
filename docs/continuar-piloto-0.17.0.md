@@ -23,7 +23,7 @@ El servidor requiere confirmation=true para una primera creación cuando el pilo
 
 - La salida a encuesta se infiere por clic humano + retiro de modal/tarjeta + Inicio estable, sin nuevas acciones ni alertas. Fue contrastada con un reporte ON_RATING; no es recibo de API iKono. No se descargan reportes en operación.
 - Historial diario y separación de varias TC dependen de la revisión del asesor. No se garantiza paginación completa ni interpretación de audios. OCR es apoyo condicionado, no confirmación automática.
-- Una preparación firmada vence a los 30 minutos o al vencer el piloto. El borrador se conserva, pero no se crea con autorización vencida. No se reabre una atención para reconstruirla automáticamente.
+- La preparación firmada vence a los 30 minutos o al vencer el piloto; la evidencia de cierre permite confirmar durante un máximo de 15 minutos. El historial muestra la confirmación como vencida al agotarse el plazo más corto. El borrador se conserva, pero no se crea con autorización vencida. No se reabre una atención para reconstruirla automáticamente.
 - Por diseño hay una tipificación por sala/día/TC. Reaperturas del mismo alcance no generan otra tarea automáticamente ni actualizan la existente.
 - Bitrix asignó una fecha límite en el ensayo sin que se enviara DEADLINE. Falta revisar la política del portal; no se elimina ni se atribuye a una automatización concreta sin evidencia.
 
