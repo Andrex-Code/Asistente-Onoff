@@ -1,3 +1,14 @@
+## 0.22.1 — QA de tipificaciones consecutivas
+
+**100/100 pruebas aprobadas**, incluidos nueve recorridos QA independientes. Reproducido y corregido el bloqueo del segundo chat: sincronización de sala antes de generar, respuestas antiguas de seguimiento descartadas y eliminación del corte global de doce salas. Memoria y correcciones por atención conservadas; servidor y métodos de escritura sin cambios. Ver [corrección](piloto-creacion-extension-0.22.1.md) e [informe QA independiente](qa-secuencial-0.22.md). Prueba en la instalación del usuario pendiente; main intacta.
+
+```mermaid
+flowchart LR
+  A["Fallo reproducido"] --> B["Correcciones y QA local: 100/100"]
+  B --> C["Paquete 0.22.1"]
+  C --> D["Dos cierres de prueba en sesión: pendiente"]
+```
+
 ## 0.22.0 — atención activa sin bloqueo por fecha ausente
 
 Captura provisional acotada al contacto activo si faltan fechas; confirmación de alcance/fecha al crear, exigida por servidor. TC del chat sin nombre, cambio de origen, vencimiento y recuperación de fallos cubiertos por pruebas. Ver [evidencia y límites](piloto-creacion-extension-0.22.0.md). No se cerraron chats ni crearon tareas reales; recarga real pendiente por interrupción del control de Edge. Main intacta.
