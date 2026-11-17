@@ -1,11 +1,10 @@
+const {requireReadAccess}=require('../lib/read-access');
 const { readConfig, findRelevantKnowledge } = require('../lib/config-store');
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
 module.exports = async function handler(req, res) {
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
+  if(!requireReadAccess(req,res))return;
 
   try {
     const apiKey = process.env.OPENAI_API_KEY;

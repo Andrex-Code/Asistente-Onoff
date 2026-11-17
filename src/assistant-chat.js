@@ -191,9 +191,11 @@
     try {
       const settings = await chrome.storage.sync.get(['backendUrl']);
       const backendUrl = String(settings.backendUrl || 'https://asistente-onoff.vercel.app').replace(/\/$/, '');
+      const token=String((await chrome.storage.local.get('onoffReadToken')).onoffReadToken||'').trim();
+      if(!/^[A-Za-z0-9._~-]{20,512}$/.test(token))throw Error('Configure un token de consulta autorizado en Ajustes de ONOFF.');
       const response = await fetch(`${backendUrl}/api/assistant-chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer '+token },
         body: JSON.stringify({ question, mode, conversation, history: history.slice(-8) })
       });
       const data = await response.json().catch(() => null);

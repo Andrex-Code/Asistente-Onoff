@@ -1,4 +1,6 @@
 const provider = document.querySelector('#provider');
+const readTokenInput = document.querySelector('#onoffReadToken');
+chrome.storage.local.get('onoffReadToken', value=>{readTokenInput.value=value.onoffReadToken||'';});
 const backendUrl = document.querySelector('#backendUrl');
 const libreTranslateUrl = document.querySelector('#libreTranslateUrl');
 const showCornerButton = document.querySelector('#showCornerButton');
@@ -31,6 +33,7 @@ chrome.storage.sync.get(Object.keys(DEFAULTS), (settings) => {
 provider.addEventListener('change', updateVisibleProviderFields);
 
 document.querySelector('#save').addEventListener('click', () => {
+  chrome.storage.local.set({onoffReadToken:readTokenInput.value.trim()},()=>{});
   chrome.storage.sync.set({
     provider: provider.value,
     backendUrl: normalizeUrl(backendUrl.value || DEFAULTS.backendUrl),

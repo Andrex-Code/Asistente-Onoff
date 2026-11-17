@@ -1,0 +1,23 @@
+name: Auditoria tipificador 0.23.3
+
+on:
+  pull_request:
+    branches:
+      - docs/roadmap-ikono-bitrix-trazabilidad
+
+permissions:
+  contents: read
+
+jobs:
+  core-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Security, TC and delivery audit checks
+        run: node --test tests/qa-audit-api.test.cjs tests/qa-audit-tc.test.cjs tests/qa-audit-delivery.test.cjs tests/ikono-task-create.test.cjs tests/bitrix-exact.test.js tests/bitrix-transport.test.js

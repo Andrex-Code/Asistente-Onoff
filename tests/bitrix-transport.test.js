@@ -10,7 +10,7 @@ function harness() {
   const state = { permission: true, status: 200, data: { ok: true, deals: [{ id: '14008', tc: '8968' }] } };
   vm.runInNewContext(source, { URL, AbortSignal, chrome: {
     runtime: { id: 'extension', onMessage: { addListener: fn => { listener = fn; } } },
-    storage: { sync: { get: async () => settings } },
+    storage: { sync: { get: async () => settings }, local: { get: async () => ({onoffReadToken:'test_read_token_12345678901234567890'}) } },
     permissions: { contains: async () => state.permission }
   }, fetch: async (url, options) => {
     calls.push({ url, ...options, body: JSON.parse(options.body) });
@@ -39,6 +39,7 @@ test('TC 8968 and all read-only searches use fixed routes and minimal payloads',
     assert.equal(call.url, 'https://backend.example.com/api/bitrix/' + endpoint);
     assert.equal(JSON.stringify(call.body), JSON.stringify({ [field]: value }));
     assert.equal(call.method, 'POST');
+    assert.equal(call.headers.Authorization, 'Bearer test_read_token_12345678901234567890');
     assert.ok(call.signal);
     assert.equal(call.redirect, 'error');
   }

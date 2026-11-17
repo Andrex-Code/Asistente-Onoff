@@ -1,10 +1,9 @@
+const {requireReadAccess}=require('../../lib/read-access');
 const DEFAULT_ID_FIELD = 'UF_CRM_1599251398';
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 
 module.exports = async function handler(req, res) {
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
+  if(!requireReadAccess(req,res))return;
 
   try {
     const webhookUrl = normalizeWebhookUrl(process.env.BITRIX_WEBHOOK_URL);

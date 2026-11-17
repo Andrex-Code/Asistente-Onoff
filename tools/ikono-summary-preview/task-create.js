@@ -22,7 +22,7 @@
    if(field.value==='title')input('Título de tarea','title',item.title);
    if(field.value==='custom'){input('Producto','product',r.product);input('Prioridad','priority',r.priority);input('Gestión SAC · teléfono','phone',r.phone);}
    if(field.value==='crm'){const tc=input('TC atendida','tc',item.tc);const lookup=document.createElement('button');lookup.textContent='Consultar negociaciones de esta TC';const select=document.createElement('select');select.setAttribute('aria-label','Negociación exacta');select.dataset.key='dealId';const o=document.createElement('option');o.value=r.dealId||'';o.textContent='Negociación actual #'+(r.dealId||'?');select.append(o);form.append(lookup,select);const l=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.dataset.key='scopeReviewed';l.append(check,document.createTextNode('Confirmo que el resumen corresponde a esta TC y negociación.'));form.append(l);
-    lookup.onclick=async()=>{const captured=tc.value;lookup.disabled=true;status.textContent='Consultando Bitrix, solo lectura…';try{const response=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tc:captured})});const d=await response.json();if(tc.value!==captured)return;if(!response.ok||!d.ok)throw Error('No se encontró la asociación');select.replaceChildren(new Option('Seleccionar negociación',''));for(const deal of d.deals||[])if(String(deal.tc)===captured)select.add(new Option(deal.title+' · '+(deal.company?.name||'Compañía pendiente'),deal.id));check.checked=false;status.textContent='Selecciona negociación y reconfirma el alcance del resumen.';}catch(e){status.textContent=e.message;}finally{lookup.disabled=false;}};tc.oninput=()=>{select.value='';check.checked=false;};
+    lookup.onclick=async()=>{const captured=tc.value;lookup.disabled=true;status.textContent='Consultando Bitrix, solo lectura…';try{const response=await (window.ONOFFIkonoRead?.fetch || fetch)('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tc:captured})});const d=await response.json();if(tc.value!==captured)return;if(!response.ok||!d.ok)throw Error('No se encontró la asociación');select.replaceChildren(new Option('Seleccionar negociación',''));for(const deal of d.deals||[])if(String(deal.tc)===captured)select.add(new Option(deal.title+' · '+(deal.company?.name||'Compañía pendiente'),deal.id));check.checked=false;status.textContent='Selecciona negociación y reconfirma el alcance del resumen.';}catch(e){status.textContent=e.message;}finally{lookup.disabled=false;}};tc.oninput=()=>{select.value='';check.checked=false;};
    }
   }
   field.onchange=render;render();const save=document.createElement('button');save.textContent='Guardar borrador';save.onclick=async e=>{if(!e.isTrusted)return;const edits={};for(const el of form.querySelectorAll('[data-key]'))edits[el.dataset.key]=el.type==='checkbox'?el.checked:el.value;save.disabled=true;try{const r=await send({action:'amend',recordKey:item.key,edits});if(!r.ok)throw Error(r.error);await journal();}catch(e){status.textContent=e.message;save.disabled=false;}};v.append(save);
@@ -33,7 +33,12 @@
  if(item.url){const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener';a.textContent='Abrir tarea #'+item.taskId;row.append(a);}
  if(item.state==='confirmation'){const preview=document.createElement('textarea');preview.readOnly=true;preview.setAttribute('aria-label','Vista previa final TC'+item.tc);preview.style='width:100%;height:200px;box-sizing:border-box';preview.value=item.review?.description||item.description;row.append(preview);
  const edit=document.createElement('button');edit.textContent='✎ Editar borrador';edit.onclick=()=>editDraft(item);row.append(edit);const button=document.createElement('button');button.textContent='✓ Confirmar crear tarea PRUEBA · TC'+item.tc;button.style='background:#087a48;color:white;padding:10px;margin:8px;border:0;border-radius:6px';button.onclick=async e=>{if(!e.isTrusted||deliveryJobs.has(item.key))return;button.disabled=true;button.textContent='Creando tarea… Espera sin volver a pulsar';row.setAttribute('aria-busy','true');await commit({action:'confirm',recordKey:item.key},item);};row.append(button);}
- if(item.state==='pending'||item.state==='failed'){const button=document.createElement('button');button.textContent='Revisar / reintentar este envío';button.onclick=()=>commit({action:'resume',recordKey:item.key},item);row.append(button);}if(item.state==='created'||item.state==='prepared')archive.append(row);else view.append(row);
+ if(item.state==='pending'||item.state==='failed'){
+  const button=document.createElement('button');
+  if(item.canCorrect){button.textContent='Corregir rechazo de Bitrix (sin reintento automático)';button.onclick=()=>editDraft(item);}
+  else{button.textContent='Revisar / reintentar este envío';button.onclick=()=>commit({action:'resume',recordKey:item.key},item);}
+  row.append(button);
+ }if(item.state==='created'||item.state==='prepared')archive.append(row);else view.append(row);
  }if(archive.children.length>1)view.append(archive);}
  const tell=t=>{if(panel)panel.querySelector('[data-create-status]').textContent=t;};
 
@@ -68,16 +73,19 @@
   if(!armed||armed.expires<Date.now()||armed.signature!==canonical(p)||!reviewed())return stop(event,'La revisión cambió o falta preparar. Confirma TC, negociación y revisión del resumen antes de resolver. La vista previa se prepara automáticamente.');
   const tile=document.querySelector('[aria-label^="Abrir sala "][aria-selected="true"]'),label=tile&&tileName(tile),before=tile&&status(tile);
   if(!tile||tiles(label).length!==1||!['En seguimiento','Pendiente'].includes(before))return stop(event,'No se puede identificar de forma única el estado de esta sala. No se solicitó el cierre.');
-  const job={...armed,label,before,clickedAt:Date.now(),dialog,interrupted:false};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
+  const job={...armed,label,before,clickedAt:Date.now(),dialog,interrupted:false,route:location.hash,tile};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
  },true);
  // Observe native acknowledgement before the next navigation can remove its DOM.
  function observeClosures(){for(const job of closureJobs.values()){
-  if(job.submitted)continue;if(job.ack&&job.dialog.isConnected){job.ack='';job.error=true;}if(job.ack)continue;
+  if(job.submitted)continue;if(job.ack&&job.dialog.isConnected){job.ack='';job.ackAt=0;}if(job.ack)continue;
   const matches=tiles(job.label),error=job.dialog.isConnected&&[...job.dialog.querySelectorAll('[role="alert"]')].some(e=>e.textContent.trim());
-  if(error){job.error=true;continue;}
+  if(error){job.error=true;job.errorAt=Date.now();continue;}
+  if(job.error&&job.dialog.isConnected){job.error=false;job.errorAt=0;}
   if(job.dialog.isConnected)continue;
-  if(matches.length===1&&status(matches[0])==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();}
-  else if(!job.interrupted&&location.hash==='#/home'&&!matches.length){job.ack='ON_RATING_HANDOFF';job.ackAt=Date.now();}
+  // A homonymous tile of another room is not evidence. Only the captured DOM
+  // element may confirm Resuelto, and only if the current room still matches.
+  if(location.hash===job.route&&matches.length===1&&matches[0]===job.tile&&status(job.tile)==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();job.error=false;}
+  else if(!job.interrupted&&location.hash==='#/home'&&!job.dialog.isConnected&&!job.tile.isConnected&&!matches.length){job.ack='ON_RATING_HANDOFF';job.ackAt=Date.now();job.error=false;}
  }}
  new MutationObserver(observeClosures).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-label']});
  window.addEventListener('hashchange',observeClosures);
@@ -85,7 +93,7 @@
  window.addEventListener('pointerdown',noteInteraction,true);window.addEventListener('keydown',noteInteraction,true);
  function processClosures(){observeClosures();for(const job of closureJobs.values()){
   if(job.submitted)continue;
-  if(!job.ack){if(Date.now()-job.clickedAt>30000){job.error=true;closureNotice('Cierre pendiente de verificar · '+job.preview.title);}continue;}
+  if(!job.ack){if(Date.now()-job.clickedAt>30000&&!job.timedOut){job.timedOut=true;closureNotice('Cierre sin confirmación visible · '+job.preview.title+' · vuelve a comprobar el estado.');}continue;}
   if(!closeDialog()&&location.hash==='#/home')closurePreview(job);
   if(job.error||Date.now()-job.ackAt<2000||Date.now()<(job.retryAt||0))continue;
   job.submitted=true;

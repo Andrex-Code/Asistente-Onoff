@@ -10,12 +10,13 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
   try{
    if(token.expires<now())throw Error('Piloto vencido.');
    const r=await fetchImpl('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true,dateReviewed:v.dateReviewed===true}),signal:AbortSignal.timeout(55000)});
-   const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se recibió confirmación del servidor.');
+   const d=await r.json().catch(()=>null);
+   if(!r.ok||!d?.ok){const err=Error(d?.error||'No se recibió confirmación del servidor.');if(d?.code==='BITRIX_REJECTED')err.definitiveReject=true;throw err;}
    await chrome.storage.local.set({[key]:{...v,result:d.data,phase:'created',lastError:'',nextAt:null}});try{await chrome.alarms?.clear(prefix+key);}catch{/* A stale alarm will see the saved result and never resend. */}return d.data;
   }catch(e){
-   const fatal=/vencid|no autorizado|otra sesión|fuera del piloto|no se verificó|campo bloqueado|no coincide con el piloto/i.test(e.message);
+   const fatal=e.definitiveReject===true||/vencid|no autorizado|otra sesión|fuera del piloto|no se verificó|campo bloqueado|no coincide con el piloto/i.test(e.message);
    const retry=!fatal&&v.attempts<=delays.length;
-   const saved={...v,phase:retry?'retry':'failed',lastError:String(e.message).slice(0,500),nextAt:retry?now()+delays[v.attempts-1]:null};await chrome.storage.local.set({[key]:saved});
+   const saved={...v,phase:retry?'retry':'failed',definitiveReject:e.definitiveReject===true,lastError:String(e.message).slice(0,500),nextAt:retry?now()+delays[v.attempts-1]:null};await chrome.storage.local.set({[key]:saved});
    if(retry)await chrome.alarms?.create(prefix+key,{when:saved.nextAt});
    throw Error(saved.lastError+(retry?' Reintento automático programado.':' Envío conservado en la bandeja de fallos.'));
   }

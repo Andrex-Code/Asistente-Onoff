@@ -1,3 +1,4 @@
+const {requireReadAccess}=require('../../lib/read-access');
 'use strict';
 const legacy = require('../../lib/client-tasks-legacy');
 const { getService } = require('../../lib/followups-service');
@@ -5,6 +6,7 @@ const { getService } = require('../../lib/followups-service');
 // Keep the established TC consultation untouched. Owner consultations use the
 // optimized service without creating an additional Vercel Function.
 module.exports = async function handler(req, res) {
+  if(!requireReadAccess(req,res))return;
   if (req.body?.mode !== 'owner') return await legacy(req, res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
