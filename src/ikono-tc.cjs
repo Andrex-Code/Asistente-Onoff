@@ -17,7 +17,7 @@ function parseChatTCCandidates(messages){
  const found=new Map(),items=(messages||[]).map(m=>String(m?.text||'').normalize('NFKC'));
  const label='(?:T\\.?\\s*C\\.?|c[oó]digo\\s+(?:(?:de\\s+(?:la\\s+)?|del\\s+))?(?:tienda|establecimiento)|plataforma)';
  const connector='(?:\\s*(?:[-:#=]|es|ser[ií]a|corresponde\\s+a|n[uú]mero|n[uú]m\\.?|nro\\.?|no\\.?|de\\s+la\\s+tienda)\\s*){0,3}';
- const pattern=new RegExp('\\b'+label+connector+'\\s*(\\d{1,8})(?!\\d|[.,/-]\\d)','gi');
+ const pattern=new RegExp('\\b'+label+connector+'\\s*(\\d{1,8})(?:-1-1)?(?!\\d|[.,/-]\\d)','gi');
  const add=(digits,text,uncertain,source)=>{const code='TC'+digits,item=found.get(code)||{code,source,uncertain:false,evidence:[]};item.uncertain ||= uncertain;item.evidence.push(text.slice(0,240));found.set(code,item);};
  for(let i=0;i<items.length;i++){
   const text=items[i];for(const m of text.matchAll(pattern)){
@@ -39,5 +39,6 @@ function attendedTC(messages,assessment){
  if(/^TC\d{1,8}$/.test(code||'')&&sources.length&&sources.every(m=>unambiguous(m.text))){const q=parseChatTCCandidates([{text:quoted}]);if(q.length===1&&q[0].code===code&&!q[0].uncertain&&(!codes.length||codes[0]===code))return code;}
  if(codes.length===1&&!candidates.some(c=>c.uncertain))return codes[0];return '';
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={parseTCCandidates,parseChatTCCandidates,attendedTC};
-if(typeof window!=='undefined')window.ONOFFIkonoTC={parseTCCandidates,parseChatTCCandidates,attendedTC};
+function normalizeTaskTC(value){const m=String(value||'').trim().replace(/^TC\s*[-:]?\s*/i,'').match(/^(\d{1,8})(?:-1-1)?$/);return m?m[1]:'';}
+if(typeof module!=='undefined'&&module.exports)module.exports={parseTCCandidates,parseChatTCCandidates,attendedTC,normalizeTaskTC};
+if(typeof window!=='undefined')window.ONOFFIkonoTC={parseTCCandidates,parseChatTCCandidates,attendedTC,normalizeTaskTC};

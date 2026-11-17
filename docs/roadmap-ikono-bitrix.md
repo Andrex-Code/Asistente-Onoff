@@ -1,3 +1,13 @@
+## 0.23.0 — envío compacto y TC Esencial
+
+- [x] TC terminada literalmente en -1-1 usa el número base en búsqueda, preparación, edición, título y campo TC; conserva ID CRM real. Otros sufijos no se fusionan.
+- [x] Validación interna de día/contacto sustituye la casilla adicional; confirmación final del asesor permanece. No certifica fechas originales ausentes.
+- [x] Vista previa anticipada mientras se verifica cierre; creación inhabilitada hasta evidencia válida.
+- [x] Envío por registro en barra compacta; permite preparar otro chat, conserva errores/reintentos y evita doble envío.
+- [ ] Ensayo de la nueva versión instalada por el asesor.
+
+Ver [alcance y pruebas](envio-compacto-tc-esencial-0.23.0.md). Sin cierres ni tareas reales en estas pruebas; main intacta.
+
 ## 0.22.8 — aislamiento del modal de cierre
 
 Reproducido y corregido: un panel auxiliar Buscar en Bitrix, incluso oculto, borraba la clasificación al recorrer todos los diálogos. Ahora se lee exclusivamente Resolver conversación visible. Dos pruebas nuevas fallaron antes y aprobaron después. Preparación real TC7133 habilitada tras recarga y restauración de los mismos campos; instalación permanente 0.22.8 pendiente. Ver [evidencia](dialogos-aislados-0.22.8.md). Main intacta.

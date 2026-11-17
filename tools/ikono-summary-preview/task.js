@@ -19,7 +19,7 @@
  function preserveDescription(){if(box&&descriptionEdited)descriptionMemory.set(descriptionScope,box.querySelector('[data-description]').value);}
  function selected(){return root?.getElementById('tc')?.value==='manual'?root.getElementById('manual').value:root?.getElementById('tc')?.value||'';}
  window.ONOFFTaskReview={advisorApply({tc,deal,description,messageIds}){
-  if(!deal||String(deal.tc)!==tc.replace(/^TC/i,'')||!deal.company?.id)throw Error('Negociación o compañía no válidas.');
+  if(!deal||(window.ONOFFIkonoTC?.normalizeTaskTC?.(deal.tc)||String(deal.tc))!==tc.replace(/^TC/i,'')||!deal.company?.id)throw Error('Negociación o compañía no válidas.');
   window.ONOFFAdvisorContext.confirm(tc);render();review();
   const checked=new Set(messageIds||[]);if(!checked.size||[...checked].some(id=>!records.has(id)))throw Error('Revisa los textos de esta atención.');
   for(const e of box.querySelectorAll('[data-messages] input'))e.checked=checked.has(e.dataset.id);

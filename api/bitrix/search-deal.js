@@ -1,5 +1,5 @@
 const { lookupAfacturar } = require('../../lib/afacturar-store');
-const { exactTcRecords } = require('../../lib/bitrix-tc');
+const { exactTcRecords, normalizeTc } = require('../../lib/bitrix-tc');
 const { normalizeCompany, loadPlans } = require('../../lib/bitrix-deal-details');
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
@@ -254,6 +254,7 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
   return {
     id,
     tc: storedTc,
+    originalTc: String(readCustomField(item, tcField) || '').trim(),
     matchType: storedTc === requestedTc ? 'exact' : 'similar',
     title,
     stageId,
@@ -307,8 +308,7 @@ async function callBitrix(webhookUrl, method, params = {}) {
 }
 
 function parseTc(value) {
-  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z0-9]+)*)$/i);
-  return match ? match[1].replace(/\s+/g, '') : '';
+  return normalizeTc(value);
 }
 
 function normalizeWebhookUrl(value) {

@@ -76,10 +76,12 @@ test('endpoint returns the company linked by ID and products belonging to each e
   assert.equal(h.calls.find(call => call.url.includes('crm.deal.productrows.get')).body.get('id'), '12');
 });
 
-test('numeric TC suffixes are retained and similar results are fallback only', async () => {
- assert.equal(normalizeTc('TC20107-1-1'), '20107-1-1');
- assert.equal(exactTcRecords([{ID:'34592',[field]:'20107-1-1'}],field,'20107').length,0);
+test('Esencial suffix -1-1 resolves the base TC while preserving the actual deal', async () => {
+ assert.equal(normalizeTc('TC20107-1-1'), '20107');
+ assert.equal(exactTcRecords([{ID:'34592',[field]:'20107-1-1'}],field,'20107').length,1);
  const h=backend('api/bitrix/search-deal.js', url=>url.includes('crm.deal.list')?[{ID:'34592',[field]:'20107-1-1'}]:{items:[]});
  const rows=await vm.runInNewContext('findDeals("https://bitrix.example/", "'+field+'", "20107")',h.context);
  assert.equal(rows.length,1); assert.equal(rows[0].ID,'34592');
 });
+
+test('Esencial canonical result retains original TC and excludes other terminals',async()=>{const h=backend('api/bitrix/search-deal.js',url=>url.includes('crm.deal.list')?[{ID:'34592',COMPANY_ID:'42',[field]:'20107-1-1'},{ID:'wrong',[field]:'20107-3'}]:[]);let payload;const res={setHeader(){},status(){return this;},json(v){payload=v;}};await h.context.module.exports({method:'POST',body:{tc:'20107'}},res);assert.equal(payload.deals.length,1);assert.equal(payload.deals[0].id,'34592');assert.equal(payload.deals[0].tc,'20107');assert.equal(payload.deals[0].originalTc,'20107-1-1');assert.equal(payload.deals[0].matchType,'exact');for(const suffix of ['-1','-3','-C'])assert.equal(exactTcRecords([{[field]:'20107'+suffix}],field,'20107').length,0);});
