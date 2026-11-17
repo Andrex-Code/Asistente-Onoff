@@ -20,7 +20,7 @@ function backend(file, response) {
   const calls = [], context = {
     module: { exports: {} }, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     process: { env: { BITRIX_WEBHOOK_URL: 'https://bitrix.example/rest/test/' } },
-    require: name => name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : name.endsWith('bitrix-deal-details') ? require('../lib/bitrix-deal-details') : { lookupAfacturar: async () => null },
+    require: name => name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : name.endsWith('bitrix-deal-details') ? require('../lib/bitrix-deal-details') : name.endsWith('read-access') ? {requireReadAccess:()=>true} : { lookupAfacturar: async () => null },
     fetch: async (url, options) => { calls.push({ url, body: options.body }); return { ok: true, json: async () => ({ result: response(url) }) }; }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
