@@ -54,3 +54,28 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   return data.data;
  })().then(data=>reply({ok:true,data}),e=>reply({ok:false,error:e.message||'Sin respuesta. Consulta el resultado antes de reintentar.'}));return true;
 });
+
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+ if(m?.type!=='ONOFF_IKONO_READ')return false;
+ (async()=>{
+  const auth=self.ONOFF_TASK_PILOT;
+  if(!auth?.token||Date.now()>=auth.expires)throw Error('Autorización del piloto vencida.');
+  const source=new URL(sender.url||'');
+  if(sender.id!==chrome.runtime.id||!sender.tab||
+   !['https://onoff.a.ikono.im','https://onoff.s.ikono.im'].includes(source.origin))throw Error('Origen de consulta no autorizado.');
+  const current=new URL((await chrome.tabs.get(sender.tab.id)).url||'');
+  if(current.origin!==source.origin||!/^#\/room\//.test(current.hash))throw Error('La sala de la consulta cambió.');
+  const route=m.route;
+  if(!['crm','summary'].includes(route)||!m.payload||typeof m.payload!=='object'||Array.isArray(m.payload))throw Error('Consulta inválida.');
+  if(route==='crm'&&!/^\d{1,8}(?:-1-1)?$/.test(String(m.payload.tc||'')))throw Error('TC inválida.');
+  if(route==='summary'&&!['summary_test','attention_summary_test','daily_summary_test','image_ocr_test'].includes(m.payload.mode))throw Error('Modalidad de resumen inválida.');
+  const serialized=JSON.stringify(m.payload);
+  if(serialized.length>60000)throw Error('El contenido supera el límite.');
+  const endpoint=route==='crm'?'search-deal':'assistant-chat';
+  const url=route==='crm'?'https://asistente-onoff.vercel.app/api/bitrix/'+endpoint:'https://asistente-onoff.vercel.app/api/'+endpoint;
+  const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:serialized,signal:AbortSignal.timeout(45000)});
+  const data=await response.json().catch(()=>null);
+  return {status:response.status,data:data||{ok:false,error:'El servidor respondió HTTP '+response.status+' sin JSON válido.'}};
+ })().then(reply,e=>reply({status:503,data:{ok:false,error:e.message||'Servicio no disponible.'}}));
+ return true;
+});
