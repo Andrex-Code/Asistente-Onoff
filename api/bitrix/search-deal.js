@@ -1,3 +1,4 @@
+const {requireReadAccess}=require('../../lib/read-access');
 const { lookupAfacturar } = require('../../lib/afacturar-store');
 const { exactTcRecords, normalizeTc } = require('../../lib/bitrix-tc');
 const { normalizeCompany, loadPlans } = require('../../lib/bitrix-deal-details');
@@ -5,9 +6,7 @@ const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
 
 module.exports = async function handler(req, res) {
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
+  if(!requireReadAccess(req,res))return;
 
   try {
     const webhookUrl = normalizeWebhookUrl(process.env.BITRIX_WEBHOOK_URL);
