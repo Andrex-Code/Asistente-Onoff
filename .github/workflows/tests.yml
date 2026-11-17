@@ -27,5 +27,8 @@ jobs:
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Run tests
         run: npm test
