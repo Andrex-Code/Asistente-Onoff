@@ -33,7 +33,12 @@
  if(item.url){const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener';a.textContent='Abrir tarea #'+item.taskId;row.append(a);}
  if(item.state==='confirmation'){const preview=document.createElement('textarea');preview.readOnly=true;preview.setAttribute('aria-label','Vista previa final TC'+item.tc);preview.style='width:100%;height:200px;box-sizing:border-box';preview.value=item.review?.description||item.description;row.append(preview);
  const edit=document.createElement('button');edit.textContent='✎ Editar borrador';edit.onclick=()=>editDraft(item);row.append(edit);const button=document.createElement('button');button.textContent='✓ Confirmar crear tarea PRUEBA · TC'+item.tc;button.style='background:#087a48;color:white;padding:10px;margin:8px;border:0;border-radius:6px';button.onclick=async e=>{if(!e.isTrusted||deliveryJobs.has(item.key))return;button.disabled=true;button.textContent='Creando tarea… Espera sin volver a pulsar';row.setAttribute('aria-busy','true');await commit({action:'confirm',recordKey:item.key},item);};row.append(button);}
- if(item.state==='pending'||item.state==='failed'){const button=document.createElement('button');button.textContent='Revisar / reintentar este envío';button.onclick=()=>commit({action:'resume',recordKey:item.key},item);row.append(button);}if(item.state==='created'||item.state==='prepared')archive.append(row);else view.append(row);
+ if(item.state==='pending'||item.state==='failed'){
+  const button=document.createElement('button');
+  if(item.canCorrect){button.textContent='Corregir rechazo de Bitrix (sin reintento automático)';button.onclick=()=>editDraft(item);}
+  else{button.textContent='Revisar / reintentar este envío';button.onclick=()=>commit({action:'resume',recordKey:item.key},item);}
+  row.append(button);
+ }if(item.state==='created'||item.state==='prepared')archive.append(row);else view.append(row);
  }if(archive.children.length>1)view.append(archive);}
  const tell=t=>{if(panel)panel.querySelector('[data-create-status]').textContent=t;};
 
