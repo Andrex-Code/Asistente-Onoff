@@ -10,7 +10,7 @@ function fixture(options={}){let task=null,adds=0,moves=0,completes=0;const reco
  if(m==='tasks.task.getFields')return {fields:Object.fromEntries([...Object.values(mapping),'UF_PRODUCT'].map(k=>[k,{title:k,type:'string'}]))};
  if(m==='task.stages.get')return {1421:{ID:'1421',TITLE:'Finalizadas Solicitud'}};
  if(m==='crm.deal.get')return options.deals?.[p.id]||{COMPANY_ID:c.companyId,UF_CRM_1642606760058:options.rawTc??c.tc};
- if(m==='tasks.task.add'){adds++;task={id:'900',xmlId:options.truncate?p.fields.XML_ID.slice(0,50):p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
+ if(m==='tasks.task.add'){adds++;if(options.definitiveReject&&adds===1){const error=Error('Bitrix validation rejected');error.definitive=true;error.bitrixCode='ERROR_ARGUMENT';throw error;}task={id:'900',xmlId:options.truncate?p.fields.XML_ID.slice(0,50):p.fields.XML_ID,groupId:'53',stageId:'0',fields:p.fields};if(options.timeout)throw Error('timeout');return {task};}
  if(m==='tasks.task.get')return {task};
  if(m==='tasks.task.complete'){completes++;assert.equal(task.stageId,'1421');if(options.completeFails&&completes===1)throw Error('complete failed');task.status=options.completionControl?'4':'5';if(options.completeTimeout&&completes===1)throw Error('completion timeout');return {task};}
  if(m==='tasks.task.list')return {tasks:task?[task]:[]};
@@ -48,3 +48,21 @@ test('active-contact date is validated internally before any Bitrix write',async
 test('prepare uses the same exact TC normalization as CRM search, never matches another terminal suffix',async()=>{for(const rawTc of ['TC5046',' 5046 ','tc:5046',['5046']]){const f=fixture({rawTc});await f.service.prepare({...c,mode:'multi'},payload);assert.equal(f.stats().adds,0);}for(const rawTc of ['5046-1','15046','5046-C'])await assert.rejects(fixture({rawTc}).service.prepare({...c,mode:'multi'},payload),/no coincide exactamente/);});
 
 test('Esencial suffix prepares and amends base TC with the original CRM IDs',async()=>{const f=fixture({rawTc:'5046-1-1'}),cfg={...c,mode:'multi'};const p=await f.service.prepare(cfg,{...payload,tc:'5046-1-1'});let signed=unseal(p.intent);assert.equal(signed.fields.UF_TC,'5046');assert.match(signed.fields.TITLE,/^TC5046 -/);assert.deepEqual(signed.fields.UF_CRM_TASK,['D_20934','CO_30342']);const a=await f.service.amend(cfg,{intent:p.intent,edits:{tc:'5046-1-1',dealId:c.dealId,scopeReviewed:true}});signed=unseal(a.intent);assert.equal(signed.fields.UF_TC,'5046');assert.equal(f.stats().adds,0);});
+
+test('definitive rejection permits one amended confirmed recovery, never blind retry',async()=>{
+ const f=fixture({definitiveReject:true}),p=await f.service.prepare(c,payload);
+ await assert.rejects(f.service.commit(c,{intent:p.intent,evidence}),/Bitrix rechazó/);
+ assert.equal(f.stats().adds,1);
+ assert.equal(JSON.parse(f.records.get('onoff/task-pilot/fixture.json')).phase,'rejected');
+ await assert.rejects(f.service.commit(c,{intent:p.intent,evidence}),/Corrige el borrador/);
+ const corrected=await f.service.amend(c,{intent:p.intent,edits:{description:'Motivo: validado\nGestión: corregida\nResultado: pendiente'}});
+ const result=await f.service.commit(c,{intent:corrected.intent,evidence});
+ assert.equal(result.completed,true);
+ assert.equal(f.stats().adds,2);
+ assert.match(f.stats().task.fields.DESCRIPTION,/corregida/);
+ assert.equal(JSON.parse(f.records.get('onoff/task-pilot/fixture-recovery.json')).phase,'completed');
+ await f.service.commit(c,{intent:corrected.intent,evidence});
+ assert.equal(f.stats().adds,2);
+ const another=await f.service.amend(c,{intent:p.intent,edits:{description:'Motivo: distinto\nGestión: otra\nResultado: pendiente'}}).catch(e=>e);
+ assert.match(another.message,/intento de recuperación/);
+});
