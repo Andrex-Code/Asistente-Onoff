@@ -42,11 +42,13 @@ async function requestBitrix(action, value) {
     throw bitrixFailure('HOST_PERMISSION', `La extensión no tiene permiso para acceder a ${url.origin}. Revise el acceso a sitios en la configuración de la extensión.`);
   }
 
+  const token=String((await chrome.storage.local.get('onoffReadToken')).onoffReadToken||'').trim();
+  if(!/^[A-Za-z0-9._~-]{20,512}$/.test(token))throw bitrixFailure('BACKEND_ACCESS','Configure un token de consulta autorizado en Ajustes de ONOFF.');
   const [endpoint, field] = BITRIX_ROUTES[action];
   let response, data;
   try {
     response = await fetch(`${url.origin}/api/bitrix/${endpoint}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer '+token },
       body: JSON.stringify({ [field]: text }), signal: AbortSignal.timeout(55000),
       credentials: 'omit', redirect: 'error'
     });
