@@ -13,3 +13,9 @@ Se conserva crear → verificar Finalizadas Solicitud → completar → verifica
 Pruebas: 33/33 de TC/consulta/servidor; 1/1 navegador con TC Esencial del texto y respuesta CRM con sufijo; 5/5 QA de envío conjunto; prueba de vista previa anticipada aprobada. Regresión adicional de cliente documentada al completar verificación. Fixtures y red simulados; ensayo instalado pendiente.
 
 Paquete privado 0.23.0 generado con --pilot. Renovación temporal existente hasta 19/11/2026 09:24 Colombia, sin nueva ampliación. Credenciales, diario, datos de clientes y ZIP no se publican.
+
+## Verificación final
+
+13/13 pruebas conjuntas de selector y contactos secuenciales aprobadas; 5/5 QA envío aprobadas en ejecución conjunta. Regresión de creador: seis casos aprobados en la batería; recuperación actualizada al aviso compacto aprobó por separado, y el aviso de un segundo aprobó usando tiempo real (el reloj simulado bloqueaba la acción del navegador). La batería amplia anterior se interrumpió al quedar detenida en este último ensayo; sus 23 casos con resultado emitido aprobaron, no se declara batería completa aprobada.
+
+Servidor desplegado READY desde 01542cce269ff3a52471122dfaf25e383791bc1f, alias de producción verificado. Consulta remota de solo lectura para 20107: HTTP200, tc 20107, originalTc 20107-1-1, coincidencia exacta con negociación y compañía presentes. No se crean ni editan tareas reales durante la comprobación. Carpeta privada y ZIP 0.23.0 verificados contra fuentes; recarga instalada pendiente del asesor.
