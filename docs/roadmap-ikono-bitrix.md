@@ -1,3 +1,7 @@
+## Cierre real listo — 17/11/2026
+
+Servidor valida TC con la misma normalización exacta de CRM y reutiliza la negociación verificada (una llamada repetida menos). 22/22 pruebas aprobadas. Revalidación real confirmó Resolver habilitado para TC8714; cierre y confirmación de tarea pendientes del asesor. Ver [evidencia](cierre-listo-tc-0.22.7.md). Main intacta.
+
 ## 0.22.7 — piloto renovado y error de inicio visible
 
 Resumen real disponible; bloqueo identificado como capacidad vencida. Renovación privada por 48 h con mismo alcance, servidor estable redesplegado y autorización verificada sin operación Bitrix. Aviso de error ya no se sobrescribe con Preparando. 13 comprobaciones dirigidas aprobadas. Recarga y verificación del botón real pendientes. Ver [estado](piloto-renovado-0.22.7.md). Main intacta.
