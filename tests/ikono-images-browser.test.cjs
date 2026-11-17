@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{chromium}=require('playwright'),path=require('node:path');
 test('packaged extension reads photo locally without delaying text; evidence revokes TC confirmation and reopens without new calls',async()=>{
- const extension=path.resolve(__dirname,'../dist/ikono-summary-preview');
+ const fixture=require('./ikono-pilot-extension-fixture.cjs')();const extension=fixture.extension;
  const context=await chromium.launchPersistentContext('',{channel:'chromium',headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
  try{let textCalls=0,imageCalls=0;await context.route('https://asistente-onoff.vercel.app/api/assistant-chat',async route=>{const body=route.request().postDataJSON();if(body.mode==='summary_test'){textCalls++;return route.fulfill({json:{ok:true,answer:'Resumen de texto disponible',imageAssessment:{ambiguous:true,chatTc:null,evidence:''}}});}imageCalls++;assert(body.conversation.length<=2);assert(body.conversation.every(m=>!m.text.includes('data:image')));return route.fulfill({json:{ok:true,answer:'Complemento OCR de prueba',summaryMode:'compact-v1'}});});
  await context.route('https://onoff.s.ikono.im/**',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><body><li class="mx_EventTile" data-event-id="text" data-self="false"><div class="mx_EventTile_body translate">Consulta ficticia</div></li></body>'}));
@@ -16,7 +16,7 @@ test('packaged extension reads photo locally without delaying text; evidence rev
  await page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary').shadowRoot.querySelector('#imageSummary').value==='Complemento revisado por asesor');assert.equal(textCalls,1);assert.equal(imageCalls,1);assert.equal(await ui.locator('[aria-label="Resumen editable"]').inputValue(),'Texto revisado por asesor');
  await page.screenshot({path:path.resolve(__dirname,'../dist/ikono-images-0.7.0.png'),fullPage:true});
  await page.evaluate(()=>location.hash='#/room/other');await page.waitForTimeout(100);assert.equal(await ui.locator('#imageSummary').inputValue(),'');assert.equal(await ui.isVisible(),false);
- }finally{await context.close();}
+ }finally{await context.close();fixture.cleanup();}
 });
 test('clear cases and TC clarified in chat skip all OCR; unresolved multiple TC and visual ambiguity trigger it',async()=>{
  const browser=await chromium.launch();try{for(const scenario of [
