@@ -1,3 +1,7 @@
+## 0.22.8 — aislamiento del modal de cierre
+
+Reproducido y corregido: un panel auxiliar Buscar en Bitrix, incluso oculto, borraba la clasificación al recorrer todos los diálogos. Ahora se lee exclusivamente Resolver conversación visible. Dos pruebas nuevas fallaron antes y aprobaron después. Preparación real TC7133 habilitada tras recarga y restauración de los mismos campos; instalación permanente 0.22.8 pendiente. Ver [evidencia](dialogos-aislados-0.22.8.md). Main intacta.
+
 ## Cierre real listo — 17/11/2026
 
 Servidor valida TC con la misma normalización exacta de CRM y reutiliza la negociación verificada (una llamada repetida menos). 22/22 pruebas aprobadas. Revalidación real confirmó Resolver habilitado para TC8714; cierre y confirmación de tarea pendientes del asesor. Ver [evidencia](cierre-listo-tc-0.22.7.md). Main intacta.
