@@ -26,7 +26,7 @@ test('repeated non-JSON 502 responses stop after three attempts, without fabrica
   await f.page.evaluate(()=>ONOFFAdvisorContext.retrySummary());
   await f.page.waitForFunction(()=>document.querySelector('#onoff-ikono-auto-summary')?.shadowRoot?.querySelector('[role=status]')?.textContent.startsWith('No se pudo generar:'),{},{timeout:7000});
   assert.equal(calls,3);
-  const value=await f.page.locator('#onoff-ikono-auto-summary').locator('textarea').inputValue();
+  const value=await f.page.locator('#onoff-ikono-auto-summary').getByLabel('Resumen editable').inputValue();
   assert.equal(value,'');
  }finally{await f.browser.close();}
 });
