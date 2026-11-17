@@ -1,3 +1,7 @@
+## 0.22.7 — piloto renovado y error de inicio visible
+
+Resumen real disponible; bloqueo identificado como capacidad vencida. Renovación privada por 48 h con mismo alcance, servidor estable redesplegado y autorización verificada sin operación Bitrix. Aviso de error ya no se sobrescribe con Preparando. 13 comprobaciones dirigidas aprobadas. Recarga y verificación del botón real pendientes. Ver [estado](piloto-renovado-0.22.7.md). Main intacta.
+
 ## Continuidad desde casa
 
 Estado vigente, preparación del equipo, pruebas y siguiente ensayo: [Continuar desde casa — 0.22.6](continuar-en-casa-0.22.6.md). Código y pruebas publicados; paquete con autorización y diarios locales no viajan por GitHub.
