@@ -1,8 +1,7 @@
+const {requireReadAccess}=require('../../lib/read-access');
 module.exports = async function handler(req, res) {
   if (req.body?.pilotAction || req.method === 'OPTIONS' && req.headers['access-control-request-headers']?.toLowerCase().includes('authorization')) return require('../../lib/ikono-task-handler')(req,res);
-  setCors(res);
-  if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
+  if(!requireReadAccess(req,res))return;
 
   try {
     const webhookUrl = normalizeWebhookUrl(process.env.BITRIX_WEBHOOK_URL);
