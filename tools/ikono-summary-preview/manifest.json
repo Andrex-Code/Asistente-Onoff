@@ -49,6 +49,7 @@
         "tc.js",
         "image-evidence.js",
         "images.js",
+        "read.js",
         "auto.js",
         "task.js",
         "advisor.js",
