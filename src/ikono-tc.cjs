@@ -2,7 +2,10 @@
 function parseTCCandidates(name) {
  const found=new Map(),text=String(name||'');
  const add=(digits,source)=>{const code='TC'+digits;if(!found.has(code)||source==='explicit')found.set(code,{code,source});};
- for(const m of text.matchAll(/\bTC\s*[-:]?\s*(\d+)\b/gi))add(m[1],'explicit');
+ // Read the complete code before canonicalizing. Never turn TC20107-C into TC20107.
+ for(const m of text.matchAll(/\bTC\s*[-:]?\s*(\d{1,8}(?:-[A-Z0-9]+)*)(?![\w-])/gi)){
+  const normalized=normalizeTaskTC(m[1]);if(normalized)add(normalized,'explicit');
+ }
  // Unlabelled numbers: only at the start of the name or a parenthesized name.
  // 1–9 digits is a heuristic to exclude phone numbers, not a validated TC format.
  for(const m of text.matchAll(/(?:^|\()\s*(\d{1,9})(?!\d)\s*[-–—:]?\s*(?=\p{L})/gu))add(m[1],'position');
@@ -18,13 +21,13 @@ function parseChatTCCandidates(messages){
  const found=new Map(),items=(messages||[]).map(m=>String(m?.text||'').normalize('NFKC'));
  const label='(?:T\\.?\\s*C\\.?|c[oó]digo\\s+(?:(?:de\\s+(?:la\\s+)?|del\\s+))?(?:tienda|establecimiento)|plataforma)';
  const connector='(?:\\s*(?:[-:#=]|es|ser[ií]a|corresponde\\s+a|n[uú]mero|n[uú]m\\.?|nro\\.?|no\\.?|de\\s+la\\s+tienda)\\s*){0,3}';
- const pattern=new RegExp('\\b'+label+connector+'\\s*(\\d{1,8})(?:-1-1)?(?!\\d|[.,/-]\\d)','gi');
+ const pattern=new RegExp('\\b'+label+connector+'\\s*(\\d{1,8}(?:-[A-Z0-9]+)*)(?![\\w-]|[.,/]\\d)','gi');
  const add=(digits,text,uncertain,source)=>{const code='TC'+digits,item=found.get(code)||{code,source,uncertain:false,evidence:[]};item.uncertain ||= uncertain;item.evidence.push(text.slice(0,240));found.set(code,item);};
  for(let i=0;i<items.length;i++){
   const text=items[i];for(const m of text.matchAll(pattern)){
    const around=text.slice(Math.max(0,m.index-55),Math.min(text.length,m.index+m[0].length+35));
    const uncertain=/[?¿]|\b(?:no|otra|anterior|antes|equivocad[ao]|ejemplo)\b/i.test(around);
-   add(m[1],text,uncertain,'explicit-chat');
+   const normalized=normalizeTaskTC(m[1]);if(normalized)add(normalized,text,uncertain,'explicit-chat');
   }
   if(i&&/^\s*\d{1,8}\s*$/.test(text)&&new RegExp('(?:cu[aá]l|confirma|indica|comparte|env[ií]a|reg[aá]la|dime|n[uú]mero|c[oó]digo)[\\s\\S]{0,90}'+label,'i').test(items[i-1]))add(text.trim(),text,false,'answer-to-tc');
  }
