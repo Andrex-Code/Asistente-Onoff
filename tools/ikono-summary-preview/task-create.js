@@ -68,16 +68,19 @@
   if(!armed||armed.expires<Date.now()||armed.signature!==canonical(p)||!reviewed())return stop(event,'La revisión cambió o falta preparar. Confirma TC, negociación y revisión del resumen antes de resolver. La vista previa se prepara automáticamente.');
   const tile=document.querySelector('[aria-label^="Abrir sala "][aria-selected="true"]'),label=tile&&tileName(tile),before=tile&&status(tile);
   if(!tile||tiles(label).length!==1||!['En seguimiento','Pendiente'].includes(before))return stop(event,'No se puede identificar de forma única el estado de esta sala. No se solicitó el cierre.');
-  const job={...armed,label,before,clickedAt:Date.now(),dialog,interrupted:false};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
+  const job={...armed,label,before,clickedAt:Date.now(),dialog,interrupted:false,route:location.hash,tile};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
  },true);
  // Observe native acknowledgement before the next navigation can remove its DOM.
  function observeClosures(){for(const job of closureJobs.values()){
-  if(job.submitted)continue;if(job.ack&&job.dialog.isConnected){job.ack='';job.error=true;}if(job.ack)continue;
+  if(job.submitted)continue;if(job.ack&&job.dialog.isConnected){job.ack='';job.ackAt=0;}if(job.ack)continue;
   const matches=tiles(job.label),error=job.dialog.isConnected&&[...job.dialog.querySelectorAll('[role="alert"]')].some(e=>e.textContent.trim());
-  if(error){job.error=true;continue;}
+  if(error){job.error=true;job.errorAt=Date.now();continue;}
+  if(job.error&&job.dialog.isConnected){job.error=false;job.errorAt=0;}
   if(job.dialog.isConnected)continue;
-  if(matches.length===1&&status(matches[0])==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();}
-  else if(!job.interrupted&&location.hash==='#/home'&&!matches.length){job.ack='ON_RATING_HANDOFF';job.ackAt=Date.now();}
+  // A homonymous tile of another room is not evidence. Only the captured DOM
+  // element may confirm Resuelto, and only if the current room still matches.
+  if(location.hash===job.route&&matches.length===1&&matches[0]===job.tile&&status(job.tile)==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();job.error=false;}
+  else if(!job.interrupted&&location.hash==='#/home'&&!job.dialog.isConnected&&!job.tile.isConnected&&!matches.length){job.ack='ON_RATING_HANDOFF';job.ackAt=Date.now();job.error=false;}
  }}
  new MutationObserver(observeClosures).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-label']});
  window.addEventListener('hashchange',observeClosures);
@@ -85,7 +88,7 @@
  window.addEventListener('pointerdown',noteInteraction,true);window.addEventListener('keydown',noteInteraction,true);
  function processClosures(){observeClosures();for(const job of closureJobs.values()){
   if(job.submitted)continue;
-  if(!job.ack){if(Date.now()-job.clickedAt>30000){job.error=true;closureNotice('Cierre pendiente de verificar · '+job.preview.title);}continue;}
+  if(!job.ack){if(Date.now()-job.clickedAt>30000&&!job.timedOut){job.timedOut=true;closureNotice('Cierre sin confirmación visible · '+job.preview.title+' · vuelve a comprobar el estado.');}continue;}
   if(!closeDialog()&&location.hash==='#/home')closurePreview(job);
   if(job.error||Date.now()-job.ackAt<2000||Date.now()<(job.retryAt||0))continue;
   job.submitted=true;
