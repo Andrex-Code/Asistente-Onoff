@@ -9,6 +9,7 @@ function parseTCCandidates(name) {
  // A short numeric suffix separated from the customer's name is only a candidate.
  const suffix=text.match(/^[^()\d]{1,120}[-–—]\s*(\d{1,9})(?!\d)(?=\s*(?:\(|$))/u);
  if(suffix&&!(suffix[1].length===4&&Number(suffix[1])>=1900&&Number(suffix[1])<=2099))add(suffix[1],'position');
+ const bare=text.match(/^\s*(\d{1,8})\s*(?:\(\s*\+?\d{10,15}\s*\))?\s*$/);if(bare)add(bare[1],'position');
  return [...found.values()];
 }
 // Contextual extraction is deliberately separate from positional room-name rules.

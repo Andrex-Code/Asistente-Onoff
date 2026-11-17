@@ -1,3 +1,13 @@
+## 0.23.2 — confirmación conservada al navegar
+
+- [x] Cola por cierre, independiente de B y su cancelación.
+- [x] Aviso compacto para revisar confirmaciones guardadas.
+- [x] Sin señal nativa de cierre no se habilita creación.
+- [x] TC numérica sin nombre reconocida.
+- [ ] Ensayo instalado del asesor.
+
+[Pruebas y límites](cierre-navegacion-0.23.2.md). Sin tareas ni cierres reales durante QA.
+
 ## 0.23.0 — envío compacto y TC Esencial
 
 - [x] TC terminada literalmente en -1-1 usa el número base en búsqueda, preparación, edición, título y campo TC; conserva ID CRM real. Otros sufijos no se fusionan.
