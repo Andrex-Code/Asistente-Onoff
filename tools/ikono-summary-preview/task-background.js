@@ -7,6 +7,10 @@ chrome.alarms?.onAlarm.addListener(async alarm=>{if(!await deliveryReady)await d
 chrome.runtime.onStartup?.addListener(()=>deliveryReady);
 chrome.runtime.onInstalled?.addListener(()=>deliveryReady);
 chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+ if(m?.type==='ONOFF_IKONO_READ'){
+  handleIkonoRead(m,sender).then(reply,e=>reply({status:503,data:{ok:false,error:e.message||'Servicio no disponible.'}}));
+  return true;
+ }
  if(m?.type!=='ONOFF_TASK_PILOT')return false;
  let url;try{url=new URL(sender.url);}catch{return false;}
  if(sender.id!==chrome.runtime.id||!sender.tab||!['https://onoff.a.ikono.im','https://onoff.s.ikono.im'].includes(url.origin))return false;
@@ -55,9 +59,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
  })().then(data=>reply({ok:true,data}),e=>reply({ok:false,error:e.message||'Sin respuesta. Consulta el resultado antes de reintentar.'}));return true;
 });
 
-chrome.runtime.onMessage.addListener((m,sender,reply)=>{
- if(m?.type!=='ONOFF_IKONO_READ')return false;
- (async()=>{
+async function handleIkonoRead(m,sender){
   const auth=self.ONOFF_TASK_PILOT;
   if(!auth?.token||Date.now()>=auth.expires)throw Error('Autorización del piloto vencida.');
   const source=new URL(sender.url||'');
@@ -76,6 +78,4 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:serialized,signal:AbortSignal.timeout(45000)});
   const data=await response.json().catch(()=>null);
   return {status:response.status,data:data||{ok:false,error:'El servidor respondió HTTP '+response.status+' sin JSON válido.'}};
- })().then(reply,e=>reply({status:503,data:{ok:false,error:e.message||'Servicio no disponible.'}}));
- return true;
-});
+}
