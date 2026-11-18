@@ -48,3 +48,11 @@ test('active-contact date is validated internally before any Bitrix write',async
 test('prepare uses the same exact TC normalization as CRM search, never matches another terminal suffix',async()=>{for(const rawTc of ['TC5046',' 5046 ','tc:5046',['5046'],'5046-C']){const f=fixture({rawTc});await f.service.prepare({...c,mode:'multi'},payload);assert.equal(f.stats().adds,0);}for(const rawTc of ['5046-1','15046'])await assert.rejects(fixture({rawTc}).service.prepare({...c,mode:'multi'},payload),/no coincide exactamente/);});
 
 test('Esencial suffix prepares and amends base TC with the original CRM IDs',async()=>{const f=fixture({rawTc:'5046-1-1'}),cfg={...c,mode:'multi'};const p=await f.service.prepare(cfg,{...payload,tc:'5046-1-1'});let signed=unseal(p.intent);assert.equal(signed.fields.UF_TC,'5046');assert.match(signed.fields.TITLE,/^TC5046 -/);assert.deepEqual(signed.fields.UF_CRM_TASK,['D_20934','CO_30342']);const a=await f.service.amend(cfg,{intent:p.intent,edits:{tc:'5046-1-1',dealId:c.dealId,scopeReviewed:true}});signed=unseal(a.intent);assert.equal(signed.fields.UF_TC,'5046');assert.equal(f.stats().adds,0);});
+
+test('verified TC prepares without a visible phone, and never fabricates a phone number',async()=>{
+ const f=fixture(), p=await f.service.prepare(c,{...payload,phone:''}), signed=unseal(p.intent);
+ assert.match(signed.fields.DESCRIPTION,/iKono \(sin teléfono visible\)/);
+ assert.equal(signed.fields[mapping.phone],'iKono (sin teléfono visible)');
+ assert.equal(f.stats().adds,0);
+ await assert.rejects(f.service.prepare({...c,mode:'multi'},{...payload,tc:'',dealId:'',identityMode:'contact',contactConfirmed:true,phone:''}),/teléfono/i);
+});

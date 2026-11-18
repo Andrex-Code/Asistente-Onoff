@@ -2,11 +2,45 @@
  if(window.ONOFFTimeline)return;
  const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  function dateLabel(label){const s=label.trim().toLowerCase();if(s==='hoy'||s==='today')return day();if(s==='ayer'||s==='yesterday')return 'older';const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(m)return `${m[3]}-${m[2]}-${m[1]}`;if(/^\d{4}-\d\d-\d\d$/.test(s))return s;return 'older';}
+ function eventDate(raw){
+  if(typeof raw!=='string')return null;
+  const stamp=/^\d{13}$/.test(raw)?Number(raw):/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(raw)?Date.parse(raw):NaN;
+  return Number.isFinite(stamp)?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(stamp)):null;
+ }
+ function historyScroller(){
+  const messages=[...document.querySelectorAll('li.mx_EventTile[data-event-id]')];
+  const last=messages.at(-1);
+  for(let node=last?.parentElement;node&&node!==document.body;node=node.parentElement){
+   if(/auto|scroll/.test(getComputedStyle(node).overflowY)&&node.scrollHeight>node.clientHeight+2&&node.contains(messages[0]))return node;
+  }
+  return null;
+ }
+ async function loadVisibleHistory({isCurrent,capture}){
+  const scroller=historyScroller();
+  if(!scroller)return false;
+  const distanceFromBottom=scroller.scrollHeight-scroller.clientHeight-scroller.scrollTop;
+  try{
+   for(let attempt=0;attempt<3&&isCurrent()&&scroller.isConnected;attempt++){
+    // Move away from the edge before returning to it to request another page.
+    if(attempt&&scroller.scrollTop===0)scroller.scrollTop=32;
+    await new Promise(resolve=>setTimeout(resolve,attempt?80:0));
+    if(!isCurrent()||!scroller.isConnected)return false;
+    scroller.scrollTop=0;
+    for(let poll=0;poll<5;poll++){
+     await new Promise(resolve=>setTimeout(resolve,240));
+     if(!isCurrent()||!scroller.isConnected)return false;
+     if(capture())return true;
+    }
+   }
+   return false;
+  }finally{
+   if(isCurrent()&&scroller.isConnected)scroller.scrollTop=Math.max(0,scroller.scrollHeight-scroller.clientHeight-distanceFromBottom);
+  }
+ }
  function read(){let date=null,sender='';const items=[];
   for(const e of document.querySelectorAll('.mx_TimelineSeparator,.mx_DateSeparator,li.mx_EventTile[data-event-id]')){
    if(e.matches('.mx_TimelineSeparator,.mx_DateSeparator')){date=dateLabel(e.getAttribute('aria-label')||e.textContent);continue;}
-   const raw=e.querySelector('time[datetime]')?.getAttribute('datetime')||e.getAttribute('data-timestamp');let eventDay=date;
-   if(raw&&/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(raw)&&Number.isFinite(Date.parse(raw)))eventDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(raw));
+   const raw=e.querySelector('time[datetime]')?.getAttribute('datetime')||e.getAttribute('data-timestamp');let eventDay=eventDate(raw)||date;
    const avatar=e.querySelector('.mx_EventTile_avatar [title]')?.getAttribute('title');if(avatar)sender=avatar;else if(!e.classList.contains('mx_EventTile_continuation'))sender='';
    const text=e.querySelector('.mx_EventTile_body.translate')?.textContent?.trim()||e.querySelector('.mx_TextualEvent')?.textContent?.trim()||'';
    const bot=/^@(?:menubot|acd|wb_whatsappbot)/i.test(sender),advisor=/^@(?:agente|supervisor)\d*:/i.test(sender)||e.dataset.self==='true'&&!bot;
@@ -41,5 +75,5 @@
   const anchor=part.find(e=>e.joined||e.greeting)||meaningful[0];
   return {id:anchor.id,reason:'Atención activa · fecha por confirmar',messages:new Map(meaningful.filter(e=>e.text).map(e=>[e.id,{text:e.text,role:e.role,day:e.day||null}])),photoIds:meaningful.filter(e=>e.photo).map(e=>e.id),captureEvidence:{mode:'active-contact-boundary',boundary:anchor.id,datesVerified:false}};
  }
- window.ONOFFTimeline={day,read,sessions,currentContact};
+ window.ONOFFTimeline={day,read,sessions,currentContact,loadVisibleHistory};
 })();

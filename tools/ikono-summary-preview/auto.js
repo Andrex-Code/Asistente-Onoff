@@ -7,7 +7,7 @@
  let timer,controller,revision=0,active=false,room=location.hash,cache=null,pendingKey='',source='',confirmedTC='',tcSignature='',imageCandidates=[];
  let imageReader,lastObserved='',lastAttempt=0,edited=false,lastMemory=null;
  const memory=()=>window.ONOFFIkonoMemory?.get(location.hash);
- root.querySelector('h3').textContent='Resumen y vista previa · 0.24.5';
+ root.querySelector('h3').textContent='Resumen y vista previa · 0.24.6';
  const tcBox=document.createElement('div');tcBox.innerHTML='<p id="source"></p><label>TC de esta atención <select id="tc" aria-label="TC de esta atención"></select></label><label>TC diferente o no encontrada <input id="manual" aria-label="TC manual" placeholder="Ej. TC1234"></label><label><input type="checkbox" id="verified">Confirmé con el cliente qué TC recibió atención</label><button id="confirm">Confirmar TC para esta prueba</button><p id="tcStatus"></p><small>Consulta de TC en la vista previa. Piloto PRUEBA requiere revisión y cierre humano.</small>';
  root.querySelector('h3').after(tcBox);window.ONOFFMovable?.(host,root.querySelector('h3'));const el=id=>root.getElementById(id);
  function saveTC(target=memory()){if(target)target.tcState={source,selected:el('tc').value,manual:el('manual').value,confirmed:confirmedTC,verified:el('verified').checked,imageSignature:JSON.stringify(imageCandidates),seen:[...target.messages.entries()].map(([id,m])=>[id,m.text])};}
@@ -46,9 +46,26 @@
   const attended=ONOFFIkonoTC.attendedTC?.(messages(),cache?.assessment)||'';
   return {room:location.hash,candidates:[...candidates.values()],confirmed:confirmedTC,summary:draft.value,clearTC:attended|| (candidates.size===1&&!chatCandidates.some(c=>c.uncertain)&&![...candidates.values()][0]?.sources.every(s=>s==='foto OCR')?[...candidates.keys()][0]:''),summaryReady:!!draft.value.trim()&&!!cache&&(cache.key===JSON.stringify([room,window.ONOFFTimeline?messages():messages().slice(-40)])||edited&&pending.hidden),attention:memory()?.attention||'',scopeKey:memory()?.scopeKey||location.hash,sessions:memory()?.sessions||[],unknownDates:memory()?.unknownDates||0,generationStatus:(memory()?.captureEvidence?.datesVerified===false?'Atención actual, sin fecha visible: confirmarás el alcance al crear. ':'')+(root.querySelector('[role=status]')?.textContent||''),captureEvidence:memory()?.captureEvidence,photos:root.querySelector('#imageStatus')?.textContent||''};
  },retrySummary(){clear();if(edited)return;cancel();cache=null;active=true;room=location.hash;generate();},confirm(code){if(!active)throw Error('Abre Resolver conversación antes de validar.');if(!/^TC\d{1,8}$/.test(code))throw Error('TC inválida.');const option=[...el('tc').options].some(o=>o.value===code);el('tc').value=option?code:'manual';el('manual').value=option?'':code;el('verified').checked=true;el('confirm').onclick();if(confirmedTC!==code)throw Error('No se pudo confirmar la TC.');return true;}};
+ let historyLoad,historyAttempt;
  async function generate(){
   if(!active||location.hash!==room)return;messages();refreshTC();if(window.__onoffPriorityKey&&window.__onoffPriorityKey!==location.origin+'/'+location.hash){status('Actualización en espera: otro chat está en revisión de cierre.');return;}if(edited){const state=memory(),seen=new Map(state?.editedSeen||[]),changes=[...state?.messages.entries()||[]].filter(([id,m])=>seen.get(id)!==m.text).map(([,m])=>m.text);pending.hidden=!changes.length;pending.open=changes.length>0;pending.querySelector('pre').textContent=changes.join('\n\n');status(changes.length?'Se conserva tu corrección. Revisa los mensajes nuevos antes de considerar final el resumen.':'Corrección conservada; no hay mensajes nuevos detectados. Revisa día y TC.');return;}lastAttempt=Date.now();
-  const all=messages(),conversation=window.ONOFFTimeline?all:all.slice(-40);if(memory()?.overflow){status('La sala supera 250 textos. Requiere revisión; actualización automática detenida.');return;}if(!conversation.length){photoDecision({ambiguous:true});status('No hay textos verificables de hoy en esta atención. Carga el separador Hoy y el contacto actual; no se usan textos anteriores.');return;}if(conversation.length>250||conversation.reduce((n,m)=>n+m.text.length,0)>48000){status('La atención supera el límite. Requiere revisión, no se recorta silenciosamente.');return;}if(conversation.some(m=>m.text.length>4000)){status('Un mensaje supera el límite admitido. No se envió el tramo.');return;}
+  const all=messages(),conversation=window.ONOFFTimeline?all:all.slice(-40);if(memory()?.overflow){status('La sala supera 250 textos. Requiere revisión; actualización automática detenida.');return;}if(!conversation.length){
+   if(window.__onoffCloseReview===room&&window.ONOFFTimeline?.loadVisibleHistory){
+    const capturedRoom=room,token=revision,key=room+':'+revision;
+    if(historyLoad?.key===key)return;
+    if(historyAttempt!==key){
+     historyAttempt=key;
+     const marker={key};historyLoad=marker;
+     status('Cargando el historial de esta atención…');
+     const isCurrent=()=>active&&room===capturedRoom&&location.hash===capturedRoom&&window.__onoffCloseReview===capturedRoom&&revision===token;
+     try{await window.ONOFFTimeline.loadVisibleHistory({isCurrent,capture:()=>messages().length>0});}
+     finally{if(historyLoad===marker)historyLoad=null;}
+     if(!isCurrent())return;
+     if(messages().length){generate();return;}
+    }
+   }
+   photoDecision({ambiguous:true});status('No se encontraron textos verificables de hoy tras revisar el historial. Puedes revalidar si iKono todavía está cargando.');return;
+  }if(conversation.length>250||conversation.reduce((n,m)=>n+m.text.length,0)>48000){status('La atención supera el límite. Requiere revisión, no se recorta silenciosamente.');return;}if(conversation.some(m=>m.text.length>4000)){status('Un mensaje supera el límite admitido. No se envió el tramo.');return;}
   const dateNote=memory()?.captureEvidence?.datesVerified===false?' Atención actual delimitada; fecha por confirmar al revisar la tarea.':'';
   const note=`${conversation.length} mensajes cargados${!window.ONOFFTimeline&&all.length>40?`; se omitieron ${all.length-40} anteriores por el límite`:''}.`;
   const key=JSON.stringify([room,conversation]);
