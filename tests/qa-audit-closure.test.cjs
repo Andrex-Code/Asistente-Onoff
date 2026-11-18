@@ -6,3 +6,12 @@ test('resolved homonymous card from another room cannot acknowledge the original
 test('a valid close after thirty seconds remains recoverable',async()=>{const h=harness();h.context.Date.now=()=>31000;h.context.process();assert.equal(h.job.error,false);h.job.dialog.isConnected=false;h.context.location.hash='#/home';h.context.observe();h.context.Date.now=()=>34000;h.context.process();await new Promise(setImmediate);assert.equal(h.calls.length,1);assert.equal(h.context.closureJobs.size,0);});
 test('reconnected original modal revokes acknowledgement without permanently poisoning its retry',async()=>{const h=harness();h.job.dialog.isConnected=false;h.context.location.hash='#/home';h.context.observe();h.job.dialog.isConnected=true;h.context.Date.now=()=>5000;h.context.process();assert.equal(h.calls.length,0);assert.equal(h.job.ack,'');h.job.dialog.isConnected=false;h.context.Date.now=()=>6000;h.context.observe();h.context.Date.now=()=>9000;h.context.process();await new Promise(setImmediate);assert.equal(h.calls.length,1);});
 test('acknowledged jobs keep their frozen room and revision after navigation and submit only once',async()=>{const h=harness();h.job.dialog.isConnected=false;h.context.location.hash='#/home';h.context.observe();h.context.location.hash='#/room/B';h.context.Date.now=()=>5000;h.context.process();h.context.process();await new Promise(setImmediate);assert.equal(h.calls.length,1);assert.equal(h.calls[0].evidence.room,'#/room/A');assert.equal(h.calls[0].evidence.revision,'r');});
+
+test('the original room card can acknowledge a delayed close after navigation',async()=>{
+ const h=harness();const tile={isConnected:true,state:'Pendiente'};h.job.originalTile=tile;h.job.interrupted=true;
+ h.job.dialog.isConnected=false;h.context.location.hash='#/room/B';h.context.tiles=()=>[tile];
+ h.context.observe();assert.equal(h.job.ack,undefined);
+ tile.state='Resuelto';h.context.observe();assert.equal(h.job.ack,'Resuelto');
+ h.context.Date.now=()=>2000;h.context.process();await new Promise(setImmediate);
+ assert.equal(h.calls.length,1);assert.equal(h.calls[0].evidence.room,'#/room/A');
+});

@@ -27,9 +27,10 @@
   }
   field.onchange=render;render();const save=document.createElement('button');save.textContent='Guardar borrador';save.onclick=async e=>{if(!e.isTrusted)return;const edits={};for(const el of form.querySelectorAll('[data-key]'))edits[el.dataset.key]=el.type==='checkbox'?el.checked:el.value;save.disabled=true;try{const r=await send({action:'amend',recordKey:item.key,edits});if(!r.ok)throw Error(r.error);await journal();}catch(e){status.textContent=e.message;save.disabled=false;}};v.append(save);
  }
- async function journal({afterSuccess=false}={}){const r=await send({action:'list'});if(!r.ok)return tell(r.error);window.__onoffHasPending=r.data.items.some(i=>['confirmation','pending','failed','rejected'].includes(i.state));if(!window.__onoffHasPending)document.getElementById('onoff-closure-pending')?.remove();if(afterSuccess&&!r.data.items.some(i=>i.state==='confirmation')){document.getElementById('onoff-task-history')?.remove();document.getElementById('onoff-task-recovery')?.remove();return;}const view=historyView();delete view.dataset.provisional;view.replaceChildren();const heading=document.createElement('h2');heading.textContent='Confirmar tipificación';heading.style='font-size:20px;margin:0 0 14px;color:#172b3a';view.append(heading);if(!r.data.items.some(i=>i.state==='confirmation')){const close=document.createElement('button');close.textContent='Cerrar historial';close.onclick=()=>view.remove();view.append(close);}if(!r.data.items.length){const p=document.createElement('p');p.textContent='No hay tipificaciones registradas en este piloto.';view.append(p);return;}
+ async function journal({afterSuccess=false,focusKey}={}){const r=await send({action:'list'});if(!r.ok)return tell(r.error);window.__onoffHasPending=r.data.items.some(i=>['confirmation','pending','failed','rejected'].includes(i.state));if(!window.__onoffHasPending)document.getElementById('onoff-closure-pending')?.remove();if(afterSuccess&&!r.data.items.some(i=>i.state==='confirmation')){document.getElementById('onoff-task-history')?.remove();document.getElementById('onoff-task-recovery')?.remove();return;}const view=historyView();delete view.dataset.provisional;view.replaceChildren();const heading=document.createElement('h2');heading.textContent='Confirmar tipificación';heading.style='font-size:20px;margin:0 0 14px;color:#172b3a';view.append(heading);if(!r.data.items.some(i=>i.state==='confirmation')){const close=document.createElement('button');close.textContent='Cerrar historial';close.onclick=()=>view.remove();view.append(close);}if(!r.data.items.length){const p=document.createElement('p');p.textContent='No hay tipificaciones registradas en este piloto.';view.append(p);return;}
  const archive=document.createElement('details');const archiveTitle=document.createElement('summary');archiveTitle.textContent='Historial y borradores anteriores';archive.append(archiveTitle);
- for(const item of r.data.items){const row=document.createElement('section');row.style='margin:0 0 20px;padding:0 0 14px;border-bottom:1px solid #ddd';const title=document.createElement('h3');title.textContent=item.title||'TC'+item.tc;row.append(title);const state=document.createElement('p');state.textContent=({created:'Creada #'+item.taskId+' · '+item.stage+(item.completed?' · Completada':''),failed:'Envío sin resultado confirmado · revisar fallo',rejected:'Bitrix rechazó la tarea. Corrige el borrador y confirma de nuevo.',expired:'Preparación vencida · requiere revisión',confirmation:'Revisa y confirma la creación',pending:'Envío en proceso / reintento pendiente',prepared:'Borrador sin cierre registrado'}[item.state]);row.append(state);if(item.error){const p=document.createElement('p');p.textContent=item.error+' · Intentos: '+item.attempts+(item.nextAt?' · Próximo: '+new Date(item.nextAt).toLocaleTimeString():'');row.append(p);}
+ const items=focusKey?[...r.data.items].sort((a,b)=>Number(b.key===focusKey)-Number(a.key===focusKey)):r.data.items;
+ for(const item of items){const row=document.createElement('section');row.style='margin:0 0 20px;padding:0 0 14px;border-bottom:1px solid #ddd';const title=document.createElement('h3');title.textContent=item.title||'TC'+item.tc;row.append(title);const state=document.createElement('p');state.textContent=({created:'Creada #'+item.taskId+' · '+item.stage+(item.completed?' · Completada':''),failed:'Envío sin resultado confirmado · revisar fallo',rejected:'Bitrix rechazó la tarea. Corrige el borrador y confirma de nuevo.',expired:'Preparación vencida · requiere revisión',confirmation:'Revisa y confirma la creación',pending:'Envío en proceso / reintento pendiente',prepared:'Borrador sin cierre registrado'}[item.state]);row.append(state);if(item.error){const p=document.createElement('p');p.textContent=item.error+' · Intentos: '+item.attempts+(item.nextAt?' · Próximo: '+new Date(item.nextAt).toLocaleTimeString():'');row.append(p);}
  if(item.url){const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener';a.textContent='Abrir tarea #'+item.taskId;row.append(a);}
  if(item.state==='confirmation'||item.state==='rejected'){const preview=document.createElement('textarea');preview.readOnly=true;preview.setAttribute('aria-label','Vista previa final TC'+item.tc);preview.style='width:100%;height:200px;box-sizing:border-box';preview.value=item.review?.description||item.description;row.append(preview);
  const edit=document.createElement('button');edit.textContent='✎ Editar borrador';edit.onclick=()=>editDraft(item);row.append(edit);const button=document.createElement('button');button.textContent='✓ Confirmar crear tarea PRUEBA · '+(item.review?.identityMode==='contact'?'Contacto '+item.review.phone:'TC'+item.tc);button.style='background:#087a48;color:white;padding:10px;margin:8px;border:0;border-radius:6px';button.onclick=async e=>{if(!e.isTrusted||deliveryJobs.has(item.key))return;button.disabled=true;button.textContent='Creando tarea… Espera sin volver a pulsar';row.setAttribute('aria-busy','true');await commit({action:'confirm',recordKey:item.key},item);};row.append(button);}
@@ -69,7 +70,7 @@
   if(!armed||armed.expires<Date.now()||armed.signature!==canonical(p)||!reviewed())return stop(event,'La revisión cambió o falta preparar. Confirma TC, negociación y revisión del resumen antes de resolver. La vista previa se prepara automáticamente.');
   const tile=document.querySelector('[aria-label^="Abrir sala "][aria-selected="true"]'),label=tile&&tileName(tile),before=tile&&status(tile);
   if(!tile||tiles(label).length!==1||!['En seguimiento','Pendiente'].includes(before))return stop(event,'No se puede identificar de forma única el estado de esta sala. No se solicitó el cierre.');
-  const job={...armed,label,before,clickedAt:Date.now(),dialog,interrupted:false};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
+  const job={...armed,label,before,clickedAt:Date.now(),dialog,originalTile:tile,interrupted:false};closureJobs.set(job.intent,job);armed=null;tell('Cierre solicitado por el asesor. Verificando salida a encuesta o estado Resuelto…');
  },true);
  // Observe native acknowledgement before the next navigation can remove its DOM.
  function observeClosures(){for(const job of closureJobs.values()){
@@ -80,7 +81,8 @@
   job.error=!!error;
   if(error)continue;
   if(job.dialog.isConnected)continue;
-  if(location.hash===job.room&&matches.length===1&&status(matches[0])==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();}
+  const originalStillVisible=job.originalTile?.isConnected&&matches[0]===job.originalTile;
+  if((location.hash===job.room||originalStillVisible)&&matches.length===1&&status(matches[0])==='Resuelto'){job.ack='Resuelto';job.ackAt=Date.now();}
   else if(!job.interrupted&&location.hash==='#/home'&&!matches.length){job.ack='ON_RATING_HANDOFF';job.ackAt=Date.now();}
  }}
  new MutationObserver(observeClosures).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-label']});
@@ -118,12 +120,13 @@
  const dailyGroups = [
   {title:'Creadas', states:['created']},
   {title:'Pendientes', states:['confirmation','pending']},
-  {title:'Por revisar', states:['failed','rejected','expired']}
+  {title:'Por revisar', states:['failed','rejected','expired']},
+  {title:'Borradores', states:['prepared']}
  ];
  const dailyStatus = {
   created:'Tarea confirmada en Bitrix', confirmation:'Pendiente de confirmación',
   pending:'En envío o esperando reintento', failed:'Envío sin resultado confirmado',
-  rejected:'Rechazada por Bitrix', expired:'Confirmación vencida'
+  rejected:'Rechazada por Bitrix', expired:'Confirmación vencida', prepared:'Sin cierre registrado. No se habilitó el envío.'
  };
  let dailyPanel, dailyReadInFlight=false, nextDailyRead=0;
  async function refreshDailyTasks() {
@@ -166,6 +169,13 @@
      if(item.error){
       const error=document.createElement('p');
       error.textContent=item.error;article.append(error);
+     }
+     if(['confirmation','pending','failed','rejected'].includes(item.state)){
+      const action=document.createElement('button');
+      action.type='button';
+      action.textContent=item.state==='confirmation'?'Revisar y confirmar':item.state==='rejected'?'Revisar borrador':'Ver envío y reintento';
+      action.onclick=()=>journal({focusKey:item.key});
+      article.append(action);
      }
      section.append(article);
     }
@@ -211,7 +221,7 @@
   if(location.hash==='#/home'&&Date.now()-lastPendingScan>5000){lastPendingScan=Date.now();send({action:'list'}).then(r=>{if(r.ok)window.__onoffHasPending=r.data.items.some(i=>['confirmation','pending','failed'].includes(i.state));}).catch(()=>{});}
   if(location.hash==='#/home'&&window.__onoffHasPending&&!document.getElementById('onoff-task-recovery')){const box=document.createElement('aside');box.id='onoff-task-recovery';box.style='position:fixed;right:18px;bottom:170px;z-index:2147483647;background:white;color:#123;padding:12px;border:1px solid #16834a;border-radius:8px';const button=document.createElement('button');button.textContent='Consultar tareas PRUEBA pendientes';button.onclick=journal;box.append(button);document.body.append(box);}else if(location.hash!=='#/home'||!window.__onoffHasPending)document.getElementById('onoff-task-recovery')?.remove();
   if(!panel){root=document.getElementById('onoff-ikono-auto-summary')?.shadowRoot;const box=root?.querySelector('[data-description]')?.closest('details');if(!box)return;
-   panel=document.createElement('section');panel.innerHTML='<h4>Tarea PRUEBA desde extensión · 0.24.4</h4><p data-pilot-context>Piloto de una tarea. El radicado anterior se conserva intacto.</p><label><input type="checkbox" data-create-enable>Pedir confirmación para crear tarea PRUEBA después de Resolver</label><label style="display:block"><input type="checkbox" data-finalreview>Revisé y corregí el resumen final de hoy para la TC seleccionada.</label><label style="display:block"><input type="checkbox" data-duplicate>La vista previa corresponde a esta atención; los radicados técnicos son referencias.</label><button data-prepare>Preparar vista previa</button><button data-resume>Consultar resultado pendiente</button><p data-create-status>Confirma TC, negociación y revisión: la vista previa se preparará sola. Tras Resolver aparecerá la confirmación final para crear. La confirmación de tipificación es obligatoria en este piloto.</p>';box.append(panel);panel.querySelector('[data-prepare]').onclick=prepare;panel.querySelector('[data-resume]').onclick=()=>commit({action:'resume'});loadPilot();
+   panel=document.createElement('section');panel.innerHTML='<h4>Tarea PRUEBA desde extensión · 0.24.5</h4><p data-pilot-context>Piloto de una tarea. El radicado anterior se conserva intacto.</p><label><input type="checkbox" data-create-enable>Pedir confirmación para crear tarea PRUEBA después de Resolver</label><label style="display:block"><input type="checkbox" data-finalreview>Revisé y corregí el resumen final de hoy para la TC seleccionada.</label><label style="display:block"><input type="checkbox" data-duplicate>La vista previa corresponde a esta atención; los radicados técnicos son referencias.</label><button data-prepare>Preparar vista previa</button><button data-resume>Consultar resultado pendiente</button><p data-create-status>Confirma TC, negociación y revisión: la vista previa se preparará sola. Tras Resolver aparecerá la confirmación final para crear. La confirmación de tipificación es obligatoria en este piloto.</p>';box.append(panel);panel.querySelector('[data-prepare]').onclick=prepare;panel.querySelector('[data-resume]').onclick=()=>commit({action:'resume'});loadPilot();
   }
   if(armed&&armed.expires<=Date.now()){armed=null;lastAutoPreparation='';autoCandidate='';window.ONOFFAdvisorValidation?.preparation('La preparación venció. Revalidando…');}
   if(armed){try{if(armed.signature!==canonical(snapshot())||!reviewed()){armed=null;tell('Cambio detectado. Se conserva tu borrador; revisa y prepara nuevamente.');}}catch{armed=null;}}
