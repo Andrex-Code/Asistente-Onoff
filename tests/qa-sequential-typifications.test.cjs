@@ -96,3 +96,24 @@ test('QA: second contact of the same room and same TC excludes the previous clos
   await ready(f);const p=await f.page.evaluate(()=>ONOFFTaskReview.snapshot());assert.equal(p.tc,'5900');assert.equal(p.messages.length,1);assert.match(p.messages[0][1].text,/SEGUNDO CONTACTO/);assert.doesNotMatch(JSON.stringify(p.messages),/PRIMER CONTACTO/);await complete(f,'5900');assert.equal(await f.page.evaluate(()=>requests.filter(m=>m.action==='confirm').length),2);
  }finally{await f.browser.close();}
 });
+
+test('QA: pending preparation from the prior room cannot block a new room',async()=>{
+ const f=await setup({name:'Cliente A',text:'Caso A. Mi TC es 5900'});
+ try{
+  await ready(f);
+  await f.page.evaluate(()=>{
+   const original=chrome.runtime.sendMessage;
+   chrome.runtime.sendMessage=m=>m.action==='prepare'&&m.payload.room==='#/room/fixture'
+    ?new Promise(resolve=>{window.releaseOldPreparation=()=>resolve({ok:false,error:'Respuesta tardía de A'});})
+    :original(m);
+   document.querySelectorAll('.select__single-value')[1].textContent='OTRO DETALLE A';
+  });
+  await f.page.waitForFunction(()=>!!window.releaseOldPreparation);
+  await mountRoom(f,{room:'B',tc:'5046'});
+  await ready(f);
+  await f.page.evaluate(()=>releaseOldPreparation());
+  await ready(f);
+  assert.equal(await f.page.evaluate(()=>ONOFFTaskReview.snapshot().tc),'5046');
+  assert.equal(await f.page.evaluate(()=>requests.filter(m=>m.action==='confirm').length),0);
+ }finally{await f.browser.close();}
+});
