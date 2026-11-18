@@ -12,7 +12,7 @@ const fs=require('node:fs/promises'),path=require('node:path');
   if(path.dirname(target)!==dist)throw Error('Destino de build fuera de dist');
   // Delete only the verified build directory; source and private data stay outside this package.
   await fs.rm(target,{recursive:true,force:true});await fs.mkdir(target,{recursive:true});
-  for(const directory of ['src','icons'])await fs.cp(path.join(root,directory),path.join(target,directory),{recursive:true,force:true});
+  for(const directory of ['src','icons'])await fs.cp(path.join(root,directory),path.join(target,directory),{recursive:true,force:true,filter:source=>path.basename(source)!=='bitrix-read.private.json'});
   await fs.copyFile(path.join(root,'manifest.json'),path.join(target,'manifest.json'));
   console.log('Extensión preparada en dist/extension. '+references.length+' recursos del manifest verificados.');
 })().catch(error=>{console.error(error.message);process.exitCode=1;});

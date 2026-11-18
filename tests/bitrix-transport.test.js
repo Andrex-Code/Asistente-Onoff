@@ -9,10 +9,11 @@ function harness() {
   const calls = [], settings = { backendUrl: 'https://backend.example.com/' };
   const state = { permission: true, status: 200, data: { ok: true, deals: [{ id: '14008', tc: '8968' }] } };
   vm.runInNewContext(source, { URL, AbortSignal, chrome: {
-    runtime: { id: 'extension', onMessage: { addListener: fn => { listener = fn; } } },
+    runtime: { getURL: path => 'chrome-extension://extension/' + path, id: 'extension', onMessage: { addListener: fn => { listener = fn; } } },
     storage: { sync: { get: async () => settings } },
     permissions: { contains: async () => state.permission }
   }, fetch: async (url, options) => {
+    if (url === 'chrome-extension://extension/src/bitrix-read.private.json') return { ok: !!state.localToken, json: async () => ({ token: state.localToken }) };
     calls.push({ url, ...options, body: JSON.parse(options.body) });
     if (state.failure) throw state.failure;
     return { ok: state.status < 400, status: state.status, json: async () => {
@@ -86,3 +87,5 @@ test('distinguishes network, timeout, access, endpoint, non-JSON, and Bitrix fai
     assert.doesNotMatch(result.error, /Failed to fetch/);
   }
 });
+
+test('main assistant sends read credential only for TC and task lookups on production', async()=>{const h=harness();h.state.localToken='a'.repeat(43);h.settings.backendUrl='https://asistente-onoff.vercel.app';await h.send('tc','20107-C');await h.send('task','523946');await h.send('identification','123456');h.settings.backendUrl='https://backend.example.com';await h.send('task','523946');assert.deepEqual(h.calls.map(c=>c.headers.Authorization),['Bearer '+h.state.localToken,'Bearer '+h.state.localToken,undefined,undefined]);});
