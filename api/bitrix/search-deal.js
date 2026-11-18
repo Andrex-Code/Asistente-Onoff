@@ -1,5 +1,5 @@
 const { lookupAfacturar } = require('../../lib/afacturar-store');
-const { exactTcRecords } = require('../../lib/bitrix-tc');
+const { exactTcRecords, normalizeTc } = require('../../lib/bitrix-tc');
 const { normalizeCompany, loadPlans } = require('../../lib/bitrix-deal-details');
 const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
@@ -9,6 +9,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
 
+  if (!require('../../lib/bitrix-read-auth')(req,res)) return;
   try {
     const webhookUrl = normalizeWebhookUrl(process.env.BITRIX_WEBHOOK_URL);
     if (!webhookUrl) {
@@ -254,6 +255,7 @@ function normalizeDeal(item, requestedTc, tcField, context, portalOrigin) {
   return {
     id,
     tc: storedTc,
+    originalTc: String(readCustomField(item, tcField) || '').trim(),
     matchType: storedTc === requestedTc ? 'exact' : 'similar',
     title,
     stageId,
@@ -307,8 +309,7 @@ async function callBitrix(webhookUrl, method, params = {}) {
 }
 
 function parseTc(value) {
-  const match = String(value || '').trim().toUpperCase().match(/^(?:TC\s*[-:]?\s*)?(\d+(?:-[A-Z0-9]+)*)$/i);
-  return match ? match[1].replace(/\s+/g, '') : '';
+  return normalizeTc(value);
 }
 
 function normalizeWebhookUrl(value) {
@@ -368,5 +369,5 @@ function cleanBitrixError(error) {
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }

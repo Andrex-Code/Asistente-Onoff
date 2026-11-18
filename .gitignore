@@ -15,3 +15,6 @@ public/
 
 # Offline OCR assets are generated from pinned packages during build.
 src/vendor/scan/
+
+# Credencial local de consulta Bitrix
+src/bitrix-read.private.json

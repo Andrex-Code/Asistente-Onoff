@@ -1,4 +1,19 @@
 // Read-only Bitrix requests run in the extension origin, not the host page.
+const BITRIX_PRODUCTION_ORIGIN = 'https://asistente-onoff.vercel.app';
+let bitrixReadConfig;
+async function bitrixReadHeaders(origin, action) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (origin !== BITRIX_PRODUCTION_ORIGIN || !['tc', 'task'].includes(action)) return headers;
+  bitrixReadConfig ||= fetch(chrome.runtime.getURL('src/bitrix-read.private.json'))
+    .then(response => response.ok ? response.json() : null)
+    .catch(() => null);
+  const config = await bitrixReadConfig;
+  if (typeof config?.token === 'string' && /^[A-Za-z0-9_-]{43}$/.test(config.token)) {
+    headers.Authorization = 'Bearer ' + config.token;
+  }
+  return headers;
+}
+
 const BITRIX_ROUTES = Object.freeze({
   tc: ['search-deal', 'tc'],
   identification: ['search-company', 'identification'],
@@ -46,7 +61,7 @@ async function requestBitrix(action, value) {
   let response, data;
   try {
     response = await fetch(`${url.origin}/api/bitrix/${endpoint}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: await bitrixReadHeaders(url.origin, action),
       body: JSON.stringify({ [field]: text }), signal: AbortSignal.timeout(55000),
       credentials: 'omit', redirect: 'error'
     });
@@ -56,7 +71,7 @@ async function requestBitrix(action, value) {
     throw bitrixFailure('BACKEND_NETWORK', `No fue posible conectar con ${url.origin}. Revise la conexión, la URL y la disponibilidad del backend.`);
   }
   if (response.status === 401 || response.status === 403) {
-    throw bitrixFailure('BACKEND_ACCESS', `El backend rechazó el acceso (HTTP ${response.status}). Revise la autorización del servidor o del Preview.`);
+    throw bitrixFailure('BACKEND_ACCESS', `El backend rechazó el acceso (HTTP ${response.status}). Compruebe que tiene instalada la copia autorizada del asistente.`);
   }
   if (!response.ok) {
     throw bitrixFailure('BACKEND_HTTP', `El backend respondió HTTP ${response.status}. ${data?.error || 'No se completó la consulta de Bitrix.'}`);

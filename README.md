@@ -177,3 +177,9 @@ QA de scripts: nombre obligatorio, variables distintas, conservación del borrad
 Menú de 260 px y máximo 450 px de alto, con una fila por herramienta. El menú se cierra al abrir una subventana también en escritorio. Los nombres y las descripciones accesibles se conservan. La mascota ocupa menos espacio y no usa el tooltip negro nativo del navegador.
 
 Límites iniciales: conversación 350 × 460, Bitrix 390 × 460, seguimientos 410 × 490, plantillas 320 × 410 y scripts 500 × 490 px. Se ajustan al espacio de la pantalla y mantienen el desplazamiento interno. El popup de la barra mide 320 px de ancho, sin el bloque de bienvenida repetido.
+
+## Búsqueda de Bitrix en la versión 1.12.6
+
+Las búsquedas por TC y radicado en producción requieren una copia autorizada de la extensión. El ZIP de código fuente de GitHub no trae credenciales. Extrae el paquete autorizado y selecciona Cargar desempaquetada en Extensiones de Edge. Selecciona la carpeta que contiene manifest.json y actualiza iKono.
+
+La credencial local solo permite consultas. Los builds ordinarios excluyen src/bitrix-read.private.json.
