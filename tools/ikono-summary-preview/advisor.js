@@ -12,8 +12,46 @@
  function mount(dialog){
   host=document.createElement('section');host.id='onoff-advisor-validation';host.setAttribute('aria-label','Validación de tarea del asesor');
   host.style='display:block;background:#fff;color:#172b3a;border:1px solid #9bb4c5;border-radius:10px;margin:12px 0;padding:14px;font:14px system-ui;max-height:42vh;overflow:auto';
-  ui=host.attachShadow({mode:'open'});ui.innerHTML='<style>'+controlCSS+'</style><div data-compact hidden><strong data-found></strong><button type="button" data-change>Cambiar TC</button><button type="button" data-retry hidden>Revalidar preparación</button><p data-compact-status role="status"></p></div><div data-full><label data-contact-label><input type="checkbox" data-contact>Cliente sin TC: tipificar con número de contacto</label><h3>Revisa esta atención</h3><p data-generation role="status"></p><label data-sessions-label hidden>Atención de hoy<select data-sessions aria-label="Atención de hoy"></select></label><p data-classification></p><p data-source></p><details data-tc-details open><summary data-tc-heading>Identificar TC</summary><label>TC de esta atención<select data-tc aria-label="TC del asesor"></select></label><label data-manual-label>TC no encontrada<input type="text" data-manual aria-label="Escribir TC" placeholder="Ej. TC1234"></label></details><label><input type="checkbox" data-verified>Confirmo qué TC recibió esta gestión.</label><button type="button" data-search>Validar TC en Bitrix</button><label>Negociación para esta TC<select data-deals aria-label="Negociación del asesor"><option value="">Pendiente de validar TC</option></select></label><small data-company></small><label>TIPIFICACIÓN DEL CHAT<textarea data-summary aria-label="Resumen del asesor"></textarea></label><details><summary>Revisar textos de hoy y de esta TC</summary><div data-texts></div></details><label><input type="checkbox" data-scope>Revisé el resumen y los textos elegidos: corresponden solo a esta atención de hoy y a la TC seleccionada.</label><button type="button" data-ready disabled>Guardar revisión para Resolver</button><p data-status role="status">Sin TC confirmada y validada no se puede preparar ni crear una tarea.</p></div>';
+  ui=host.attachShadow({mode:'open'});ui.innerHTML='<style>'+controlCSS+'</style><div data-compact hidden><strong data-found></strong><button type="button" data-change>Cambiar TC</button><button type="button" data-retry hidden>Revalidar preparación</button><p data-compact-status role="status"></p></div><div data-full><div data-phone-area hidden><button type="button" data-phone-search>Buscar TC por teléfono</button><p data-phone-status role="status"></p><label data-phone-results hidden>Coincidencias en Bitrix<select data-phone-deals aria-label="Coincidencias por teléfono"></select></label><button type="button" data-phone-use hidden disabled>Confirmar coincidencia</button></div><label data-contact-label><input type="checkbox" data-contact>Cliente sin TC: tipificar con número de contacto</label><h3>Revisa esta atención</h3><p data-generation role="status"></p><label data-sessions-label hidden>Atención de hoy<select data-sessions aria-label="Atención de hoy"></select></label><p data-classification></p><p data-source></p><details data-tc-details open><summary data-tc-heading>Identificar TC</summary><label>TC de esta atención<select data-tc aria-label="TC del asesor"></select></label><label data-manual-label>TC no encontrada<input type="text" data-manual aria-label="Escribir TC" placeholder="Ej. TC1234"></label></details><label><input type="checkbox" data-verified>Confirmo qué TC recibió esta gestión.</label><button type="button" data-search>Validar TC en Bitrix</button><label>Negociación para esta TC<select data-deals aria-label="Negociación del asesor"><option value="">Pendiente de validar TC</option></select></label><small data-company></small><label>TIPIFICACIÓN DEL CHAT<textarea data-summary aria-label="Resumen del asesor"></textarea></label><details><summary>Revisar textos de hoy y de esta TC</summary><div data-texts></div></details><label><input type="checkbox" data-scope>Revisé el resumen y los textos elegidos: corresponden solo a esta atención de hoy y a la TC seleccionada.</label><button type="button" data-ready disabled>Guardar revisión para Resolver</button><p data-status role="status">Sin TC confirmada y validada no se puede preparar ni crear una tarea.</p></div>';
   const footer=dialog.querySelector('.mx_Dialog_buttons')||[...dialog.querySelectorAll('button')].find(b=>b.textContent.trim()==='Resolver conversación')?.parentElement;if(footer&&footer!==dialog)footer.before(host);else dialog.append(host);
+  const phoneSearch=ui.querySelector('[data-phone-search]');
+  const phoneStatus=ui.querySelector('[data-phone-status]');
+  const phoneResults=ui.querySelector('[data-phone-results]');
+  const phoneDeals=ui.querySelector('[data-phone-deals]');
+  const phoneUse=ui.querySelector('[data-phone-use]');
+  let matches=[],searchedPhone='';
+  phoneDeals.onchange=()=>{phoneUse.disabled=!phoneDeals.value;};
+  phoneSearch.onclick=async()=>{
+   const generation=dialogGeneration,phone=window.ONOFFTaskReview.snapshot().phone;
+   if(!/^\d{10,15}$/.test(phone||''))return;
+   phoneSearch.disabled=true;
+   phoneResults.hidden=phoneUse.hidden=true;phoneUse.disabled=true;
+   matches=[];searchedPhone='';
+   phoneStatus.textContent='Buscando coincidencias en Bitrix…';
+   try{
+    const result=await chrome.runtime.sendMessage({type:'ONOFF_TASK_PILOT',action:'lookup-phone',phone});
+    if(generation!==dialogGeneration||phone!==window.ONOFFTaskReview.snapshot().phone||window.ONOFFAdvisorContext.read().candidates.length)return;
+    if(!result?.ok)throw Error(result?.error||'No se pudo buscar por teléfono.');
+    searchedPhone=phone;
+    matches=(result.data?.deals||[]).filter(d=>/^\d{1,8}$/.test(d.tc)&&d.id&&d.company?.id);
+    phoneDeals.replaceChildren(new Option('Elige el negocio atendido',''),...matches.map(d=>new Option('TC'+d.tc+' · '+d.title,d.id)));
+    phoneResults.hidden=phoneUse.hidden=!matches.length;
+    phoneStatus.textContent=matches.length?'Elige una coincidencia y confírmala si corresponde a esta atención.':result.data?.truncated?'La búsqueda fue parcial. Puedes verificar la TC manualmente o tipificar por contacto.':'Bitrix no devolvió una TC asociada. Puedes tipificar con el número de contacto.';
+    if(matches.length&&result.data?.truncated) phoneStatus.textContent+=' Bitrix devolvió una lista parcial.';
+   }catch(error){if(generation===dialogGeneration)phoneStatus.textContent=error.message+' Puedes reintentar o tipificar por contacto.';}
+   finally{phoneSearch.disabled=false;}
+  };
+  phoneUse.onclick=()=>{
+   const deal=matches.find(d=>String(d.id)===phoneDeals.value);
+   if(!deal||searchedPhone!==window.ONOFFTaskReview.snapshot().phone||window.ONOFFAdvisorContext.read().candidates.length)return;
+   invalidate();
+   ui.querySelector('[data-contact]').checked=false;
+   ui.querySelector('[data-tc]').value='manual';
+   ui.querySelector('[data-manual]').value=deal.tc;
+   ui.querySelector('[data-verified]').checked=true;
+   selectedDeal=deal;lookupTC=autoLookup=deal.tc;manualMode=manualSelected=true;inputDue=0;
+   phoneStatus.textContent='Confirmaste TC'+deal.tc+' · '+deal.title;
+  };
   ui.querySelector('[data-contact]').onchange=()=>{validated='';autoPrepared='';preparationMessage='';lookupController?.abort();lookupSerial++;selectedDeal=null;lookupTC='';};
   ui.querySelector('[data-retry]').onclick=()=>{window.dispatchEvent(new Event('onoff-retry-preparation'));validated='';autoPrepared='';if(!selectedDeal)autoLookup='';if(!window.ONOFFAdvisorContext.read().summaryReady)window.ONOFFAdvisorContext.retrySummary?.();preparationMessage='Revalidando preparación…';};
   ui.querySelector('[data-change]').onclick=()=>{manualMode=true;revoke('Revisa o cambia la TC y confirma nuevamente.');};
@@ -58,7 +96,7 @@
   ui.querySelector('[data-ready]').disabled=!ready||saving||this.isValidated();ui.querySelector('[data-ready]').textContent=saving?'Preparando vista previa…':this.isValidated()?'✓ Revisión guardada':'Confirmar establecimiento';if(preparationMessage)ui.querySelector('[data-status]').textContent=preparationMessage;
   ui.querySelector('[data-ready]').onclick=async()=>{if(saving||this.isValidated()||!ready||!ui.querySelector('[data-scope]').checked||!ui.querySelector('[data-verified]').checked||lookupTC!==code()||!selectedDeal)return;const messageIds=[...ui.querySelectorAll('[data-texts] input:checked')].map(x=>x.dataset.id);try{window.ONOFFTaskReview.advisorApply({tc:'TC'+code(),deal:selectedDeal,description:ui.querySelector('[data-summary]').value,messageIds});validated=JSON.stringify(window.ONOFFTaskReview.snapshot());saving=true;host.setAttribute('aria-busy','true');ui.querySelector('[data-ready]').disabled=true;ui.querySelector('[data-status]').textContent='Preparando vista previa… No necesitas volver a pulsar.';const savingScope=scopeKey,savingGeneration=dialogGeneration;const ok=await onReady();if(scopeKey!==savingScope||savingGeneration!==dialogGeneration)return;preparationMessage=ok===false?(preparationMessage||'No se pudo preparar. Revisa el aviso y vuelve a guardar.'):'✓ Lista. Pulsa Resolver conversación una sola vez; después confirmarás la creación.';if(ok===false)validated='';ui.querySelector('[data-status]').textContent=preparationMessage;}catch(e){validated='';preparationMessage=e.message;ui.querySelector('[data-status]').textContent=e.message;}finally{saving=false;host.setAttribute('aria-busy','false');}};
   if(window.__onoffPreparationError){preparationMessage=window.__onoffPreparationError;ui.querySelector('[data-status]').textContent=preparationMessage;ui.querySelector('[data-compact-status]').textContent=preparationMessage;ui.querySelector('[data-retry]').hidden=false;return;}
-  const contactCheckbox=ui.querySelector('[data-contact]');ui.querySelector('[data-contact-label]').hidden=ctx.candidates.length>0;if(ctx.candidates.length)contactCheckbox.checked=false;
+  const contactCheckbox=ui.querySelector('[data-contact]');ui.querySelector('[data-phone-area]').hidden=ctx.candidates.length>0||!/^\d{10,15}$/.test(p.phone||'')||contactCheckbox.checked;ui.querySelector('[data-contact-label]').hidden=ctx.candidates.length>0;if(ctx.candidates.length)contactCheckbox.checked=false;
   if(contactCheckbox.checked){
    ui.querySelector('[data-tc-details]').hidden=true;ui.querySelector('[data-manual-label]').hidden=true;ui.querySelector('[data-deals]').closest('label').hidden=true;
    if(!/^\d{10,15}$/.test(p.phone||'')){preparationMessage='No se encontró un número de contacto válido. No se puede tipificar sin TC.';ui.querySelector('[data-status]').textContent=preparationMessage;return;}
