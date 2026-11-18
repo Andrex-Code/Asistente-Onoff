@@ -2,6 +2,7 @@ const { requireAdmin } = require('../../lib/admin-auth');
 const { readConfig, writeConfig } = require('../../lib/config-store');
 
 module.exports = async function handler(req, res) {
+  if (req.query?.action === 'bitrix-access') return require('../../lib/bitrix-access-admin-handler')(req,res);
   res.setHeader('Cache-Control', 'no-store');
   const session = requireAdmin(req, res);
   if (!session) return;

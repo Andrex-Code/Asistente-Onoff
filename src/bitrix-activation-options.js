@@ -27,9 +27,9 @@ form.addEventListener('submit',async event=>{
       btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
         .replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
     await chrome.storage.local.set({[pendingKey]:{fingerprint,secret}});
-    const response=await fetch('https://asistente-onoff.vercel.app/api/bitrix/activate',{
+    const response=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{
       method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',redirect:'error',
-      body:JSON.stringify({code,secret}),signal:AbortSignal.timeout(15000)
+      body:JSON.stringify({action:'activate',code,secret}),signal:AbortSignal.timeout(15000)
     });
     const result=await response.json().catch(()=>null);
     if(!response.ok || !result?.ok || result.token!=='onoff1.'+fingerprint+'.'+secret){

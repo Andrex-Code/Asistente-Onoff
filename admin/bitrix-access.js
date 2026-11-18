@@ -9,7 +9,7 @@ async function changeBitrixAccess(form, method, body){
   button.disabled=true;
   setStatus(accessStatus,'Procesando…');
   try{
-    const response=await fetch('/api/admin/bitrix-access',{
+    const response=await fetch('/api/admin/config?action=bitrix-access',{
       method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
     });
     const result=await safeJson(response);

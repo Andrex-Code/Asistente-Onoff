@@ -5,6 +5,7 @@ const DEFAULT_TC_FIELD = 'UF_CRM_1642606760058';
 const MAX_RESULTS = 10;
 
 module.exports = async function handler(req, res) {
+  if (req.method === 'POST' && req.body?.action === 'activate') return require('../../lib/bitrix-activation-handler')(req,res);
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido.' });
