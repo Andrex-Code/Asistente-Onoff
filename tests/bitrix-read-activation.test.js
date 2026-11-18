@@ -4,7 +4,7 @@ const {createActivationService}=require('../lib/bitrix-read-activation');
 function fixture(){
   const values=new Map();let clock=0,version=0;
   const service=createActivationService({now:()=>clock,storage:{
-    async get(path){const v=values.get(path);return v?{statusCode:200,etag:v.etag,stream:new Blob([v.data]).stream()}:null;},
+    async get(path){const v=values.get(path);return v?{statusCode:200,blob:{etag:v.etag},stream:new Blob([v.data]).stream()}:null;},
     async put(path,data,options){const previous=values.get(path);if(previous&&(!options.allowOverwrite||options.ifMatch!==previous.etag))throw Error('Conflict');values.set(path,{data,etag:String(++version)});}
   }});
   return {service,advance(ms){clock+=ms;}};
