@@ -178,8 +178,10 @@ Menú de 260 px y máximo 450 px de alto, con una fila por herramienta. El menú
 
 Límites iniciales: conversación 350 × 460, Bitrix 390 × 460, seguimientos 410 × 490, plantillas 320 × 410 y scripts 500 × 490 px. Se ajustan al espacio de la pantalla y mantienen el desplazamiento interno. El popup de la barra mide 320 px de ancho, sin el bloque de bienvenida repetido.
 
-## Búsqueda de Bitrix en la versión 1.12.6
+## Activar consultas en Bitrix
+     
+Descarga la extensión desde GitHub, extráela y carga la carpeta con manifest.json como extensión desempaquetada. Abre las Opciones de Asistente ONOFF y elige **Activar búsquedas en Bitrix**. Pega el código de un solo uso recibido del responsable. El código vence a las 24 horas de su emisión. Una vez activado, puedes buscar por TC y radicado sin repetir el paso.
 
-Las búsquedas por TC y radicado en producción requieren una copia autorizada de la extensión. El ZIP de código fuente de GitHub no trae credenciales. Extrae el paquete autorizado y selecciona Cargar desempaquetada en Extensiones de Edge. Selecciona la carpeta que contiene manifest.json y actualiza iKono.
+En el panel de administración, **Acceso de consulta a Bitrix** permite generar códigos y revocar una instalación usando su referencia. Conserva la referencia junto al nombre del asesor para revocar el acceso cuando sea necesario. La extensión guarda el acceso en el perfil local. El código fuente y el paquete público no contienen credenciales.
 
-La credencial local solo permite consultas. Los builds ordinarios excluyen src/bitrix-read.private.json.
+Las copias autorizadas con el método anterior pueden seguir consultando mientras su credencial siga habilitada.

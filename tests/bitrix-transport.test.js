@@ -10,7 +10,7 @@ function harness() {
   const state = { permission: true, status: 200, data: { ok: true, deals: [{ id: '14008', tc: '8968' }] } };
   vm.runInNewContext(source, { URL, AbortSignal, chrome: {
     runtime: { getURL: path => 'chrome-extension://extension/' + path, id: 'extension', onMessage: { addListener: fn => { listener = fn; } } },
-    storage: { sync: { get: async () => settings } },
+    storage: { sync: { get: async () => settings }, local: {get: async () => ({onoffBitrixReadToken:state.activationToken})} },
     permissions: { contains: async () => state.permission }
   }, fetch: async (url, options) => {
     if (url === 'chrome-extension://extension/src/bitrix-read.private.json') return { ok: !!state.localToken, json: async () => ({ token: state.localToken }) };
@@ -89,3 +89,11 @@ test('distinguishes network, timeout, access, endpoint, non-JSON, and Bitrix fai
 });
 
 test('main assistant sends read credential only for TC and task lookups on production', async()=>{const h=harness();h.state.localToken='a'.repeat(43);h.settings.backendUrl='https://asistente-onoff.vercel.app';await h.send('tc','20107-C');await h.send('task','523946');await h.send('identification','123456');h.settings.backendUrl='https://backend.example.com';await h.send('task','523946');assert.deepEqual(h.calls.map(c=>c.headers.Authorization),['Bearer '+h.state.localToken,'Bearer '+h.state.localToken,undefined,undefined]);});
+
+test('activated access works for both protected modes and stays on production',async()=>{
+ const h=harness();h.settings.backendUrl='https://asistente-onoff.vercel.app';
+ h.state.activationToken='onoff1.'+'a'.repeat(64)+'.'+'b'.repeat(43);
+ await h.send('tc','20107');await h.send('task','523946');
+ h.settings.backendUrl='https://backend.example.com';await h.send('task','523946');
+ assert.deepEqual(h.calls.map(c=>c.headers.Authorization),['Bearer '+h.state.activationToken,'Bearer '+h.state.activationToken,undefined]);
+});

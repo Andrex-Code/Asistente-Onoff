@@ -38,6 +38,16 @@
         </form>
         <div id="afacturarStatus" class="status"></div>
       </article>
+      <article class="card">
+        <h2>Acceso de consulta a Bitrix</h2>
+        <form id="bitrixAccessForm"><button type="submit">Generar código de un solo uso</button></form>
+        <div id="bitrixAccessOutput" hidden>
+          <label>Código para el asesor<input id="bitrixIssuedCode" readonly></label>
+          <label>Referencia para revocar el acceso<input id="bitrixIssuedReference" readonly></label>
+        </div>
+        <form id="bitrixRevokeForm"><label>Referencia de acceso<input id="bitrixRevokeReference" required></label><button type="submit" class="secondary">Revocar acceso</button></form>
+        <p id="bitrixAccessStatus" role="status" class="status"></p>
+      </article>
       <form id="configForm" class="grid">
         <article class="card">
           <h2>Prompt para mejorar texto</h2>
@@ -63,5 +73,6 @@
   </main>
   <script src="/src/theme.js"></script>
   <script src="/admin/app.js"></script>
+  <script src="/admin/bitrix-access.js"></script>
 </body>
 </html>

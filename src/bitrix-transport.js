@@ -4,6 +4,12 @@ let bitrixReadConfig;
 async function bitrixReadHeaders(origin, action) {
   const headers = { 'Content-Type': 'application/json' };
   if (origin !== BITRIX_PRODUCTION_ORIGIN || !['tc', 'task'].includes(action)) return headers;
+  const saved = await chrome.storage.local?.get('onoffBitrixReadToken');
+  const token = saved?.onoffBitrixReadToken;
+  if (typeof token === 'string' && /^onoff1\.[a-f0-9]{64}\.[\w-]{43}$/.test(token)) {
+    headers.Authorization = 'Bearer ' + token;
+    return headers;
+  }
   bitrixReadConfig ||= fetch(chrome.runtime.getURL('src/bitrix-read.private.json'))
     .then(response => response.ok ? response.json() : null)
     .catch(() => null);
@@ -71,7 +77,7 @@ async function requestBitrix(action, value) {
     throw bitrixFailure('BACKEND_NETWORK', `No fue posible conectar con ${url.origin}. Revise la conexión, la URL y la disponibilidad del backend.`);
   }
   if (response.status === 401 || response.status === 403) {
-    throw bitrixFailure('BACKEND_ACCESS', `El backend rechazó el acceso (HTTP ${response.status}). Compruebe que tiene instalada la copia autorizada del asistente.`);
+    throw bitrixFailure('BACKEND_ACCESS', `El backend rechazó el acceso (HTTP ${response.status}). Abre Opciones → Activar búsquedas en Bitrix e ingresa tu código.`);
   }
   if (!response.ok) {
     throw bitrixFailure('BACKEND_HTTP', `El backend respondió HTTP ${response.status}. ${data?.error || 'No se completó la consulta de Bitrix.'}`);

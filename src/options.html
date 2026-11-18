@@ -2,7 +2,7 @@
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ajustes · Asistente ONOFF</title><link rel="stylesheet" href="ui-refresh.css"><link rel="stylesheet" href="pages.css"></head>
 <body class="onoff-page onoff-options"><main>
 <header class="onoff-page-brand"><span class="onoff-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v8M7 6.7a8 8 0 1 0 10 0"/></svg></span><div><span class="onoff-kicker">ASISTENTE ONOFF</span><h1>Un espacio a tu medida.</h1></div></header><p class="onoff-page-intro">Personaliza cómo te acompaña ONOFF y cómo funcionan tus herramientas.</p>
-<div class="onoff-settings-grid">
+<section class="onoff-page-card"><h2>Activar búsquedas en Bitrix</h2><p>Usa el código de un solo uso que te entregó el responsable.</p><form id="bitrixActivationForm"><label class="onoff-field">Código de activación<input id="bitrixActivationCode" type="password" autocomplete="off" spellcheck="false" required></label><button type="submit" class="onoff-primary">Activar Bitrix</button><p id="bitrixActivationStatus" role="status" aria-live="polite"></p></form></section><div class="onoff-settings-grid">
 <section class="onoff-page-card"><div class="onoff-section-title"><h2>Apariencia y movimiento</h2><span class="onoff-section-number">01</span></div><p class="onoff-muted">El diseño se adapta a ti y respeta el movimiento reducido de tu sistema.</p>
 <label class="onoff-field">Tema de la interfaz<select id="onoffTheme" class="onoff-theme-control"><option value="system">Automático · sigue tu sistema</option><option value="light">Claro</option><option value="dark">Oscuro</option></select></label>
 <label class="toggle-row"><span><strong>Mostrar la mascota</strong><small>Acceso flotante a todas las herramientas</small></span><input id="showCornerButton" type="checkbox"></label>
@@ -16,4 +16,4 @@
 <section class="provider-box" data-provider-box="libretranslate-local"><label class="onoff-field">URL de LibreTranslate<input id="libreTranslateUrl" type="url" placeholder="http://localhost:5000/translate"></label></section>
 <div class="onoff-help-note"><strong>Tu contenido sigue bajo tu control.</strong><p>Las respuestas se copian manualmente. El asistente no envía mensajes por ti.</p></div>
 </section></div><footer class="onoff-settings-save"><p id="status" role="status" aria-live="polite">Guarda para aplicar tus preferencias.</p><button id="save" type="button" class="onoff-primary">Guardar preferencias</button></footer>
-</main><script src="theme.js"></script><script src="options.js"></script></body></html>
+</main><script src="theme.js"></script><script src="options.js"></script><script src="bitrix-activation-options.js"></script></body></html>
