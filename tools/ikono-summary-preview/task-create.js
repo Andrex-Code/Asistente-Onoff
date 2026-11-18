@@ -107,7 +107,98 @@
   const blocked=busy||!!pending||!current;native.toggleAttribute('data-onoff-blocked',blocked);native.setAttribute('aria-disabled',String(blocked||native.disabled));native.setAttribute('aria-busy',String(busy));native.title=busy?'Preparando la tarea…':blocked?'Completa tipificación y detalle y espera el aviso Lista.':'Lista para resolver. Pulsa una sola vez.';
  }
  function refreshDeliveryBars(){if(!deliveryRows.size||deliveryScanBusy||Date.now()-lastDeliveryScan<3000)return;lastDeliveryScan=Date.now();deliveryScanBusy=true;send({action:'list'}).then(r=>{if(!r.ok)return;for(const [key,row]of deliveryRows){if(deliveryJobs.has(key))continue;const item=r.data.items.find(i=>i.key===key);if(item?.state==='created'){row.remove();deliveryRows.delete(key);successToast();}else if(item?.state==='pending')row.querySelector('[role=status]').textContent='Reintentando…';}if(!deliveryRows.size)document.getElementById('onoff-task-sending')?.remove();}).catch(()=>{}).finally(()=>deliveryScanBusy=false);}
+ const dailyDate = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota', dateStyle: 'medium'
+ });
+ const dailyTime = new Intl.DateTimeFormat('es-CO', {
+  timeZone: 'America/Bogota', timeStyle: 'short'
+ });
+ const dailyGroups = [
+  {title:'Creadas', states:['created']},
+  {title:'Pendientes', states:['confirmation','pending']},
+  {title:'Por revisar', states:['failed','rejected','expired']}
+ ];
+ const dailyStatus = {
+  created:'Tarea confirmada en Bitrix', confirmation:'Pendiente de confirmación',
+  pending:'En envío o esperando reintento', failed:'Envío sin resultado confirmado',
+  rejected:'Rechazada por Bitrix', expired:'Confirmación vencida'
+ };
+ let dailyPanel, dailyReadInFlight=false, nextDailyRead=0;
+ async function refreshDailyTasks() {
+  if(!dailyPanel?.isConnected || dailyReadInFlight) return;
+  const panelAtRequest=dailyPanel;
+  dailyReadInFlight=true;
+  nextDailyRead=Date.now()+5000;
+  const status=panelAtRequest.querySelector('[role=status]');
+  try {
+   const response=await send({action:'list'});
+   if(!response.ok) throw Error(response.error||'No se pudo leer el historial.');
+   if(!panelAtRequest.isConnected) return;
+   const today=dailyDate.format(new Date());
+   const items=response.data.items.map(item=>({...item, displayedAt:item.resultAt||item.lastAttempt||item.closedAt||item.at}))
+    .filter(item=>Number.isFinite(item.displayedAt) && item.displayedAt>0 && dailyDate.format(item.displayedAt)===today)
+    .sort((a,b)=>b.displayedAt-a.displayedAt);
+   const sections=dailyGroups.map(group=>{
+    const section=document.createElement('section');
+    const list=items.filter(item=>group.states.includes(item.state));
+    const heading=document.createElement('h3');
+    heading.textContent=group.title+' ('+list.length+')';
+    section.append(heading);
+    for(const item of list){
+     const article=document.createElement('article');
+     article.style='border-top:1px solid #d5e0e5;padding:9px 0';
+     const title=document.createElement('strong');
+     title.textContent=item.title||(item.tc==='Sin TC'?'Cliente sin TC':'TC'+item.tc);
+     const detail=document.createElement('div');
+     detail.textContent=dailyTime.format(item.displayedAt)+' · '+dailyStatus[item.state]+(item.stage?' · '+item.stage:'')+(item.completed?' · Completada':'');
+     article.append(title,detail);
+     if(item.taskId){
+      const label='Radicado #'+item.taskId;
+      let url;
+      try{url=new URL(item.url);}catch{}
+      if(url?.protocol==='https:'){
+       const link=document.createElement('a');
+       link.href=url.href;link.rel='noopener noreferrer';link.target='_blank';link.textContent=label;article.append(link);
+      }else article.append(document.createTextNode(label));
+     }
+     if(item.error){
+      const error=document.createElement('p');
+      error.textContent=item.error;article.append(error);
+     }
+     section.append(article);
+    }
+    return section;
+   });
+   panelAtRequest.querySelector('[data-daily-rows]').replaceChildren(...sections);
+   status.textContent='Registros de esta instalación · '+today+' · hora de Colombia';
+  }catch(error){
+   status.textContent='No se pudo actualizar. '+error.message;
+  }finally{dailyReadInFlight=false;}
+ }
+ function mountDailyTasks() {
+  if(document.getElementById('onoff-task-daily-button')) return;
+  const open=document.createElement('button');
+  open.id='onoff-task-daily-button';
+  open.textContent='Tipificaciones de hoy';
+  open.style='position:fixed;left:65px;bottom:16px;z-index:2147483630;background:#fff;color:#173b55;border:1px solid #617b8e;border-radius:7px;padding:8px 12px;font:14px system-ui;cursor:pointer';
+  open.onclick=()=>{
+   if(dailyPanel?.isConnected){dailyPanel.querySelector('button').focus();return;}
+   dailyPanel=document.createElement('section');
+   dailyPanel.setAttribute('aria-label','Tipificaciones de hoy');
+   dailyPanel.style='position:fixed;left:65px;bottom:57px;z-index:2147483630;width:min(460px,calc(100vw - 90px));max-height:65vh;overflow:auto;background:#fff;color:#172b3a;padding:16px;border:1px solid #16834a;border-radius:10px;font:14px system-ui';
+   const title=document.createElement('h2');title.textContent='Tipificaciones de hoy';
+   const close=document.createElement('button');close.textContent='Cerrar lista';close.onclick=()=>{dailyPanel.remove();open.focus();};
+   const refresh=document.createElement('button');refresh.textContent='Actualizar lista';refresh.onclick=()=>refreshDailyTasks();
+   const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Cargando registros…';
+   const rows=document.createElement('div');rows.setAttribute('data-daily-rows','');
+   dailyPanel.append(title,close,refresh,status,rows);document.body.append(dailyPanel);
+   close.focus();refreshDailyTasks();
+  };
+  document.body.append(open);
+ }
  function tick(){refreshDeliveryBars();processClosures();
+  mountDailyTasks();
+  if(dailyPanel?.isConnected&&Date.now()>=nextDailyRead)refreshDailyTasks();
   const currentDialog=closeDialog();if(currentDialog!==lastDialog){if(!pending)resetPreparation();lastDialog=currentDialog;}
 
 
@@ -118,7 +209,7 @@
   if(location.hash==='#/home'&&Date.now()-lastPendingScan>5000){lastPendingScan=Date.now();send({action:'list'}).then(r=>{if(r.ok)window.__onoffHasPending=r.data.items.some(i=>['confirmation','pending','failed'].includes(i.state));}).catch(()=>{});}
   if(location.hash==='#/home'&&window.__onoffHasPending&&!document.getElementById('onoff-task-recovery')){const box=document.createElement('aside');box.id='onoff-task-recovery';box.style='position:fixed;right:18px;bottom:170px;z-index:2147483647;background:white;color:#123;padding:12px;border:1px solid #16834a;border-radius:8px';const button=document.createElement('button');button.textContent='Consultar tareas PRUEBA pendientes';button.onclick=journal;box.append(button);document.body.append(box);}else if(location.hash!=='#/home'||!window.__onoffHasPending)document.getElementById('onoff-task-recovery')?.remove();
   if(!panel){root=document.getElementById('onoff-ikono-auto-summary')?.shadowRoot;const box=root?.querySelector('[data-description]')?.closest('details');if(!box)return;
-   panel=document.createElement('section');panel.innerHTML='<h4>Tarea PRUEBA desde extensión · 0.24.0</h4><p data-pilot-context>Piloto de una tarea. El radicado anterior se conserva intacto.</p><label><input type="checkbox" data-create-enable>Pedir confirmación para crear tarea PRUEBA después de Resolver</label><label style="display:block"><input type="checkbox" data-finalreview>Revisé y corregí el resumen final de hoy para la TC seleccionada.</label><label style="display:block"><input type="checkbox" data-duplicate>La vista previa corresponde a esta atención; los radicados técnicos son referencias.</label><button data-prepare>Preparar vista previa</button><button data-resume>Consultar resultado pendiente</button><p data-create-status>Confirma TC, negociación y revisión: la vista previa se preparará sola. Tras Resolver aparecerá la confirmación final para crear. La confirmación de tipificación es obligatoria en este piloto.</p>';box.append(panel);panel.querySelector('[data-prepare]').onclick=prepare;panel.querySelector('[data-resume]').onclick=()=>commit({action:'resume'});loadPilot();
+   panel=document.createElement('section');panel.innerHTML='<h4>Tarea PRUEBA desde extensión · 0.24.1</h4><p data-pilot-context>Piloto de una tarea. El radicado anterior se conserva intacto.</p><label><input type="checkbox" data-create-enable>Pedir confirmación para crear tarea PRUEBA después de Resolver</label><label style="display:block"><input type="checkbox" data-finalreview>Revisé y corregí el resumen final de hoy para la TC seleccionada.</label><label style="display:block"><input type="checkbox" data-duplicate>La vista previa corresponde a esta atención; los radicados técnicos son referencias.</label><button data-prepare>Preparar vista previa</button><button data-resume>Consultar resultado pendiente</button><p data-create-status>Confirma TC, negociación y revisión: la vista previa se preparará sola. Tras Resolver aparecerá la confirmación final para crear. La confirmación de tipificación es obligatoria en este piloto.</p>';box.append(panel);panel.querySelector('[data-prepare]').onclick=prepare;panel.querySelector('[data-resume]').onclick=()=>commit({action:'resume'});loadPilot();
   }
   if(armed&&armed.expires<=Date.now()){armed=null;lastAutoPreparation='';autoCandidate='';window.ONOFFAdvisorValidation?.preparation('La preparación venció. Revalidando…');}
   if(armed){try{if(armed.signature!==canonical(snapshot())||!reviewed()){armed=null;tell('Cambio detectado. Se conserva tu borrador; revisa y prepara nuevamente.');}}catch{armed=null;}}
