@@ -2,6 +2,7 @@
  if(window.__onoffTaskReviewInstalled)return;window.__onoffTaskReviewInstalled=true;
  const team=['211','490253','601125','672371','1460672','1470334','1523392','1585264','2006588','2188252','2315788','2316058'];
  const template={id:'477',name:'PRIMER CONTACTO',responsible:'Guadalupe Ríos Pelaez',project:'SAC TiendasOn',participants:team,observer:'1870252'};
+ let contactScope='';const contactKey=()=>JSON.stringify([location.hash,day(),window.ONOFFIkonoMemory?.get(location.hash)?.attention||'']);
  const descriptionMemory=new Map();let descriptionScope='',reviewSnapshot='';const roomMemory=new Map();let dailyKey='',dailyAnswer='',dailyBusy=false;let previousTc='',descriptionEdited=false,host,root,box,room=location.hash,records=new Map(),lookup=null,epoch=0,classification={},last='';
  const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());let today=day();
  function collect(){
@@ -18,7 +19,9 @@
  function reviewVersion(){return JSON.stringify([room,today,window.ONOFFIkonoMemory?.get(room)?.attention||'',selected(),[...records.entries()]]);}
  function preserveDescription(){if(box&&descriptionEdited)descriptionMemory.set(descriptionScope,box.querySelector('[data-description]').value);}
  function selected(){return root?.getElementById('tc')?.value==='manual'?root.getElementById('manual').value:root?.getElementById('tc')?.value||'';}
- window.ONOFFTaskReview={advisorApply({tc,deal,description,messageIds}){
+ window.ONOFFTaskReview={advisorApplyContact({description,messageIds}){
+  collect();const phone=(document.querySelector('.mx_RoomHeader')?.textContent||document.title).match(/\((\d{10,15})\)/)?.[1]||'';if(!/^\d{10,15}$/.test(phone))throw Error('No se encontró el número de contacto para tipificar sin TC.');contactScope=contactKey();root.getElementById('tc').value='manual';root.getElementById('manual').value='';render();review();const checked=new Set(messageIds||[]);if(!checked.size||[...checked].some(id=>!records.has(id)))throw Error('Revisa los textos de esta atención.');for(const e of box.querySelectorAll('[data-messages] input'))e.checked=checked.has(e.dataset.id);lookup=null;descriptionEdited=true;box.querySelector('[data-description]').value=description;preserveDescription();box.querySelector('[data-dayreview]').checked=true;render();
+ },advisorApply({tc,deal,description,messageIds}){contactScope='';
   if(!deal||(window.ONOFFIkonoTC?.normalizeTaskTC?.(deal.tc)||String(deal.tc))!==tc.replace(/^TC/i,'')||!deal.company?.id)throw Error('Negociación o compañía no válidas.');
   window.ONOFFAdvisorContext.confirm(tc);render();review();
   const checked=new Set(messageIds||[]);if(!checked.size||[...checked].some(id=>!records.has(id)))throw Error('Revisa los textos de esta atención.');
@@ -26,9 +29,9 @@
   lookup={tc:tc.replace(/^TC/i,''),deals:[deal],selected:deal};descriptionEdited=true;box.querySelector('[data-description]').value=description;preserveDescription();box.querySelector('[data-dayreview]').checked=true;render();
  },snapshot(){
   collect();if(!box)throw Error('Vista previa pendiente.');
-  const tc=selected().replace(/^TC\s*/i,'');const phone=(document.querySelector('.mx_RoomHeader')?.textContent||document.title).match(/\((\d{10,15})\)/)?.[1]||'';
+  const contactMode=contactScope===contactKey();const tc=contactMode?'':selected().replace(/^TC\s*/i,'');const phone=(document.querySelector('.mx_RoomHeader')?.textContent||document.title).match(/\((\d{10,15})\)/)?.[1]||'';
   const checked=[...box.querySelectorAll('[data-messages] input:checked')].map(e=>e.dataset.id);
-  return {tc,room:location.hash,day:today,...(window.ONOFFTimeline?{attention:window.ONOFFIkonoMemory.get(location.hash)?.attention,captureEvidence:window.ONOFFIkonoMemory.get(location.hash)?.captureEvidence}:{}),category:classification.category||'',detail:classification.detail||'',description:box.querySelector('[data-description]').value,phone,tcConfirmed:!!root.getElementById('verified')?.checked&&!!root.getElementById('tcStatus')?.textContent.includes('confirmada'),reviewed:!!box.querySelector('[data-dayreview]')?.checked&&reviewSnapshot===reviewVersion()&&checked.length>0,messages:[...records.entries()],selectedMessageIds:checked,dealId:String(lookup?.selected?.id||'')};
+  return {tc,...(contactMode?{identityMode:'contact',contactConfirmed:true}:{}),room:location.hash,day:today,...(window.ONOFFTimeline?{attention:window.ONOFFIkonoMemory.get(location.hash)?.attention,captureEvidence:window.ONOFFIkonoMemory.get(location.hash)?.captureEvidence}:{}),category:classification.category||'',detail:classification.detail||'',description:box.querySelector('[data-description]').value,phone,tcConfirmed:contactMode||!!root.getElementById('verified')?.checked&&!!root.getElementById('tcStatus')?.textContent.includes('confirmada'),reviewed:!!box.querySelector('[data-dayreview]')?.checked&&reviewSnapshot===reviewVersion()&&checked.length>0,messages:[...records.entries()],selectedMessageIds:checked,dealId:contactMode?'':String(lookup?.selected?.id||'')};
  }};
  function render(){
   preserveDescription();collect();const tc=selected().replace(/^TC\s*/i,'');if(previousTc!==tc){previousTc=tc;lookup=null;descriptionEdited=false;dailyKey='';dailyAnswer='';}
@@ -41,7 +44,7 @@
  }
  async function search(){const tc=selected().replace(/^TC\s*/i,'');if(!/^\d+$/.test(tc)||!root.getElementById('verified').checked||!root.getElementById('tcStatus').textContent.includes('confirmada')){box.querySelector('[data-result]').textContent='Confirma primero la TC con el asesor.';return;}
   const token=++epoch,requestRoom=location.hash;box.querySelector('[data-result]').textContent='Consultando TC en Bitrix, solo lectura…';
-  try{const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tc})}),data=await r.json();if(token!==epoch||requestRoom!==location.hash||tc!==selected().replace(/^TC\s*/i,'')||!root.getElementById('verified').checked)return;if(!r.ok||!data.ok)throw Error('Consulta no disponible');
+  try{const r=await chrome.runtime.sendMessage({type:'ONOFF_TASK_PILOT',action:'lookup',tc}),data=r.data||{};if(token!==epoch||requestRoom!==location.hash||tc!==selected().replace(/^TC\s*/i,'')||!root.getElementById('verified').checked)return;if(!r.ok||data.ok===false)throw Error(r.error||'Consulta no disponible');
    lookup={tc,deals:(data.deals||[]).filter(d=>String(d.tc)===tc),selected:null};const select=box.querySelector('[data-deals]');select.replaceChildren(new Option('Seleccionar negociación exacta',''));for(const d of lookup.deals)select.add(new Option(d.title+' · #'+d.id,d.id));box.querySelector('[data-result]').textContent=lookup.deals.length+' coincidencias. Selecciona la negociación; no se elige automáticamente.';render();
   }catch(e){if(token===epoch)box.querySelector('[data-result]').textContent='No se pudo consultar la TC. Sin cambios en Bitrix.';}}
  function review(){

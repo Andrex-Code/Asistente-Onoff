@@ -1,3 +1,11 @@
+## 0.24.0 — Confirmación prioritaria y tipificación por contacto
+
+La confirmación se abre automáticamente tras comprobar el cierre, incluso si el asesor cambia de chat. La espera mínima bajó a 300 ms. Se recuperan alertas transitorias y se comprueba que la señal corresponde a la sala original.
+
+Si iKono muestra un teléfono y no identifica TC, el asesor puede elegir Cliente sin TC. El borrador usa el contacto, sin rellenar Plataforma ni enlazar un CRM desconocido. Se conserva la normalización -C y -1-1. La consulta de tareas y negociaciones requiere autorización. Los rechazos explícitos de Bitrix permiten corregir el borrador, mientras los envíos inciertos mantienen la protección contra duplicados.
+
+Validado con servicios simulados. No se cerraron chats reales ni se crearon tareas en Bitrix.
+
 ## 0.23.2 — confirmación conservada al navegar
 
 - [x] Cola por cierre, independiente de B y su cancelación.

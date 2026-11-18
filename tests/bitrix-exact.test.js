@@ -7,11 +7,11 @@ const { exactTcRecords, normalizeTc } = require('../lib/bitrix-tc');
 const field = 'UF_CRM_1642606760058';
 
 test('TC exacta conserva prefijos normalizados y distingue números y sufijos', () => {
-  assert.equal(normalizeTc(' TC: 896-c '), '896-C');
+  assert.equal(normalizeTc(' TC: 896-c '), '896');
   const rows = ['8968', '1896', '896-C', '896', 'TC896', '896-R', '', '00896'].map((tc, i) => ({ ID: String(i), [field]: tc }));
   rows.push({ ID: 'missing' }, { ID: 'title-only', TITLE: 'TC896' });
-  assert.deepEqual(exactTcRecords(rows, field, '896').map(r => r.ID), ['3', '4']);
-  assert.deepEqual(exactTcRecords(rows, field, '896-C').map(r => r.ID), ['2']);
+  assert.deepEqual(exactTcRecords(rows, field, '896').map(r => r.ID), ['2', '3', '4']);
+  assert.deepEqual(exactTcRecords(rows, field, '896-C').map(r => r.ID), ['2', '3', '4']);
   assert.deepEqual(exactTcRecords(rows, field, '89'), []);
   assert.deepEqual(exactTcRecords([{ item: { id: '1', ufCrm1642606760058: '896' } }], field, '896').map(r => r.id), ['1']);
 });
@@ -20,7 +20,7 @@ function backend(file, response) {
   const calls = [], context = {
     module: { exports: {} }, URL, URLSearchParams, AbortController, setTimeout, clearTimeout,
     process: { env: { BITRIX_WEBHOOK_URL: 'https://bitrix.example/rest/test/' } },
-    require: name => name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : name.endsWith('bitrix-deal-details') ? require('../lib/bitrix-deal-details') : { lookupAfacturar: async () => null },
+    require: name => name.endsWith('bitrix-read-auth') ? ()=>true : name.endsWith('bitrix-tc') ? require('../lib/bitrix-tc') : name.endsWith('bitrix-deal-details') ? require('../lib/bitrix-deal-details') : { lookupAfacturar: async () => null },
     fetch: async (url, options) => { calls.push({ url, body: options.body }); return { ok: true, json: async () => ({ result: response(url) }) }; }
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
@@ -49,7 +49,7 @@ test('deal endpoint verifies exact TC before limiting and enriching records', as
 test('deal fallback and task bindings both discard similar TC records', async () => {
   for (const file of ['api/bitrix/search-deal.js', 'lib/client-tasks-legacy.js']) {
     const h = backend(file, url => url.includes('crm.deal.list') ? [{ ID: 'wrong', [field]: '8968' }]
-      : { items: [{ id: 'right', ufCrm1642606760058: '896' }, { id: 'wrong2', [field]: '896-C' }] });
+      : { items: [{ id: 'right', ufCrm1642606760058: '896' }, { id: 'wrong2', [field]: '896-R' }] });
     const method = file.startsWith('api/') ? 'findExactDeals' : 'findDeals';
     const result = await vm.runInNewContext(method + '("https://bitrix.example/", "' + field + '", "896")', h.context);
     assert.equal(result.length, 1); assert.equal(result[0].id, 'right');
@@ -84,4 +84,4 @@ test('Esencial suffix -1-1 resolves the base TC while preserving the actual deal
  assert.equal(rows.length,1); assert.equal(rows[0].ID,'34592');
 });
 
-test('Esencial canonical result retains original TC and excludes other terminals',async()=>{const h=backend('api/bitrix/search-deal.js',url=>url.includes('crm.deal.list')?[{ID:'34592',COMPANY_ID:'42',[field]:'20107-1-1'},{ID:'wrong',[field]:'20107-3'}]:[]);let payload;const res={setHeader(){},status(){return this;},json(v){payload=v;}};await h.context.module.exports({method:'POST',body:{tc:'20107'}},res);assert.equal(payload.deals.length,1);assert.equal(payload.deals[0].id,'34592');assert.equal(payload.deals[0].tc,'20107');assert.equal(payload.deals[0].originalTc,'20107-1-1');assert.equal(payload.deals[0].matchType,'exact');for(const suffix of ['-1','-3','-C'])assert.equal(exactTcRecords([{[field]:'20107'+suffix}],field,'20107').length,0);});
+test('Esencial canonical result retains original TC and excludes other terminals',async()=>{const h=backend('api/bitrix/search-deal.js',url=>url.includes('crm.deal.list')?[{ID:'34592',COMPANY_ID:'42',[field]:'20107-1-1'},{ID:'wrong',[field]:'20107-3'}]:[]);let payload;const res={setHeader(){},status(){return this;},json(v){payload=v;}};await h.context.module.exports({method:'POST',body:{tc:'20107'}},res);assert.equal(payload.deals.length,1);assert.equal(payload.deals[0].id,'34592');assert.equal(payload.deals[0].tc,'20107');assert.equal(payload.deals[0].originalTc,'20107-1-1');assert.equal(payload.deals[0].matchType,'exact');for(const suffix of ['-1','-3','-R'])assert.equal(exactTcRecords([{[field]:'20107'+suffix}],field,'20107').length,0);});
