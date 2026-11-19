@@ -6,9 +6,10 @@
   const GAP = 10;
 
   const TEMPLATES = [
-    ['TCXXXX - ESCALAMIENTO OPERACIONES', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/383/'],
+    ['TCXXXX - ESCALAMIENTO INFRAESTRUCTURA (REPORTE DE INCIDENTES)', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/383/'],
     ['TCXXXX- PRIMER CONTACTO', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/477/'],
     ['TCXXXX - S SOLICITUD DE RECAPACITACIÓN (CIUDAD OBLIGATORIA)', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/513/'],
+    ['TCXXXX - RECAPACITACION VIRTUAL CLIENTE EXTERNO (⚠REGIONAL OBLIGATORIA⚠)', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/860/'],
     ['TCXXXX - ACTUALIZAR INFORMACION DE PRODUCTO', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/606/'],
     ['TCXXXX - CESION DE CONTRATO', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/648/'],
     ['TCXXXX - SOLICITUD DE RETIRO', 'https://onoff.bitrix24.es/company/personal/user/2315788/tasks/templates/template/view/650/'],
