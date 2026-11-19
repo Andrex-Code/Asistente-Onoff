@@ -3,10 +3,11 @@ const assert = require('node:assert/strict');
 const { normalizeCompany, loadPlans } = require('../lib/bitrix-deal-details');
 
 test('company details preserve identification, phone/email arrays and the verified company link', () => {
-  const company = normalizeCompany({ ID: '42', TITLE: 'Compañía de prueba', UF_CRM_1599251398: '001234567-8',
+  const company = normalizeCompany({ ID: '42', TITLE: 'Compañía de prueba', UF_CRM_1599251398: '001234567-8', UF_CRM_5F877446B4C39: ' ARMENIA ',
     PHONE: [{ VALUE: '+57 300 000 0000' }, { VALUE: '+57 300 000 0000' }, { VALUE: '+57 601 0000000' }],
     EMAIL: [{ VALUE: 'contacto@example.com' }, { VALUE: '' }] }, '42', 'https://bitrix.example', 'UF_CRM_1599251398');
   assert.equal(company.identification, '001234567-8');
+  assert.equal(company.city, 'ARMENIA');
   assert.deepEqual(company.phones, ['+57 300 000 0000', '+57 601 0000000']);
   assert.deepEqual(company.emails, ['contacto@example.com']);
   assert.equal(company.url, 'https://bitrix.example/crm/company/details/42/');
@@ -16,7 +17,13 @@ test('company details preserve identification, phone/email arrays and the verifi
 test('company camelCase fields work without manufacturing missing contact details', () => {
   const company = normalizeCompany({ id: 42, title: 'Persona natural', ufCrm1599251398: '00012345' }, '42', 'https://bitrix.example', 'UF_CRM_1599251398');
   assert.equal(company.identification, '00012345');
+  assert.equal(company.city, '');
   assert.deepEqual(company.phones, []); assert.deepEqual(company.emails, []);
+});
+
+test('city uses the operation city field in camelCase and does not substitute the address city', () => {
+  assert.equal(normalizeCompany({ id: 42, ufCrm5f877446b4c39: 'Bogotá', addressCity: 'Medellín' }, '42', 'https://bitrix.example', 'UF_CRM_1599251398').city, 'Bogotá');
+  assert.equal(normalizeCompany({ ID: '42', ADDRESS_CITY: 'Medellín' }, '42', 'https://bitrix.example', 'UF_CRM_1599251398').city, '');
 });
 
 test('plan comes from the exact deal product rows, never from a product catalog guess', async () => {

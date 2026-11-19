@@ -24,7 +24,7 @@ const server = http.createServer(async (req, res) => {
     ? { ok: true, deals: [
       ...(['898','20107'].includes(body.tc) ? [] : [{ id: '14008', tc: body.tc, title: 'Negociación de prueba', client: 'Cliente ficticio', url: 'https://example.com/deal',
         plan: body.tc === '897' ? { status: 'empty', items: [] } : { status: 'available', items: ['Servicio anual de prueba', 'Equipo POS'] },
-        company: body.tc === '897' ? { status: 'none' } : { status: 'available', name: 'Compañía de prueba S.A.S.', identification: '900000000-0', phones: ['+57 300 000 0000'], emails: ['contacto@example.com'], url: 'https://example.com/company' }
+        company: body.tc === '897' ? { status: 'none' } : { status: 'available', name: 'Compañía de prueba S.A.S.', identification: '900000000-0', city: 'ARMENIA', phones: ['+57 300 000 0000'], emails: ['contacto@example.com'], url: 'https://example.com/company' }
       }]),
       { id: 'similar', tc: body.tc === '20107' ? '20107-1-1' : body.tc + '8', title: 'Similar de otro cliente', url: 'https://example.com/other' }
     ] }
@@ -85,10 +85,14 @@ const server = http.createServer(async (req, res) => {
     const card = panel.locator('.onoff-bitrix-card').first();
     assert.equal(await card.getByRole('tab', { name: 'Negociación', exact: true }).getAttribute('aria-selected'), 'true');
     assert.match(await card.innerText(), /Servicio anual de prueba/);
+    assert.deepEqual(await card.locator('dt:visible').allTextContents(), ['Cliente', 'NIT / identificación', 'Ciudad']);
+    assert.match(await card.innerText(), /ARMENIA/);
     assert.equal(await card.locator('dt').filter({ hasText: /^(Estado|Responsable|ID)$/ }).count(), 0);
     const requestCount = calls.length;
     await card.getByRole('tab', { name: 'Compañía', exact: true }).click();
     assert.match(await card.innerText(), /900000000-0/);
+    assert.deepEqual((await card.locator('dt:visible').allTextContents()).slice(0, 2), ['NIT / identificación', 'Ciudad']);
+    assert.match(await card.innerText(), /ARMENIA/);
     assert.match(await card.innerText(), /contacto@example.com/);
     assert.match(await card.innerText(), /\+57 300 000 0000/);
     assert.equal(await card.getByRole('button', { name: 'Abrir compañía', exact: true }).count(), 1);

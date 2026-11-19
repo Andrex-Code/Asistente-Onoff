@@ -173,7 +173,8 @@
     const company = deal.company;
     const companyAvailable = company?.status === 'available';
     const negotiation = card(`TC${deal.tc || tc}`, deal.title, [
-      ['Cliente', deal.client], ['NIT / identificación', companyAvailable ? company.identification : 'No disponible']
+      ['Cliente', deal.client], ['NIT / identificación', companyAvailable ? company.identification : 'No disponible'],
+      ['Ciudad', companyAvailable ? company.city || 'No registrada' : 'No disponible']
     ], deal.url, 'Abrir negociación', deal.afacturar);
     const plan = document.createElement('section'); plan.className = 'onoff-bitrix-plan';
     const planTitle = document.createElement('strong'); planTitle.textContent = 'Plan contratado'; plan.appendChild(planTitle);
@@ -197,6 +198,7 @@
     if (companyAvailable) {
       companyBody = card('Compañía asociada', company.name, [
         ['NIT / identificación', company.identification],
+        ['Ciudad', company.city || 'No registrada'],
         ['Teléfono', (company.phones || []).join(' · ')], ['Correo', (company.emails || []).join(' · ')]
       ], company.url, 'Abrir compañía');
     } else {
