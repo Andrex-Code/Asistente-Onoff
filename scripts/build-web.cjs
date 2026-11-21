@@ -10,6 +10,11 @@ const path = require('node:path');
   await fs.access(path.join(source, 'index.html'));
   await fs.mkdir(destination, { recursive: true });
   await fs.cp(source, path.join(destination, 'admin'), { recursive: true, force: true });
+  const sharedAssets = ['ui-refresh.css', 'pages.css', 'theme.js'];
+  await fs.mkdir(path.join(destination, 'src'), { recursive: true });
+  for (const asset of sharedAssets) {
+    await fs.copyFile(path.join(root, 'src', asset), path.join(destination, 'src', asset));
+  }
   await fs.writeFile(
     path.join(destination, 'index.html'),
     '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Asistente ONOFF</title></head><body style="font-family:system-ui,sans-serif;margin:3rem;color:#18352b"><h1>Asistente ONOFF</h1><p>Servicio de apoyo para la extensi\u00f3n de navegador.</p><a href="/admin/">Administraci\u00f3n</a></body></html>\n',
