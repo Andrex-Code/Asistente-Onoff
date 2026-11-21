@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "ONOFF · Chats y tipificaciones",
-  "version": "0.23.2",
+  "version": "0.23.4",
   "description": "Resumen por chat y piloto de tarea PRUEBA tras cierre humano verificado. Confirmación de TC y revisión obligatorias.",
   "permissions": [
     "activeTab",
     "scripting",
     "offscreen",
     "storage",
-    "alarms"
+    "alarms",
+    "identity"
   ],
   "host_permissions": [
     "https://asistente-onoff.vercel.app/*",
@@ -59,5 +60,6 @@
       ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8ClE8LQoAkuFyTS3iFAski4Cws7UEv/GvlrPff4XR5dPDfZD8eVGotSkQaUGR1m3/Dzqwxk1O4dVAb+drLW/mP/yLBk2ySnsOW+8WDY5Z3T0DB2FaE7g6te9cEaBEnkS9XjR9UBSLDpbgHRnCMuBKKeVdY+cN42zP7bDw1FPi9tleS+n3hLt2VaEjpW18PQm08UyQ3VtUolQu533J2g6B5QJqAFx9eKYCzRbh6Zjhxl1UXGpzKpquBMFaOmEbcewIyYxTKKyJ/K68Ajcy1aIA75Xneo/cGNpMLSoOg1mDOJjhbvdHxFSyHwvZu8CB6veBMP11NVoWge35B6Ufs9hPwIDAQAB"
 }

@@ -1,5 +1,5 @@
 importScripts('pilot-auth.js','delivery.js');
-const delivery=self.createONOFFDelivery({chrome,fetchImpl:fetch,auth:()=>self.ONOFF_TASK_PILOT});
+const delivery=self.createONOFFDelivery({chrome,fetchImpl:advisorFetch,auth:()=>self.ONOFF_TASK_PILOT});
 // A suspended MV3 worker can restart without onStartup or onInstalled.
 // Finish recovery before processing alarms/messages so it cannot overwrite a new send.
 const deliveryReady=delivery.restore().then(()=>null,e=>e);
@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   const keyFor=async value=>'onoff-task-pilot-'+auth.scope+'-'+[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(b=>b.toString(16).padStart(2,'0')).join('');let key;
   if(m.action==='amend'){
    const saved=(await chrome.storage.local.get(m.recordKey))[m.recordKey];if(!m.recordKey?.startsWith('onoff-task-pilot-'+auth.scope+'-')||!saved||saved.confirmed&&!saved.definitiveReject||saved.superseded)throw Error('El borrador no es editable después de confirmar el envío.');
-   const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:'amend',intent:saved.intent,edits:m.edits}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se guardó el borrador.');
+   const r=await advisorFetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:'amend',intent:saved.intent,edits:m.edits}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se guardó el borrador.');
    key=await keyFor(d.data.intent);await chrome.storage.local.set({[key]:{...saved,intent:d.data.intent,tc:m.edits.tc||saved.tc,prepared:d.data,confirmed:false,definitiveReject:false,phase:'confirmation',lastError:'',attempts:0,nextAt:null}});if(key!==m.recordKey)await chrome.storage.local.set({[m.recordKey]:{...saved,superseded:key}});return d.data;
   }
   if(m.action==='await-confirmation'){key=await keyFor(m.intent);const saved=(await chrome.storage.local.get(key))[key];if(!saved||saved.intent!==m.intent)throw Error('No existe preparación guardada para este cierre.');if(saved.result)return saved.result;if(saved.confirmed===true)throw Error('Creación ya confirmada; consulta el resultado.');await chrome.storage.local.set({[key]:{...saved,evidence:m.evidence,confirmed:false,phase:'confirmation'}});return {awaitingConfirmation:true,key};}
@@ -46,7 +46,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   }
   if(m.action==='commit'){key=await keyFor(m.intent);const saved=(await chrome.storage.local.get(key))[key];if(saved?.confirmed!==true&&m.confirmation!==true)throw Error('Confirma Crear tarea PRUEBA después del cierre.');}
   if(m.action==='commit')return delivery.deliver(key,{manual:true});
-  const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:m.action,payload:m.payload,intent:m.intent,evidence:m.evidence,confirmation:m.confirmation===true}),signal:AbortSignal.timeout(55000)});
+  const r=await advisorFetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:m.action,payload:m.payload,intent:m.intent,evidence:m.evidence,confirmation:m.confirmation===true}),signal:AbortSignal.timeout(55000)});
   const data=await r.json();if(!r.ok||!data.ok)throw Error(data.error||'Servicio no disponible.');
   // Persist before telling the content script it is armed: iKono can unload the
   // entire room immediately after the human resolves it. No closure is inferred.
@@ -78,4 +78,30 @@ async function handleIkonoRead(m,sender){
   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:serialized,signal:AbortSignal.timeout(45000)});
   const data=await response.json().catch(()=>null);
   return {status:response.status,data:data||{ok:false,error:'El servidor respondió HTTP '+response.status+' sin JSON válido.'}};
+}
+
+async function advisorFetch(endpoint, options) {
+ const configResponse = await fetch(endpoint, {
+  method: 'POST', headers: options.headers,
+  body: JSON.stringify({pilotAction:'advisor-config'}), signal: AbortSignal.timeout(15000)
+ });
+ const config = await configResponse.json();
+ if (!configResponse.ok || !config.data?.clientId) throw Error(config.error || 'Configuración de Bitrix pendiente.');
+ const portal = 'onoff.bitrix24.es';
+ const state = crypto.randomUUID();
+ const url = new URL('https://' + portal + '/oauth/authorize/');
+ url.search = new URLSearchParams({client_id:config.data.clientId, state}).toString();
+ let callback;
+ try {
+  callback = new URL(await chrome.identity.launchWebAuthFlow({url:url.href, interactive:false}));
+ } catch {
+  throw Error('Abre Bitrix ONOFF en este perfil del navegador e inicia sesión con tu cuenta de asesor.');
+ }
+ const redirect = new URL(chrome.identity.getRedirectURL());
+ const code = callback.searchParams.get('code');
+ if (callback.origin !== redirect.origin || callback.pathname !== redirect.pathname ||
+     callback.searchParams.get('domain') !== portal || callback.searchParams.get('state') !== state || !code) {
+  throw Error('No se pudo verificar la sesión de Bitrix del asesor.');
+ }
+ return fetch(endpoint, {...options, body:JSON.stringify({...JSON.parse(options.body), advisorCode:code})});
 }
