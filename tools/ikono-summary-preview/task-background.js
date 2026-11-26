@@ -1,6 +1,12 @@
 importScripts('pilot-auth.js','delivery.js','preparation.js','preparation-review.js');
-const delivery=self.createONOFFDelivery({chrome,fetchImpl:fetch,auth:()=>self.ONOFF_TASK_PILOT});
-const requestPreparation=createONOFFPreparation();
+const productionApiOrigin='https://asistente-onoff.vercel.app';
+const pilotApiOrigin=self.ONOFF_TASK_PILOT?.apiOrigin||productionApiOrigin;
+if(pilotApiOrigin!==productionApiOrigin&&(
+ !/^https:\/\/asistente-onoff-[a-z0-9-]+\.vercel\.app$/.test(pilotApiOrigin)||
+ !chrome.runtime.getManifest().host_permissions?.includes(pilotApiOrigin+'/*')))
+ throw Error('El origen de la API del piloto no está autorizado en el manifiesto.');
+const delivery=self.createONOFFDelivery({chrome,fetchImpl:fetch,auth:()=>self.ONOFF_TASK_PILOT,apiOrigin:pilotApiOrigin});
+const requestPreparation=createONOFFPreparation({apiOrigin:pilotApiOrigin});
 const preparationJobs=new Map();
 // A suspended MV3 worker can restart without onStartup or onInstalled.
 // Finish recovery before processing alarms/messages so it cannot overwrite a new send.
@@ -72,7 +78,7 @@ async function prepareRecovered(auth,message,room){
  });
 }
 async function requestJson(path,body,auth,timeout){
- const response=await fetch('https://asistente-onoff.vercel.app/api/'+path,{method:'POST',
+ const response=await fetch((auth?pilotApiOrigin:productionApiOrigin)+'/api/'+path,{method:'POST',
   headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth.token}:{})},
   body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});
  const result=await response.json();
@@ -157,12 +163,12 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   if(m.action==='lookup-phone'){
     const phone=typeof m.phone==='string'?m.phone:'';
     if(!/^\d{10,15}$/.test(phone))throw Error('Teléfono inválido.');
-    const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({action:'lookup-phone',phone}),signal:AbortSignal.timeout(28000)});
+    const r=await fetch(pilotApiOrigin+'/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({action:'lookup-phone',phone}),signal:AbortSignal.timeout(28000)});
     const data=await r.json().catch(()=>null);
     if(!r.ok||!data?.ok)throw Error('No se pudo buscar por teléfono en Bitrix. Intenta nuevamente.');
     return {deals:data.deals||[],truncated:data.truncated===true};
   }
-  if(m.action==='lookup'){const tc=String(m.tc||'').trim();if(!/^(?:TC\s*[-:]?\s*)?\d{1,8}(?:-1-1|-C)?$/i.test(tc))throw Error('TC inválida.');const response=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({tc}),signal:AbortSignal.timeout(30000)});const data=await response.json();if(!response.ok||!data.ok)throw Error(data.error||'No se pudo consultar la TC.');return {deals:data.deals||[]};}
+  if(m.action==='lookup'){const tc=String(m.tc||'').trim();if(!/^(?:TC\s*[-:]?\s*)?\d{1,8}(?:-1-1|-C)?$/i.test(tc))throw Error('TC inválida.');const response=await fetch(pilotApiOrigin+'/api/bitrix/search-deal',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({tc}),signal:AbortSignal.timeout(30000)});const data=await response.json();if(!response.ok||!data.ok)throw Error(data.error||'No se pudo consultar la TC.');return {deals:data.deals||[]};}
   if(m.action==='info')return {tc:auth.tc,room:auth.room,expires:auth.expires,previousTaskId:auth.previousTaskId,mode:auth.mode};
   if(m.action==='recover-closures'){
    const all=await chrome.storage.local.get(null);
@@ -187,7 +193,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
    const saved=(await chrome.storage.local.get(previousKey))[previousKey];
    if(!previousKey?.startsWith('onoff-task-pilot-'+auth.scope+'-')||!saved?.evidence||saved.confirmed||saved.result||saved.superseded)
     throw Error('La tipificación ya cambió. Actualiza la cola.');
-   const response=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',
+   const response=await fetch(pilotApiOrigin+'/api/bitrix/search-task',{method:'POST',
     headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},
     body:JSON.stringify({pilotAction:'renew',intent:saved.intent,evidence:saved.evidence}),signal:AbortSignal.timeout(30000)});
    const data=await response.json();
@@ -201,7 +207,7 @@ chrome.runtime.onMessage.addListener((m,sender,reply)=>{
   }
   if(m.action==='amend'){
    const saved=(await chrome.storage.local.get(m.recordKey))[m.recordKey];if(!m.recordKey?.startsWith('onoff-task-pilot-'+auth.scope+'-')||!saved||saved.confirmed&&!saved.rejected||saved.superseded)throw Error('El borrador no es editable después de confirmar el envío.');
-   const r=await fetch('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:'amend',intent:saved.intent,edits:m.edits}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se guardó el borrador.');
+   const r=await fetch(pilotApiOrigin+'/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+auth.token},body:JSON.stringify({pilotAction:'amend',intent:saved.intent,edits:m.edits}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'No se guardó el borrador.');
    key=await keyFor(d.data.intent);await chrome.storage.local.set({[key]:{...saved,intent:d.data.intent,tc:m.edits.tc||saved.tc,prepared:d.data,confirmed:false,rejected:false,phase:saved.evidence?'confirmation':'prepared',attempts:0,lastError:'',nextAt:null}});if(key!==m.recordKey)await chrome.storage.local.set({[m.recordKey]:{...saved,superseded:key}});return d.data;
   }
   if(m.action==='record-close'||m.action==='resolve-and-send'){

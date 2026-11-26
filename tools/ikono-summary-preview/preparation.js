@@ -1,10 +1,10 @@
 // Preparation only reads Bitrix and returns a signed draft. Commit has a separate queue.
-function createONOFFPreparation({fetchImpl=fetch, now=Date.now, pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
+function createONOFFPreparation({fetchImpl=fetch, apiOrigin='https://asistente-onoff.vercel.app', now=Date.now, pause=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  const active=new Map();
  const retryStatuses=new Set([408,429,500,502,503,504]);
  const retryCodes=new Set(['BITRIX_TEMPORARY','QUERY_LIMIT_EXCEEDED','OPERATION_TIME_LIMIT']);
  const retryMessage=/^(?:The operation was aborted due to timeout|fetch failed|Bitrix: (?:408|429|5\d\d|Too many requests|Operation time limit exceeded|QUERY_LIMIT_EXCEEDED|OPERATION_TIME_LIMIT))\.?$/i;
- const endpoint='https://asistente-onoff.vercel.app/api/bitrix/search-task';
+ const endpoint=apiOrigin+'/api/bitrix/search-task';
 
  function delayFromHeader(response){
   const value=response.headers.get('Retry-After');

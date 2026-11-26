@@ -6,7 +6,8 @@ const {resolve}=require('node:path');
 const vm=require('node:vm');
 
 test('recovery stages a single signed draft and does not send until a trusted confirmation',async()=>{
- const auth={scope:'fixture',mode:'multi',token:'fixture-only',expires:Date.now()+86400000};
+ const apiOrigin='https://asistente-onoff-fixture.vercel.app';
+ const auth={scope:'fixture',mode:'multi',token:'fixture-only',expires:Date.now()+86400000,apiOrigin};
  const room='#/room/historical';
  const source='onoff-preparation-reviews-00000000-0000-0000-0000-000000000000';
  const store={[source]:{room,at:Date.now()-86400000,state:'preparation-review',description:'Resumen',
@@ -20,11 +21,12 @@ test('recovery stages a single signed draft and does not send until a trusted co
   ONOFF_TASK_PILOT:auth,
   importScripts:(...files)=>files.filter(name=>name!=='pilot-auth.js').forEach(load),
   chrome:{
-   runtime:{id:'fixture-id',onMessage:{addListener:fn=>{listener=fn;}}},
+   runtime:{id:'fixture-id',getManifest:()=>({host_permissions:[apiOrigin+'/*']}),onMessage:{addListener:fn=>{listener=fn;}}},
    tabs:{get:async()=>({url:sender.url})},
    storage:{local:{get:async key=>key?{[key]:structuredClone(store[key])}:structuredClone(store),set:async values=>Object.assign(store,structuredClone(values))}}
   },
-  fetch:async (_,options)=>{
+  fetch:async (url,options)=>{
+   assert.equal(url,apiOrigin+'/api/bitrix/search-task');
    const body=JSON.parse(options.body);
    operations.push(body);
    assert.equal(options.headers.Authorization,'Bearer fixture-only');

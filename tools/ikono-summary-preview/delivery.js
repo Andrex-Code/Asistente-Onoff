@@ -1,5 +1,5 @@
 // Durable retries always reuse the same signed intent. The server reserves task.add once.
-self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now()}){
+self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,apiOrigin='https://asistente-onoff.vercel.app',now=()=>Date.now()}){
  const active=new Map(),delays=[30000,120000,300000],prefix='onoff-delivery|';
  const get=async key=>(await chrome.storage.local.get(key))[key];
  async function run(key,{manual=false}={}){
@@ -9,7 +9,7 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
   v={...v,attempts:(v.attempts||0)+1,phase:'sending',lastAttempt:now(),nextAt:null};await chrome.storage.local.set({[key]:v});
   try{
    if(token.expires<now())throw Error('Piloto vencido.');
-   const r=await fetchImpl('https://asistente-onoff.vercel.app/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true,dateReviewed:v.dateReviewed===true}),signal:AbortSignal.timeout(55000)});
+   const r=await fetchImpl(apiOrigin+'/api/bitrix/search-task',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token.token},body:JSON.stringify({pilotAction:'commit',intent:v.intent,evidence:v.evidence,confirmation:true,dateReviewed:v.dateReviewed===true}),signal:AbortSignal.timeout(55000)});
    const d=await r.json();if(!r.ok||!d.ok){const error=Error(d.error||'No se recibió confirmación del servidor.');error.code=d.code;throw error;}
    await chrome.storage.local.set({[key]:{...v,result:d.data,resultAt:now(),phase:'created',lastError:'',nextAt:null}});try{await chrome.alarms?.clear(prefix+key);}catch{/* A stale alarm will see the saved result and never resend. */}return d.data;
   }catch(e){

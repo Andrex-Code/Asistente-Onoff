@@ -19,17 +19,21 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const tc = parseTc(req.body?.tc);
-    if (!tc) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Ingrese una TC válida, por ejemplo TC5900 o 5900.'
-      });
-    }
-
     const tcField = String(process.env.BITRIX_TC_FIELD || DEFAULT_TC_FIELD).trim();
     if (!/^UF_CRM_[A-Z0-9_]+$/i.test(tcField)) {
       throw new Error('BITRIX_TC_FIELD no tiene un formato válido.');
+    }
+
+    if(req.body?.action==='lookup-phone'){
+      const phone=typeof req.body.phone==='string'?req.body.phone:'';
+      if(!/^\d{10,15}$/.test(phone))return res.status(400).json({ok:false,error:'Teléfono inválido.'});
+      res.setHeader('Cache-Control','no-store');
+      const result=await require('../../lib/bitrix-phone-deals').findPhoneDeals(phone,tcField,(method,params)=>callBitrix(webhookUrl,method,params));
+      return res.status(200).json({ok:true,...result});
+    }
+    const tc = parseTc(req.body?.tc);
+    if (!tc) {
+      return res.status(400).json({ok:false,error:'Ingrese una TC válida, por ejemplo TC5900 o 5900.'});
     }
 
     const rawItems = await findDeals(webhookUrl, tcField, tc);

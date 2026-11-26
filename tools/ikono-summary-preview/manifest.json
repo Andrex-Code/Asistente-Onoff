@@ -12,6 +12,7 @@
   ],
   "host_permissions": [
     "https://asistente-onoff.vercel.app/*",
+    "https://asistente-onoff-git-fix-ikono-t-4fbe05-andres-projects-bf9797b2.vercel.app/*",
     "https://onoff.a.ikono.im/*",
     "https://onoff.s.ikono.im/*"
   ],
