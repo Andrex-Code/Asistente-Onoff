@@ -47,15 +47,15 @@
   }
   let snapshot,context;
   try{snapshot=window.ONOFFTaskReview?.snapshot();context=window.ONOFFAdvisorContext?.read();}catch{}
-  const generation=context?.generationStatus||'';const manual=window.ONOFFAdvisorValidation?.manualDraft?.();if(manual&&!manual.saved)return null;
+  const generation=context?.generationStatus||'';const manual=window.ONOFFAdvisorValidation?.manualDraft?.();const missingReason=manual?.required&&!manual.saved;
   if(busy||dialog.querySelector('[aria-busy="true"]:not([data-onoff-blocked])'))return null;
-  const reason=recordedDialogs.get(dialog)?.reason||window.__onoffPreparationError||
+  const reason=missingReason?'Motivo de contacto pendiente de completar por el asesor.':recordedDialogs.get(dialog)?.reason||window.__onoffPreparationError||
    (preparationFailure?.dialog===dialog&&preparationFailure.room===room&&preparationFailure.category===category&&preparationFailure.detail===detail?preparationFailure.reason:'')||
    (/(?:No hay textos verificables|No se pudo generar|agotó el tiempo)/i.test(generation)?generation:'')||
    (Date.now()-fallback.startedAt>=65000?'La revisión de la atención sigue pendiente. Verifica la identidad y el resumen antes de reintentar.':'');
   return reason?{...fallback,reason,snapshot,context,manual}:null;
  }
- function reviewSignature(review){return JSON.stringify([review.room,review.category,review.detail,review.snapshot?.attention,review.snapshot?.tc,review.snapshot?.phone,review.manual?.description||review.snapshot?.description||review.context?.summary||'',review.snapshot?.messages]);}
+ function reviewSignature(review){return JSON.stringify([review.room,review.category,review.detail,review.snapshot?.attention,review.snapshot?.tc,review.snapshot?.phone,review.manual?.required&&!review.manual.saved?'':review.manual?.description||review.snapshot?.description||review.context?.summary||'',review.snapshot?.messages]);}
  async function recordPreparationReview(review){
   const {dialog,room,category,detail,snapshot,context,reason,manual}=review;
   const signature=reviewSignature(review),previous=recordedDialogs.get(dialog);
@@ -65,7 +65,7 @@
   const key=previous?.key||fallbackKey+'-'+crypto.randomUUID(),at=Date.now();
   const tc=snapshot?.tc||'';const phone=snapshot?.phone||'';
   const identity=tc?'TC'+tc:phone?'Contacto '+phone:'Identidad pendiente';
-  const description=manual?.description||snapshot?.description?.trim()||context?.summary?.trim()||'';
+  const description=manual?.required&&!manual.saved?'':manual?.description||snapshot?.description?.trim()||context?.summary?.trim()||'';
   const entry={key,room,tc,at,state:'preparation-review',title:identity+' · '+detail,error:reason.slice(0,1000),description,review:{category,detail,phone,dealId:snapshot?.dealId||'',attention:snapshot?.attention||'',observations:dialog.querySelector('textarea')?.value?.slice(0,3000)||''}};
   try{await chrome.storage.local.set({[key]:entry});recordedDialogs.set(dialog,{key,signature,reason});reviewSaveErrors.delete(dialog);preparationEpoch++;armed=null;busy=false;return key;}
   finally{pendingReviewSaves.delete(dialog);}

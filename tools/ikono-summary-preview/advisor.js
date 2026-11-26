@@ -49,15 +49,15 @@
   };
  }
  function manualState(p,ctx){
-  manualRequired=window.ONOFFManualReview.needsManual(p,ctx);
+  const assessment=window.ONOFFManualReview.assess(p,ctx);manualRequired=assessment.required;
   if(manualRequired&&!manualOpen){manualOpen=true;validated='';autoPrepared='';preparationMessage='';}
   if(!manualRequired&&ctx.summaryReady&&manualOpen&&!manualUserOpened&&!manualDirty&&!manualSaved){manualOpen=false;validated='';autoPrepared='';}
   const signature=window.ONOFFManualReview.signature(p,ctx);
   if(manualSaved&&manualSaved.evidence!==signature){manualSaved=null;validated='';autoPrepared='';preparationMessage='';ui.querySelector('[data-manual-status]').textContent='Cambió la atención, mensajes o tipificación. Revisa y guarda nuevamente.';}
   manualEvidence=signature;
   ui.querySelector('[data-manual-form]').hidden=!manualOpen;ui.querySelector('[data-manual-open]').hidden=manualOpen;ui.querySelector('[data-manual-auto]').hidden=manualRequired||!ctx.summaryReady;
-  const hint=ui.querySelector('[data-manual-hint]'),text=ctx.customerAudioIds?.length?'Escucha la nota en iKono y escribe la consulta. No se descarga ni transcribe audio.':'Describe la consulta; no inventes gestión ni resultado.';if(hint.textContent!==text)hint.textContent=text;
-  return manualOpen?{summary:manualSaved?.description||'',ready:!!manualSaved,manual:true}:{summary:ctx.summary,ready:ctx.summaryReady,manual:false};
+  const hint=ui.querySelector('[data-manual-hint]'),text=assessment.reason==='audio'?'No se identifica la consulta. Escucha la nota en iKono y escribe el motivo; no se descarga ni transcribe audio.':assessment.reason==='image'?'La imagen no aporta una consulta verificable. Escribe el motivo.':'No se identifica una consulta concreta. Describe el motivo sin inventar gestión ni resultado.';if(hint.textContent!==text)hint.textContent=text;
+  return manualOpen?{summary:manualSaved?.description||'',ready:!!manualSaved,manual:true}:{summary:assessment.summary||ctx.summary,ready:!!assessment.summary||ctx.summaryReady,manual:false};
  }
  function mount(dialog){
   host=document.createElement('section');host.id='onoff-advisor-validation';host.setAttribute('aria-label','Validación de tarea del asesor');
