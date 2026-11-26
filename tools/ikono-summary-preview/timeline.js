@@ -1,7 +1,7 @@
 (() => {
  if(window.ONOFFTimeline)return;
  const day=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
- function dateLabel(label){const s=label.trim().toLowerCase();if(s==='hoy'||s==='today')return day();if(s==='ayer'||s==='yesterday')return 'older';const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(m)return `${m[3]}-${m[2]}-${m[1]}`;if(/^\d{4}-\d\d-\d\d$/.test(s))return s;return 'older';}
+ function dateLabel(label){const s=label.trim().toLowerCase();if(s==='hoy'||s==='today')return day();if(s==='ayer'||s==='yesterday')return eventDate(String(Date.now()-86400000));const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(m)return `${m[3]}-${m[2]}-${m[1]}`;if(/^\d{4}-\d\d-\d\d$/.test(s))return s;return 'older';}
  function eventDate(raw){
   if(typeof raw!=='string')return null;
   const stamp=/^\d{13}$/.test(raw)?Number(raw):/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(raw)?Date.parse(raw):NaN;
@@ -47,7 +47,7 @@
    const notice=e.matches('.mx_EventTile_info')||!!e.querySelector('.mx_MNoticeBody');
    const closed=notice&&/chat resuelto/i.test(text),joined=advisor&&notice&&/se ha unido a la sala/i.test(text);
    const greeting=advisor&&!notice&&/^(?:hola\b|buen(?:os|as)\s+(?:d[ií]as|tardes|noches)|bienvenid[oa])/i.test(text)&&/(?:mi nombre|soy |gestor|asesor|podemos ayudar|puedo ayudar|ayudarte|servicio|soporte)/i.test(text);
-   items.push({id:e.dataset.eventId,day:eventDay,text,role:advisor?'advisor':bot?'bot':'customer',notice,closed,joined,greeting,photo:!!e.querySelector('.mx_MImageBody')});
+   items.push({id:e.dataset.eventId,day:eventDay,text,role:advisor?'advisor':bot?'bot':'customer',notice,closed,joined,greeting,photo:!!e.querySelector('.mx_MImageBody'),audio:!notice&&!!e.querySelector('audio,.mx_MAudioBody,.mx_VoiceMessageBody,.mx_VoiceMessage,.mx_AudioPlayer')});
   }return items;
  }
  function sessions(events){const result=[];let current=null,closed=false;
@@ -55,9 +55,9 @@
    if(e.role==='bot')continue;
    if(e.notice&&!e.joined)continue;
    const split=!current||closed||(e.greeting&&current.greeting&&current.messages.size>1);
-   if(split){current={id:e.id,reason:closed?'Reapertura tras cierre':e.greeting?'Saludo del asesor':'Inicio visible de atención',messages:new Map(),photoIds:[]};result.push(current);closed=false;}
+   if(split){current={id:e.id,reason:closed?'Reapertura tras cierre':e.greeting?'Saludo del asesor':'Inicio visible de atención',messages:new Map(),photoIds:[],customerAudioIds:[]};result.push(current);closed=false;}
    if(e.joined&&!current.anchor){current.id=e.id;current.anchor=true;}if(e.greeting){if(!current.anchor){current.id=e.id;current.anchor=true;}current.greeting=true;}
-   if(e.photo)current.photoIds.push(e.id);
+   if(e.photo)current.photoIds.push(e.id);if(e.audio&&e.role==='customer')current.customerAudioIds.push(e.id);
    if(!e.notice&&e.text)current.messages.set(e.id,{text:e.text,role:e.role,day:e.day});
   }return result;
  }
@@ -70,10 +70,10 @@
   const part=events.slice(start);
   // A visible date always wins. Never relabel yesterday as today's attention.
   if(part.some(e=>e.day&&e.day!==day()))return null;
-  const meaningful=part.filter(e=>e.role!=='bot'&&!e.notice&&(e.text||e.photo));
+  const meaningful=part.filter(e=>e.role!=='bot'&&!e.notice&&(e.text||e.photo||e.audio));
   if(!meaningful.length||!meaningful.some(e=>!e.day))return null;
   const anchor=part.find(e=>e.joined||e.greeting)||meaningful[0];
-  return {id:anchor.id,reason:'Atención activa · fecha por confirmar',messages:new Map(meaningful.filter(e=>e.text).map(e=>[e.id,{text:e.text,role:e.role,day:e.day||null}])),photoIds:meaningful.filter(e=>e.photo).map(e=>e.id),captureEvidence:{mode:'active-contact-boundary',boundary:anchor.id,datesVerified:false}};
+  return {id:anchor.id,reason:'Atención activa · fecha por confirmar',messages:new Map(meaningful.filter(e=>e.text).map(e=>[e.id,{text:e.text,role:e.role,day:e.day||null}])),photoIds:meaningful.filter(e=>e.photo).map(e=>e.id),customerAudioIds:meaningful.filter(e=>e.audio&&e.role==='customer').map(e=>e.id),captureEvidence:{mode:'active-contact-boundary',boundary:anchor.id,datesVerified:false}};
  }
  window.ONOFFTimeline={day,read,sessions,currentContact,loadVisibleHistory};
 })();

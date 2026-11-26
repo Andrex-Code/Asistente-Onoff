@@ -1,6 +1,6 @@
 // Durable retries always reuse the same signed intent. The server reserves task.add once.
 self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now()}){
- const active=new Map(),delays=[60000,180000,600000],prefix='onoff-delivery|';
+ const active=new Map(),delays=[30000,120000,300000],prefix='onoff-delivery|';
  const get=async key=>(await chrome.storage.local.get(key))[key];
  async function run(key,{manual=false}={}){
   const token=auth();if(!key.startsWith('onoff-task-pilot-'+token.scope+'-'))throw Error('Registro de otra sesión.');
@@ -14,7 +14,7 @@ self.createONOFFDelivery=function({chrome,fetchImpl=fetch,auth,now=()=>Date.now(
    await chrome.storage.local.set({[key]:{...v,result:d.data,resultAt:now(),phase:'created',lastError:'',nextAt:null}});try{await chrome.alarms?.clear(prefix+key);}catch{/* A stale alarm will see the saved result and never resend. */}return d.data;
   }catch(e){
    const rejected=e.code==='BITRIX_REJECTED';const fatal=rejected||/vencid|no autorizado|otra sesión|fuera del piloto|no se verificó|campo bloqueado|no coincide con el piloto/i.test(e.message);
-   const retry=!fatal&&v.attempts<=delays.length;
+   const retry=(!fatal||e.code==='RESOLVE_CLOCK_AHEAD')&&v.attempts<=delays.length;
    const saved={...v,...(rejected?{confirmed:false,rejected:true}:{}),phase:retry?'retry':'failed',lastError:String(e.message).slice(0,500),nextAt:retry?now()+delays[v.attempts-1]:null};await chrome.storage.local.set({[key]:saved});
    if(retry)await chrome.alarms?.create(prefix+key,{when:saved.nextAt});
    throw Error(saved.lastError+(retry?' Reintento automático programado.':' Envío conservado en la bandeja de fallos.'));

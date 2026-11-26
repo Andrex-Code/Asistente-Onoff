@@ -6,4 +6,3 @@ function onoffClosure(state){
  return '';
 }
 if(typeof module!=='undefined')module.exports=onoffClosure;
-

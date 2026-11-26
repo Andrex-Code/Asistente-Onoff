@@ -18,6 +18,32 @@ function fixture(options={}){let task=null,adds=0,moves=0,completes=0;const reco
  throw Error(m);
  }});return {service,stats:()=>({adds,moves,completes,task}),records};}
 const evidence={room:c.room,revision:payload.revision,before:'En seguimiento',after:'Resuelto',clickedAt:now};
+
+test('historical recovery requires the explicit private pilot flow and reuses the original scope',async()=>{
+ const f=fixture({timeout:true}),multi={...c,mode:'multi'};
+ const base={...payload,tc:'',dealId:'',identityMode:'contact',contactConfirmed:true,attention:'old-contact'};
+ const historical={...base,day:'2026-11-11',recovery:{caseAt:now-86400000,closureId:'old-closure'}};
+ await assert.rejects(f.service.prepare(multi,historical),/flujo de recuperación/);
+ await assert.rejects(f.service.prepareRecovery(c,historical),/cierre visible/);
+ await assert.rejects(f.service.prepareRecovery(multi,{...historical,day:'2026-11-10'}),/cierre visible/);
+ await assert.rejects(f.service.prepareRecovery(multi,{...historical,recovery:{...historical.recovery,closureId:'old-contact'}}),/cierre visible/);
+ const prepared=await f.service.prepareRecovery(multi,historical);
+ const signed=unseal(prepared.intent);
+ assert.equal(prepared.recovery,true);
+ assert.equal(signed.review.day,historical.day);
+ assert.equal(signed.review.identityMode,'contact');
+ assert.equal(signed.fields.UF_CRM_TASK,undefined);
+ assert.equal(f.stats().adds,0);
+ const click={room:c.room,revision:payload.revision,clickedAt:now,after:'ADVISOR_RECOVERY'};
+ await assert.rejects(f.service.commit(multi,{intent:prepared.intent,evidence:click}),/confirmar/);
+ await assert.rejects(f.service.commit(multi,{intent:prepared.intent,evidence:{...click,after:'ADVISOR_RESOLVE'},confirmation:true}),/cierre/);
+ await assert.rejects(f.service.amend(multi,{intent:prepared.intent,edits:{phone:'573111111111'}}),/identidad/);
+ await assert.rejects(f.service.commit(multi,{intent:prepared.intent,evidence:click,confirmation:true}),/sin respuesta/);
+ const result=await f.service.commit(multi,{intent:prepared.intent,evidence:click,confirmation:true});
+ assert.equal(result.taskId,'900');
+ assert.equal(f.stats().adds,1);
+ await assert.rejects(f.service.prepareRecovery(multi,{...historical,revision:'b'.repeat(64)}),/intento de envío/);
+});
 test('prepare preserves template/team, maps fields, marks PRUEBA and never creates',async()=>{const f=fixture(),p=await f.service.prepare(c,payload),s=unseal(p.intent);assert.equal(f.stats().adds,0);assert.deepEqual(s.fields.ACCOMPLICES,['211','490253']);assert.equal(s.fields.RESPONSIBLE_ID,'931952');assert.equal(s.fields.UF_PRODUCT,'TRYTIENDAS');assert.match(s.fields.DESCRIPTION,/PRUEBA/);assert.equal(s.fields.UF_CATEGORY,payload.category);assert.deepEqual(s.fields.UF_CRM_TASK,['D_20934','CO_30342']);assert.equal(s.fields.REPLICATE,'N');});
 test('wrong TC, room, deal or missing review cannot prepare',async()=>{for(const change of [{tc:'5058'},{room:'#/other'},{dealId:'999'},{reviewed:false},{tcConfirmed:false},{duplicateAcknowledged:false}])await assert.rejects(fixture().service.prepare(c,{...payload,...change}));});
 test('click or vanished dialog alone cannot create; signature tampering rejected',async()=>{const f=fixture(),p=await f.service.prepare(c,payload);for(const change of [undefined,{...evidence,after:'Pendiente'},{...evidence,room:'#/other'},{...evidence,revision:'x'}])await assert.rejects(f.service.commit(c,{intent:p.intent,evidence:change}));assert.equal(f.stats().adds,0);await assert.rejects(f.service.commit(c,{intent:p.intent+'x',evidence}));});
